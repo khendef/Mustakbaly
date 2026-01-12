@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/certificationmodule",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\CertificationModule\\": "app/",
+            "Modules\\CertificationModule\\Database\\Factories\\": "database/factories/",
+            "Modules\\CertificationModule\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\CertificationModule\\Tests\\": "tests/"
+        }
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "LearningModule": true,
+    "AssesmentModule": true,
+    "SystemModule": true,
+    "MediaModule": true,
+    "CertificationModule": true,
+    "OrganizationsModule": true,
+    "UserManagementModule": true
+}
