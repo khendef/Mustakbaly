@@ -1,0 +1,11 @@
+{
+    "name": "OrganizationsModule",
+    "alias": "organizationsmodule",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\OrganizationsModule\\Providers\\OrganizationsModuleServiceProvider"
+    ],
+    "files": []
+}

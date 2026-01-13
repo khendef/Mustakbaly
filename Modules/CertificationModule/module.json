@@ -1,0 +1,11 @@
+{
+    "name": "CertificationModule",
+    "alias": "certificationmodule",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\CertificationModule\\Providers\\CertificationModuleServiceProvider"
+    ],
+    "files": []
+}
