@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Models\CourseManagement;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class CourseInstructor extends Model
+{
+    /**
+     * Represents the pivot relationship between courses and instructors.
+     * Manages instructor assignments to courses, including primary instructor designation and assignment tracking.
+     */
+
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'course_instructor_id';
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'course_instructor';
+
+    /**
+     * i don't need timestamps for this model because i need only assigned_at and assigned_by.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'course_id',
+        'instructor_id',
+        'is_primary',
+        'assigned_at',
+        'assigned_by',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_primary' => 'boolean',
+            'assigned_at' => 'datetime',
+        ];
+    }
+
+    // Relationships
+
+    /**
+     * Get the course that this instructor is assigned to.
+     *
+     * @return BelongsTo
+     */
+    public function course(): BelongsTo
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'course_id');
+    }
+
+    /**
+     * Get the instructor (user).
+     *
+     * @return BelongsTo
+     */
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'instructor_id', 'user_id');
+    }
+
+    /**
+     * Get the user who assigned this instructor.
+     *
+     * @return BelongsTo
+     */
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by', 'user_id');
+    }
+}

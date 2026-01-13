@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('enrollments', function (Blueprint $table) {
+            $table->id('enrollment_id');
+            $table->foreignId('learner_id')->constrained('users', 'user_id')->cascadeOnDelete();
+            $table->foreignId('course_id')->constrained('courses', 'course_id')->cascadeOnDelete();
+            $table->foreignId('enrolled_by')->nullable()->constrained('users', 'user_id')->cascadeOnDelete();
+            $table->string('enrollment_type', 20)->default('self'); // self, assigned
+            $table->string('enrollment_status', 20)->default('active'); // active, completed, dropped, suspended
+            $table->timestamp('enrolled_at');
+
+            $table->timestamp('completed_at')->nullable();
+
+            // calculate progress percentage based on the total lessons completed and the total lessons of the course progress percentage = ($completedLessons / $totalLessons) * 100
+
+            $table->decimal('progress_percentage', 5, 2)->default(0.00);
+            $table->timestamps();
+
+            // Unique constraint to prevent duplicate enrollments
+            $table->unique(['learner_id', 'course_id']);
+
+            // Indexes
+            $table->index('enrollment_status');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('enrollments');
+    }
+};
