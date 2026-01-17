@@ -3,14 +3,16 @@
 namespace App\Models;
 
 
-use App\Models\CourseManagement\Course;
-use App\Models\CourseManagement\CourseInstructor;
-use App\Models\CourseManagement\Enrollment;
+use Modules\LearningModule\Models\Course;
+use Modules\LearningModule\Models\CourseInstructor;
+use Modules\LearningModule\Models\Enrollment;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Model
+class User extends Authenticatable implements JWTSubject
 {
     /**
      * Represents a user account in the e-learning platform.
@@ -100,5 +102,36 @@ class User extends Model
     {
         return $this->belongsToMany(Course::class, 'enrollments', 'learner_id', 'course_id')
             ->using(Enrollment::class);
+    }
+
+    /**
+     * Get the activity log causer name.
+     * This helps identify who performed the action in activity logs.
+     *
+     * @return string
+     */
+    public function getActivitylogCauserName(): string
+    {
+        return $this->name ?? $this->email ?? "User #{$this->user_id}";
+    }
+
+    /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Return a key value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }

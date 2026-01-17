@@ -13,6 +13,9 @@ return [
     | framework. This connection is utilized if another isn't explicitly
     | specified when running a cache operation inside the application.
     |
+    | Recommended for production: 'redis' (supports cache tags for better
+    | invalidation). For development: 'database' or 'file' works fine.
+    |
     */
 
     'default' => env('CACHE_STORE', 'database'),
