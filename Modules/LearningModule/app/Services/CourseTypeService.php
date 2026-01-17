@@ -1,0 +1,375 @@
+<?php
+
+namespace Modules\LearningModule\Services;
+
+use App\Traits\CachesQueries;
+use App\Traits\HelperTrait;
+use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\LearningModule\Models\CourseType;
+
+/**
+ * Service class for managing course type business logic.
+ * Handles course type creation, updates, activation/deactivation, and various course type operations.
+ */
+class CourseTypeService
+{
+    use HelperTrait, CachesQueries;
+    /**
+     * Create a new course type.
+     *
+     * @param array $data
+     * @return CourseType
+     * @throws Exception
+     */
+    public function create(array $data): CourseType
+    {
+        try {
+
+            // Ensure name is unique
+            if (isset($data['name'])) {
+                $this->validateUniqueName($data['name'], CourseType::class);
+            }
+
+            // Generate slug if not provided
+            if (empty($data['slug']) && !empty($data['name'])) {
+                $data['slug'] = $this->generateUniqueSlug($data['name'], CourseType::class);
+            }
+
+            // Ensure slug is unique
+            if (isset($data['slug'])) {
+                $data['slug'] = $this->ensureUniqueSlug($data['slug'], CourseType::class);
+            }
+
+            $courseType = CourseType::create($data);
+
+            // Clear cache after creation
+            $this->clearCourseTypeCache();
+
+            Log::info("Course type created", [
+                'course_type_id' => $courseType->course_type_id,
+                'name' => $courseType->name,
+                'slug' => $courseType->slug,
+            ]);
+
+            return $courseType;
+        } catch (Exception $e) {
+            Log::error("Failed to create course type", [
+                'data' => $data,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Update an existing course type.
+     *
+     * @param CourseType $courseType
+     * @param array $data
+     * @return CourseType
+     * @throws Exception
+     */
+    public function update(CourseType $courseType, array $data): CourseType
+    {
+        try {
+
+            // Validate name uniqueness if being changed
+            if (isset($data['name']) && $data['name'] !== $courseType->name) {
+                $this->validateUniqueName($data['name'], CourseType::class, 'course_type_id', $courseType->course_type_id);
+            }
+
+            // Handle slug update
+            if (isset($data['name']) && empty($data['slug'])) {
+                // If name changed and slug not provided, generate new slug
+                $data['slug'] = $this->generateUniqueSlug($data['name'], CourseType::class);
+            } elseif (isset($data['slug'])) {
+                // Ensure slug is unique (excluding current course type)
+                $data['slug'] = $this->ensureUniqueSlug($data['slug'], CourseType::class, 'slug', 'course_type_id', $courseType->course_type_id);
+            }
+
+            $courseType->update($data);
+
+            // Clear cache after update
+            $this->clearCourseTypeCache($courseType);
+
+            Log::info("Course type updated", [
+                'course_type_id' => $courseType->course_type_id,
+                'updated_fields' => array_keys($data),
+            ]);
+
+            return $courseType->fresh();
+        } catch (Exception $e) {
+            Log::error("Failed to update course type", [
+                'course_type_id' => $courseType->course_type_id,
+                'data' => $data,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Activate a course type.
+     *
+     * @param CourseType $courseType
+     * @return CourseType
+     * @throws Exception
+     */
+    public function activate(CourseType $courseType): CourseType
+    {
+        try {
+            if ($courseType->is_active) {
+                return $courseType;
+            }
+
+            $courseType->update(['is_active' => true]);
+
+            // Clear cache after activation
+            $this->clearCourseTypeCache($courseType);
+
+            Log::info("Course type activated", [
+                'course_type_id' => $courseType->course_type_id,
+                'name' => $courseType->name,
+            ]);
+
+            return $courseType->fresh();
+        } catch (Exception $e) {
+            Log::error("Failed to activate course type", [
+                'course_type_id' => $courseType->course_type_id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Deactivate a course type.
+     *
+     * @param CourseType $courseType
+     * @return CourseType
+     * @throws Exception
+     */
+    public function deactivate(CourseType $courseType): CourseType
+    {
+        try {
+            if (!$courseType->is_active) {
+                return $courseType;
+            }
+
+            // Check if course type has active courses
+            $activeCoursesCount = $courseType->courses()
+                ->where('status', 'published')
+                ->count();
+
+            if ($activeCoursesCount > 0) {
+                throw new Exception("Cannot deactivate course type with {$activeCoursesCount} active published course(s).", 422);
+            }
+
+            $courseType->update(['is_active' => false]);
+
+            // Clear cache after deactivation
+            $this->clearCourseTypeCache($courseType);
+
+            Log::info("Course type deactivated", [
+                'course_type_id' => $courseType->course_type_id,
+                'name' => $courseType->name,
+            ]);
+
+            return $courseType->fresh();
+        } catch (Exception $e) {
+            Log::error("Failed to deactivate course type", [
+                'course_type_id' => $courseType->course_type_id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Delete a course type (soft delete).
+     *
+     * @param CourseType $courseType
+     * @return bool
+     * @throws Exception
+     */
+    public function delete(CourseType $courseType): bool
+    {
+        try {
+            // Check if course type has courses
+            $coursesCount = $courseType->courses()->count();
+
+            if ($coursesCount > 0) {
+                throw new Exception("Cannot delete course type with {$coursesCount} course(s).", 422);
+            }
+
+            $courseTypeId = $courseType->course_type_id;
+            $courseTypeName = $courseType->name;
+            $deleted = $courseType->delete();
+
+            if ($deleted) {
+                // Clear cache after deletion
+                $this->clearCourseTypeCache();
+
+                Log::info("Course type deleted", [
+                    'course_type_id' => $courseTypeId,
+                    'name' => $courseTypeName,
+                ]);
+            }
+
+            return $deleted;
+        } catch (Exception $e) {
+            Log::error("Failed to delete course type", [
+                'course_type_id' => $courseType->course_type_id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Check if course type can be deleted.
+     *
+     * @param CourseType $courseType
+     * @return bool
+     */
+    public function canBeDeleted(CourseType $courseType): bool
+    {
+        return $courseType->courses()->count() === 0;
+    }
+
+    /**
+     * Check if course type can be deactivated.
+     *
+     * @param CourseType $courseType
+     * @return bool
+     */
+    public function canBeDeactivated(CourseType $courseType): bool
+    {
+        $activeCoursesCount = $courseType->courses()
+            ->where('status', 'published')
+            ->count();
+
+        return $activeCoursesCount === 0;
+    }
+
+    /**
+     * Get all active course types.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getActiveCourseTypes()
+    {
+        return $this->remember('course_types.active', 3600, function () {
+            return CourseType::where('is_active', true)
+                ->orderBy('name', 'asc')
+                ->get();
+        }, ['course_types']);
+    }
+
+    /**
+     * Get all course types (active and inactive).
+     *
+     * @param array $filters
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllCourseTypes()
+    {
+        return $this->remember('course_types.all', 3600, function () {
+            return CourseType::orderBy('name', 'asc')->get();
+        }, ['course_types']);
+    }
+
+    /**
+     * Get course type by slug.
+     *
+     * @param string $slug
+     * @return CourseType|null
+     */
+    public function getBySlug(string $slug): ?CourseType
+    {
+        return $this->remember("course_type.slug.{$slug}", 3600, function () use ($slug) {
+            return CourseType::where('slug', $slug)->first();
+        }, ['course_types']);
+    }
+
+    /**
+     * Get course type by ID.
+     *
+     * @param int $courseTypeId
+     * @return CourseType|null
+     */
+    public function getById(int $courseTypeId): ?CourseType
+    {
+        return $this->remember("course_type.{$courseTypeId}", 3600, function () use ($courseTypeId) {
+            $courseType = CourseType::find($courseTypeId);
+
+            if (!$courseType) {
+                throw new Exception("Course type not found.", 404);
+            }
+
+            return $courseType;
+        }, ['course_types']);
+    }
+
+    /**
+     * Get course count for a course type.
+     *
+     * @param CourseType $courseType
+     * @return int
+     */
+    public function getCourseCount(CourseType $courseType): int
+    {
+        return $courseType->courses()->count();
+    }
+
+    /**
+     * Get active course count for a course type.
+     *
+     * @param CourseType $courseType
+     * @return int
+     */
+    public function getActiveCourseCount(CourseType $courseType): int
+    {
+        $cacheKey = "course_type.{$courseType->course_type_id}.active_count";
+
+        return $this->remember($cacheKey, 3600, function () use ($courseType) {
+            return $courseType->courses()
+                ->where('status', 'published')
+                ->count();
+        }, ['course_types', "course_type.{$courseType->course_type_id}"]);
+    }
+
+    /**
+     * Clear course type related cache.
+     *
+     * @param CourseType|null $courseType Optional course type to clear specific cache
+     * @return void
+     */
+    protected function clearCourseTypeCache(?CourseType $courseType = null): void
+    {
+        if ($this->supportsCacheTags()) {
+            // Use tags for efficient bulk invalidation
+            $this->flushTags(['course_types']);
+            if ($courseType) {
+                $this->flushTags(["course_type.{$courseType->course_type_id}"]);
+            }
+        } else {
+            // Fallback to individual key deletion
+            $keys = [
+                'course_types.active',
+                'course_types.all',
+            ];
+
+            if ($courseType) {
+                $keys[] = "course_type.{$courseType->course_type_id}";
+                $keys[] = "course_type.slug.{$courseType->slug}";
+                $keys[] = "course_type.{$courseType->course_type_id}.active_count";
+                $keys[] = "course_type.{$courseType->course_type_id}.count";
+            }
+
+            $this->forgetMany($keys);
+        }
+    }
+}
