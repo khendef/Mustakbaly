@@ -212,8 +212,7 @@ class EnrollmentService
                 // If no lessons, progress is 0
                 $progress = 0.00;
             } else {
-                // Get completed lessons count (this would need a lesson completion tracking table)
-                // For now, we'll use a placeholder - you'll need to implement lesson completion tracking
+                // Get completed lessons count
                 $completedLessons = $this->getCompletedLessonsCount($enrollment);
 
                 $progress = round(($completedLessons / $totalLessons) * 100, 2);
@@ -288,10 +287,10 @@ class EnrollmentService
         $cacheKey = "enrollment.check.{$learnerId}.{$courseId}";
 
         return $this->remember($cacheKey, 300, function () use ($learnerId, $courseId) {
-        return Enrollment::where('learner_id', $learnerId)
-            ->where('course_id', $courseId)
-            ->where('enrollment_status', EnrollmentStatus::ACTIVE->value)
-            ->exists();
+            return Enrollment::where('learner_id', $learnerId)
+                ->where('course_id', $courseId)
+                ->where('enrollment_status', EnrollmentStatus::ACTIVE->value)
+                ->exists();
         }, ['enrollments', "learner.{$learnerId}", "course.{$courseId}"]);
     }
 
@@ -309,9 +308,9 @@ class EnrollmentService
         $cacheKey = "enrollment.{$learnerId}.{$courseId}";
 
         return $this->remember($cacheKey, 300, function () use ($learnerId, $courseId) {
-        return Enrollment::where('learner_id', $learnerId)
-            ->where('course_id', $courseId)
-            ->first();
+            return Enrollment::where('learner_id', $learnerId)
+                ->where('course_id', $courseId)
+                ->first();
         }, ['enrollments', "learner.{$learnerId}", "course.{$courseId}"]);
     }
 
@@ -341,11 +340,11 @@ class EnrollmentService
         $cacheKey = "enrollments.learner.{$learnerId}.active";
 
         return $this->remember($cacheKey, 600, function () use ($learnerId) {
-        return Enrollment::where('learner_id', $learnerId)
-            ->where('enrollment_status', EnrollmentStatus::ACTIVE->value)
-            ->with(['course', 'enrolledBy'])
-            ->orderBy('enrolled_at', 'desc')
-            ->get();
+            return Enrollment::where('learner_id', $learnerId)
+                ->where('enrollment_status', EnrollmentStatus::ACTIVE->value)
+                ->with(['course', 'enrolledBy'])
+                ->orderBy('enrolled_at', 'desc')
+                ->get();
         }, ['enrollments', "learner.{$learnerId}"]);
     }
 
@@ -393,6 +392,7 @@ class EnrollmentService
             $totalUnits = Unit::where('course_id', $course->course_id)->count();
             $totalLessons = $this->getTotalLessonsCount($course);
             $completedLessons = $this->getCompletedLessonsCount($enrollment);
+
 
             return [
                 'enrollment_id' => $enrollment->enrollment_id,
