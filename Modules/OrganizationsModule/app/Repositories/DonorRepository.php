@@ -2,10 +2,10 @@
 namespace Modules\OrganizationsModule\Repositories;
 use Illuminate\Support\Facades\Cache;
 use Modules\OrganizationsModule\Models\Donor;
-
 class DonorRepository
+
 {
-    private const PAGINATION_VERSION = 'donors:pagination:version';
+    private const CACHE_TIMESTAMP_KEY = 'donors:last_updated_at';
 
     public function findCached(int $id): Donor
     {
@@ -19,22 +19,25 @@ class DonorRepository
     public function paginateCached(int $perPage = 15)
     {
         $page = request('page', 1);
-        $version = Cache::get(self::PAGINATION_VERSION, 1);
+        $timestamp = Cache::get(self::CACHE_TIMESTAMP_KEY, 'init');
+
+        $cacheKey = sprintf(
+            'donors:pagination:%s:%d:%d',
+            $timestamp,
+            $perPage,
+            $page
+        );
 
         return Cache::remember(
-            "donors:pagination:v{$version}:{$perPage}:{$page}",
+            $cacheKey,
             600,
             fn () => Donor::with('user')->paginate($perPage)
         );
     }
-      public function clearDonorCache(int $id): void
+
+    public function clearDonorCache(int $id): void
     {
         Cache::forget("donors:{$id}");
         Cache::forget("donors:{$id}:total_donated");
-    }
-
-    public function bumpPagination(): void
-    {
-        Cache::increment(self::PAGINATION_VERSION);
     }
 }

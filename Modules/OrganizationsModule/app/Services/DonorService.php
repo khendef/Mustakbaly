@@ -14,9 +14,7 @@ class DonorService
     public function create(array $data): Donor
     {
         return DB::transaction(function () use ($data) {
-            $donor = Donor::create($data);
-            $this->repository->bumpPagination();
-            return $donor;
+            return Donor::create($data);
         });
     }
 
@@ -24,8 +22,6 @@ class DonorService
     {
         return DB::transaction(function () use ($donor, $data) {
             $donor->update($data);
-            $this->repository->clearDonorCache($donor->id);
-            $this->repository->bumpPagination();
             return $donor->refresh();
         });
     }
@@ -33,8 +29,6 @@ class DonorService
     public function delete(Donor $donor): void
     {
         DB::transaction(function () use ($donor) {
-            $this->repository->clearDonorCache($donor->id);
-            $this->repository->bumpPagination();
             $donor->delete();
         });
     }

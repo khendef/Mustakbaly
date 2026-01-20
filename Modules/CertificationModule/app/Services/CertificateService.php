@@ -22,11 +22,7 @@ class CertificateService
             $data['certificate_number'] ??=
                 $this->generateCertificateNumber();
 
-            $certificate = Certificate::create($data);
-
-            $this->repository->bumpPagination();
-
-            return $certificate;
+            return Certificate::create($data);
         });
     }
 
@@ -39,13 +35,6 @@ class CertificateService
 
             $certificate->update($data);
 
-            $this->repository->clearCertificateCache(
-                $certificate->id,
-                $certificate->certificate_number
-            );
-
-            $this->repository->bumpPagination();
-
             return $certificate->refresh();
         });
     }
@@ -53,20 +42,9 @@ class CertificateService
     public function delete(Certificate $certificate): void
     {
         DB::transaction(function () use ($certificate) {
-
-            $this->repository->clearCertificateCache(
-                $certificate->id,
-                $certificate->certificate_number
-            );
-
-            $this->repository->bumpPagination();
-
             $certificate->delete();
         });
     }
-
- /*   * Generate a unique certificate number.
-     */
 
     private function generateCertificateNumber(): string
     {

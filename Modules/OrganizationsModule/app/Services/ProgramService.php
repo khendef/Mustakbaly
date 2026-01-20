@@ -18,9 +18,7 @@ class ProgramService
     public function create(array $data): Program
     {
         return DB::transaction(function () use ($data) {
-            $program = Program::create($data);
-            $this->repository->bumpPagination();
-            return $program;
+            return Program::create($data);
         });
     }
 
@@ -28,8 +26,6 @@ class ProgramService
     {
         return DB::transaction(function () use ($program, $data) {
             $program->update($data);
-            $this->repository->clearProgram($program->id);
-            $this->repository->bumpPagination();
             return $program->refresh();
         });
     }
@@ -37,8 +33,6 @@ class ProgramService
     public function delete(Program $program): void
     {
         DB::transaction(function () use ($program) {
-            $this->repository->clearProgram($program->id);
-            $this->repository->bumpPagination();
             $program->delete();
         });
     }
