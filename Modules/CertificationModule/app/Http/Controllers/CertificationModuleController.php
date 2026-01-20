@@ -1,56 +1,63 @@
 <?php
 
 namespace Modules\CertificationModule\Http\Controllers;
-
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Modules\CertificationModule\Models\Certificate;
+use Modules\CertificationModule\Services\CertificateService;
+use Modules\CertificationModule\Repositories\CertificateRepository;
+use Modules\CertificationModule\Http\Requests\StoreCertificateRequest;
+use Modules\CertificationModule\Http\Requests\CertificateFilterRequest;
+use Modules\CertificationModule\Http\Requests\UpdateCertificateRequest;
 
 class CertificationModuleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+public function __construct(
+        protected CertificateRepository $repository,
+        protected CertificateService $service
+    ) {}
+
+public function index(CertificateFilterRequest $request)
+{
+    return self::success(
+        $this->repository->paginateFiltered(
+            $request->validated()
+        ),
+        'Certificates retrieved successfully',
+        200
+    );
+}
+
+    public function store(StoreCertificateRequest $request)
     {
-        return view('certificationmodule::index');
+        return self::success(
+            $this->service->create($request->validated()),
+            'Certificate issued successfully',
+            201
+        );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('certificationmodule::create');
+    public function update(
+        UpdateCertificateRequest $request,
+        Certificate $certificate
+    ) {
+        return self::success(
+            $this->service->update(
+                $certificate,
+                $request->validated()
+            ),
+            'Certificate updated successfully',
+            200
+        );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function destroy(Certificate $certificate)
     {
-        return view('certificationmodule::show');
+        $this->service->delete($certificate);
+
+        return self::success(
+            null,
+            'Certificate revoked successfully',
+            200
+        );
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('certificationmodule::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }
