@@ -87,15 +87,7 @@ class Lesson extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly([
-                'title',
-                'description',
-                'lesson_order',
-                'lesson_type',
-                'is_required',
-                'is_completed',
-                'actual_duration_minutes',
-            ])
+            ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {

@@ -27,7 +27,7 @@ class GenerateLearnerReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'learner_id' => ['nullable', 'integer', 'exists:users,user_id'],
+            'learner_id' => ['nullable', 'integer', 'exists:users,id'],
             'course_id' => ['nullable', 'integer', 'exists:courses,course_id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -52,4 +52,3 @@ class GenerateLearnerReportRequest extends FormRequest
         ];
     }
 }
-

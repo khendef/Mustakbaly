@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('enrollments', function (Blueprint $table) {
             $table->id('enrollment_id');
-            $table->foreignId('learner_id')->constrained('users', 'user_id')->cascadeOnDelete();
+            $table->foreignId('learner_id')->constrained('users', 'id')->cascadeOnDelete();
             $table->foreignId('course_id')->constrained('courses', 'course_id')->cascadeOnDelete();
-            $table->foreignId('enrolled_by')->nullable()->constrained('users', 'user_id')->cascadeOnDelete();
+            $table->foreignId('enrolled_by')->nullable()->constrained('users', 'id')->cascadeOnDelete();
             $table->string('enrollment_type', 20)->default('self'); // self, assigned
             $table->string('enrollment_status', 20)->default('active'); // active, completed, dropped, suspended
             $table->timestamp('enrolled_at');
@@ -23,8 +23,12 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
 
             // calculate progress percentage based on the total lessons completed and the total lessons of the course progress percentage = ($completedLessons / $totalLessons) * 100
-
             $table->decimal('progress_percentage', 5, 2)->default(0.00);
+
+            // final grade for course
+            // calculated from quizzes , can't set until course marked completed and progresss percentage = 100%
+            $table->decimal('final_grade', 5, 2)->nullable();
+
             $table->timestamps();
 
             // Unique constraint to prevent duplicate enrollments

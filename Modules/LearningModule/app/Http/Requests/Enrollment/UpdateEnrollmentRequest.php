@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
  * Validates:
  * - Enrollment type is valid (if updating)
  * - Progress percentage is within valid range (0-100)
+ * - Final grade is within valid range (0-100)
  * - Only allows updating specific fields
  */
 class UpdateEnrollmentRequest extends FormRequest
@@ -69,6 +70,11 @@ class UpdateEnrollmentRequest extends FormRequest
             'progress_percentage.min' => 'The progress percentage cannot be less than 0.',
             'progress_percentage.max' => 'The progress percentage cannot be greater than 100.',
             'progress_percentage.decimal' => 'The progress percentage can have at most 2 decimal places.',
+
+            'final_grade.numeric' => 'The final grade must be a number.',
+            'final_grade.min' => 'The final grade cannot be less than 0.',
+            'final_grade.max' => 'The final grade cannot be greater than 100.',
+            'final_grade.decimal' => 'The final grade can have at most 2 decimal places.',
         ];
     }
 
@@ -82,6 +88,7 @@ class UpdateEnrollmentRequest extends FormRequest
         return [
             'enrollment_type' => 'enrollment type',
             'progress_percentage' => 'progress percentage',
+            'final_grade' => 'final grade',
         ];
     }
 
@@ -95,6 +102,11 @@ class UpdateEnrollmentRequest extends FormRequest
         // Convert progress_percentage to float if provided
         if ($this->has('progress_percentage')) {
             $this->merge(['progress_percentage' => (float)$this->progress_percentage]);
+        }
+
+        // Convert final_grade to float if provided
+        if ($this->has('final_grade')) {
+            $this->merge(['final_grade' => (float)$this->final_grade]);
         }
     }
 

@@ -43,7 +43,7 @@ class StoreEnrollmentRequest extends FormRequest
             'learner_id' => [
                 'required',
                 'integer',
-                'exists:users,user_id',
+                'exists:users,id',
                 Rule::unique('enrollments', 'learner_id')
                     ->where('course_id', $this->get('course_id'))
                     ->whereIn('enrollment_status', ['active', 'suspended']),
@@ -67,7 +67,7 @@ class StoreEnrollmentRequest extends FormRequest
             'enrolled_by' => [
                 'nullable',
                 'integer',
-                'exists:users,user_id',
+                'exists:users,id',
             ],
         ];
     }

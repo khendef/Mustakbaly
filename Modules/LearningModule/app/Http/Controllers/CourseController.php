@@ -2,21 +2,24 @@
 
 namespace Modules\LearningModule\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Traits\CachesQueries;
 use Exception;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\LearningModule\Http\Requests\Course\AssignInstructorRequest;
-use Modules\LearningModule\Http\Requests\Course\ChangeStatusCourseRequest;
-use Modules\LearningModule\Http\Requests\Course\RemoveInstructorRequest;
-use Modules\LearningModule\Http\Requests\Course\SetPrimaryInstructorRequest;
+use App\Traits\CachesQueries;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Modules\LearningModule\Models\Course;
+use Modules\LearningModule\Services\CourseService;
+use Modules\LearningModule\Http\Resources\CourseResource;
+use Modules\LearningModule\Services\CourseInstructorService;
 use Modules\LearningModule\Http\Requests\Course\StoreCourseRequest;
 use Modules\LearningModule\Http\Requests\Course\UpdateCourseRequest;
-use Modules\LearningModule\Http\Resources\CourseResource;
-use Modules\LearningModule\Models\Course;
-use Modules\LearningModule\Services\CourseInstructorService;
-use Modules\LearningModule\Services\CourseService;
+use Modules\LearningModule\Http\Requests\Course\FilterCoursesRequest;
+use Modules\LearningModule\Http\Requests\Course\AssignInstructorRequest;
+use Modules\LearningModule\Http\Requests\Course\RemoveInstructorRequest;
+use Modules\LearningModule\Http\Requests\Course\ChangeStatusCourseRequest;
+use Modules\LearningModule\Http\Requests\Course\SetPrimaryInstructorRequest;
 
 /**
  * Controller for managing courses.
@@ -55,10 +58,10 @@ class CourseController extends Controller
     /**
      * Display a listing of courses.
      *
-     * @param Request $request
+     * @param FilterCoursesRequest $request
      * @return JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(FilterCoursesRequest $request): JsonResponse
     {
         try {
             // Generate cache key based on query parameters
@@ -74,9 +77,13 @@ class CourseController extends Controller
                     ->through(fn($course) => new CourseResource($course));
             }, ['courses']);
 
-            return $this->successResponse($courses, 'Courses retrieved successfully.');
+            return self::paginated($courses, 'Courses retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve courses.', null, null, $e);
+            Log::error('Unexpected error retrieving courses', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve courses at this time. Please try again later.', 500);
         }
     }
 
@@ -90,14 +97,24 @@ class CourseController extends Controller
     {
         try {
             $course = $this->courseService->create($request->validated());
+
+            if (!$course) {
+                throw new Exception('Failed to create course. Please check your input and try again.', 422);
+            }
+
             $course->load(['courseType', 'creator']);
 
-            return $this->createdResponse(
+            return self::success(
                 new CourseResource($course),
-                'Course created successfully.'
+                'Course created successfully.',
+                201
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to create course.', null, null, $e);
+            Log::error('Unexpected error creating course', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while creating the course. Please try again.', 500);
         }
     }
 
@@ -117,12 +134,17 @@ class CourseController extends Controller
                 return new CourseResource($course);
             }, ['courses', "course.{$course->course_id}"]);
 
-            return $this->successResponse(
+            return self::success(
                 $courseData,
                 'Course retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Course not found.', null, null, $e);
+            Log::error('Unexpected error retrieving course', [
+                'course_id' => $course->course_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve course details.', 500);
         }
     }
 
@@ -137,14 +159,24 @@ class CourseController extends Controller
     {
         try {
             $updatedCourse = $this->courseService->update($course, $request->validated());
+
+            if (!$updatedCourse) {
+                throw new Exception('Failed to update course. Please check your input and try again.', 422);
+            }
+
             $updatedCourse->load(['courseType', 'creator']);
 
-            return $this->successResponse(
+            return self::success(
                 new CourseResource($updatedCourse),
                 'Course updated successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to update course.', null, null, $e);
+            Log::error('Unexpected error updating course', [
+                'course_id' => $course->course_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while updating the course. Please try again.', 500);
         }
     }
 
@@ -157,11 +189,20 @@ class CourseController extends Controller
     public function destroy(Course $course): JsonResponse
     {
         try {
-            $this->courseService->delete($course);
+            $deleted = $this->courseService->delete($course);
 
-            return $this->successResponse(null, 'Course deleted successfully.');
+            if (!$deleted) {
+                throw new Exception('Cannot delete course. It may have active enrollments or other dependencies.', 422);
+            }
+
+            return self::success(null, 'Course deleted successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to delete course.', null, null, $e);
+            Log::error('Unexpected error deleting course', [
+                'course_id' => $course->course_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while deleting the course.', 500);
         }
     }
 
@@ -176,12 +217,21 @@ class CourseController extends Controller
         try {
             $publishedCourse = $this->courseService->publish($course);
 
-            return $this->successResponse(
+            if (!$publishedCourse) {
+                throw new Exception('Course cannot be published. Please ensure it has at least one instructor, one unit, and all required information.', 422);
+            }
+
+            return self::success(
                 new CourseResource($publishedCourse),
                 'Course published successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to publish course.', null, null, $e);
+            Log::error('Unexpected error publishing course', [
+                'course_id' => $course->course_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while publishing the course.', 500);
         }
     }
 
@@ -196,12 +246,17 @@ class CourseController extends Controller
         try {
             $unpublishedCourse = $this->courseService->unpublish($course);
 
-            return $this->successResponse(
+            return self::success(
                 new CourseResource($unpublishedCourse),
                 'Course unpublished successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to unpublish course.', null, null, $e);
+            Log::error('Unexpected error unpublishing course', [
+                'course_id' => $course->course_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while unpublishing the course.', 500);
         }
     }
 
@@ -217,12 +272,22 @@ class CourseController extends Controller
         try {
             $updatedCourse = $this->courseService->changeStatus($course, $request->validated()['status']);
 
-            return $this->successResponse(
+            if (!$updatedCourse) {
+                throw new Exception('Invalid status provided or course cannot be changed to this status.', 422);
+            }
+
+            return self::success(
                 new CourseResource($updatedCourse),
                 'Course status changed successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to change course status.', null, null, $e);
+            Log::error('Unexpected error changing course status', [
+                'course_id' => $course->course_id ?? null,
+                'status' => $request->validated()['status'] ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while changing the course status.', 500);
         }
     }
 
@@ -237,7 +302,7 @@ class CourseController extends Controller
         try {
             $duration = $this->courseService->getDuration($course);
 
-            return $this->successResponse(
+            return self::success(
                 [
                     'course_id' => $course->course_id,
                     'duration_hours' => $duration,
@@ -246,7 +311,11 @@ class CourseController extends Controller
                 'Course duration retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve course duration.', null, null, $e);
+            Log::error('Unexpected error retrieving course duration', [
+                'course_id' => $course->course_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve course duration.', 500);
         }
     }
 
@@ -262,7 +331,7 @@ class CourseController extends Controller
             $isPublishable = $this->courseService->isPublishable($course);
             $reasons = $isPublishable ? [] : $this->courseService->getUnpublishabilityReasons($course);
 
-            return $this->successResponse(
+            return self::success(
                 [
                     'is_publishable' => $isPublishable,
                     'reasons' => $reasons,
@@ -270,17 +339,21 @@ class CourseController extends Controller
                 'Publishability check completed.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to check publishability.', null, null, $e);
+            Log::error('Unexpected error checking publishability', [
+                'course_id' => $course->course_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to check course publishability.', 500);
         }
     }
 
     /**
      * Get courses available for enrollment.
      *
-     * @param Request $request
+     * @param FilterCoursesRequest $request
      * @return JsonResponse
      */
-    public function enrollable(Request $request): JsonResponse
+    public function enrollable(FilterCoursesRequest $request): JsonResponse
     {
         try {
             // Generate cache key based on query parameters
@@ -296,20 +369,24 @@ class CourseController extends Controller
                     ->through(fn($course) => new CourseResource($course));
             }, ['courses', 'courses.enrollable']);
 
-            return $this->successResponse($courses, 'Enrollable courses retrieved successfully.');
+            return self::paginated($courses, 'Enrollable courses retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve enrollable courses.', null, null, $e);
+            Log::error('Unexpected error retrieving enrollable courses', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve enrollable courses.', 500);
         }
     }
 
     /**
      * Get courses by instructor.
      *
-     * @param Request $request
+     * @param FilterCoursesRequest $request
      * @param int $instructorId
      * @return JsonResponse
      */
-    public function byInstructor(Request $request, int $instructorId): JsonResponse
+    public function byInstructor(FilterCoursesRequest $request, int $instructorId): JsonResponse
     {
         try {
             $courses = Course::query()
@@ -320,9 +397,14 @@ class CourseController extends Controller
                 ->paginateFromRequest($request)
                 ->through(fn($course) => new CourseResource($course));
 
-            return $this->successResponse($courses, 'Instructor courses retrieved successfully.');
+            return self::paginated($courses, 'Instructor courses retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve instructor courses.', null, null, $e);
+            Log::error('Unexpected error retrieving instructor courses', [
+                'instructor_id' => $instructorId ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve courses for this instructor.', 500);
         }
     }
 
@@ -342,14 +424,25 @@ class CourseController extends Controller
                 $request->input('is_primary', false)
             );
 
+            if (!$assignment) {
+                throw new Exception('Instructor is already assigned to this course or assignment failed.', 422);
+            }
+
             $course->load('instructors');
 
-            return $this->createdResponse(
+            return self::success(
                 new CourseResource($course),
-                'Instructor assigned to course successfully.'
+                'Instructor assigned to course successfully.',
+                201
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to assign instructor to course.', null, null, $e);
+            Log::error('Unexpected error assigning instructor', [
+                'course_id' => $course->course_id ?? null,
+                'instructor_id' => $request->input('instructor_id'),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while assigning the instructor.', 500);
         }
     }
 
@@ -363,16 +456,26 @@ class CourseController extends Controller
     public function removeInstructor(RemoveInstructorRequest $request, Course $course): JsonResponse
     {
         try {
-            $this->courseInstructorService->remove($course, $request->input('instructor_id'));
+            $removed = $this->courseInstructorService->remove($course, $request->input('instructor_id'));
+
+            if (!$removed) {
+                throw new Exception('Cannot remove instructor. The course must have at least one instructor.', 422);
+            }
 
             $course->load('instructors');
 
-            return $this->successResponse(
+            return self::success(
                 new CourseResource($course),
                 'Instructor removed from course successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to remove instructor from course.', null, null, $e);
+            Log::error('Unexpected error removing instructor', [
+                'course_id' => $course->course_id ?? null,
+                'instructor_id' => $request->input('instructor_id'),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while removing the instructor.', 500);
         }
     }
 
@@ -386,16 +489,26 @@ class CourseController extends Controller
     public function setPrimaryInstructor(SetPrimaryInstructorRequest $request, Course $course): JsonResponse
     {
         try {
-            $this->courseInstructorService->setPrimary($course, $request->input('instructor_id'));
+            $assignment = $this->courseInstructorService->setPrimary($course, $request->input('instructor_id'));
+
+            if (!$assignment) {
+                throw new Exception('Instructor is not assigned to this course.', 404);
+            }
 
             $course->load('instructors');
 
-            return $this->successResponse(
+            return self::success(
                 new CourseResource($course),
                 'Instructor set as primary successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to set primary instructor.', null, null, $e);
+            Log::error('Unexpected error setting primary instructor', [
+                'course_id' => $course->course_id ?? null,
+                'instructor_id' => $request->input('instructor_id'),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while setting the primary instructor.', 500);
         }
     }
 
@@ -413,12 +526,18 @@ class CourseController extends Controller
 
             $course->load('instructors');
 
-            return $this->successResponse(
+            return self::success(
                 new CourseResource($course),
                 'Primary instructor flag removed successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to unset primary instructor.', null, null, $e);
+            Log::error('Unexpected error unsetting primary instructor', [
+                'course_id' => $course->course_id ?? null,
+                'instructor_id' => $request->input('instructor_id'),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while removing the primary instructor flag.', 500);
         }
     }
 
@@ -442,13 +561,13 @@ class CourseController extends Controller
                     'is_primary' => $courseInstructor->is_primary,
                     'assigned_at' => $courseInstructor->assigned_at?->toDateTimeString(),
                     'assigned_by' => $courseInstructor->assignedBy ? [
-                        'id' => $courseInstructor->assignedBy->user_id,
+                        'id' => $courseInstructor->assignedBy->id,
                         'name' => $courseInstructor->assignedBy->name,
                     ] : null,
                 ];
             });
 
-            return $this->successResponse(
+            return self::success(
                 [
                     'course_id' => $course->course_id,
                     'course_title' => $course->title,
@@ -458,7 +577,11 @@ class CourseController extends Controller
                 'Course instructors retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve course instructors.', null, null, $e);
+            Log::error('Unexpected error retrieving course instructors', [
+                'course_id' => $course->course_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve course instructors.', 500);
         }
     }
 }

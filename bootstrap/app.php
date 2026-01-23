@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,11 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('activitylog:clean')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Use custom exception handler for better error messages
-        $exceptions->render(function (Throwable $e, $request) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                $handler = app(\App\Exceptions\Handler::class);
-                return $handler->render($request, $e);
-            }
+        // Exception rendering is handled by Handler class
+        // Handler::render() will process all exceptions globally
+        $exceptions->render(function (Request $request, \Throwable $e) {
+            // Return null to let Handler::render() handle all exceptions
+            return null;
         });
-    })->create();
+    })
+    ->create();

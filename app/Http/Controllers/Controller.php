@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Base controller class for all application controllers.
@@ -15,217 +15,78 @@ abstract class Controller
     use AuthorizesRequests;
 
     /**
-     * JSON response options for consistent encoding
+     * Return a success JSON response.
+     *
+     * @param  mixed|null  $data  The response data (optional).
+     * @param  string  $message  The success message (default: "Operation successful").
+     * @param  int  $status  The HTTP status code (default: 200).
+     * @return \Illuminate\Http\JsonResponse
      */
-    private const JSON_OPTIONS = JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION;
+    public static function success($data = null, $message = 'Operation successful', $status = 200)
+    {
+        return response()->json(
+            [
+                'status' => 'success', // Indicates a successful operation
+                'message' => trans($message), // Translates the message
+                'data' => $data, // Contains the response data (if any)
+            ],
+            $status,
+            options: JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
+        );
+    }
 
     /**
-     * Return a standardized success JSON response.
+     * Return an error JSON response.
      *
-     * @param mixed $data
-     * @param string $message
-     * @param int $code
-     * @return JsonResponse
+     * @param  string|array  $message  The error message or an array containing additional error details.
+     * @param  int  $status  The HTTP status code (default: 400).
+     * @param  mixed|null  $data  Additional data to include in the response (optional).
+     * @return \Illuminate\Http\JsonResponse
      */
-    protected function successResponse(
-        mixed $data = null,
-        string $message = 'Operation successful',
-        int $code = Response::HTTP_OK
-    ): JsonResponse {
+    public static function error($message = 'Operation failed', $status = 400, $data = null)
+    {
+        // If the message is an array, don't translate it directly (handle structured error messages)
+        if (is_array($message)) {
+            // $messageArray = $message; // Preserve the existing message array
+            // $messageArray['message'] = trans($message['message']); // Translate only the message key
+            $translatedMessage = trans($message['message']);
+        } else {
+            // $messageArray['message'] = trans($message);
+            $translatedMessage = trans($message);
+        }
+
+        return response()->json(
+            [
+                'status' => 'error', // Indicates an error response
+                'message' => $translatedMessage, // Contains the error message(s)
+                'data' => $data, // Optional additional data
+            ],
+            $status,
+            options: JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
+        );
+    }
+
+    /**
+     * Return a paginated JSON response.
+     *
+     * @param  LengthAwarePaginator  $paginator  The paginator instance containing paginated results.
+     * @param  string  $message  The success message (default: "Operation successful").
+     * @param  int  $status  The HTTP status code (default: 200).
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public static function paginated(LengthAwarePaginator $paginator, $message = 'Operation successful', $status = 200)
+    {
         return response()->json([
-            'status' => 'success',
-            'message' => $message,
-            'data' => $data,
-        ], $code, [], self::JSON_OPTIONS);
-    }
-
-    /**
-     * Return a standardized error JSON response.
-     *
-     * @param string $message
-     * @param int $code
-     * @param array|null $errors
-     * @param string|null $errorCode
-     * @param string|null $hint
-     * @return JsonResponse
-     */
-    protected function errorResponse(
-        string $message = 'Operation failed',
-        int $code = Response::HTTP_BAD_REQUEST,
-        ?array $errors = null,
-        ?string $errorCode = null,
-        ?string $hint = null
-    ): JsonResponse {
-        $response = [
-            'status' => 'error',
-            'message' => $message,
-            'data' => null,
-        ];
-
-        if ($errorCode !== null) {
-            $response['error_code'] = $errorCode;
-        }
-
-        if ($errors !== null) {
-            $response['errors'] = $errors;
-        }
-
-        if ($hint !== null) {
-            $response['hint'] = $hint;
-        }
-
-        return response()->json($response, $code, [], self::JSON_OPTIONS);
-    }
-
-    /**
-     * Return a success response for created resources (201).
-     *
-     * @param mixed $data
-     * @param string $message
-     * @return JsonResponse
-     */
-    protected function createdResponse(
-        mixed $data = null,
-        string $message = 'Resource created successfully'
-    ): JsonResponse {
-        return $this->successResponse($data, $message, Response::HTTP_CREATED);
-    }
-
-    /**
-     * Return a success response with no content (204).
-     *
-     * @return JsonResponse
-     */
-    protected function noContentResponse(): JsonResponse
-    {
-        return response()->json(null, Response::HTTP_NO_CONTENT, [], self::JSON_OPTIONS);
-    }
-
-    /**
-     * Return a validation error response (422).
-     *
-     * @param array $errors
-     * @param string $message
-     * @return JsonResponse
-     */
-    protected function validationErrorResponse(
-        array $errors,
-        string $message = 'Validation failed'
-    ): JsonResponse {
-        return $this->errorResponse($message, Response::HTTP_UNPROCESSABLE_ENTITY, $errors);
-    }
-
-    /**
-     * Return an unauthorized error response (401).
-     *
-     * @param string $message
-     * @return JsonResponse
-     */
-    protected function unauthorizedResponse(
-        string $message = 'Unauthenticated. Please login to access this resource.'
-    ): JsonResponse {
-        return $this->errorResponse($message, Response::HTTP_UNAUTHORIZED);
-    }
-
-    /**
-     * Return a forbidden error response (403).
-     *
-     * @param string $message
-     * @return JsonResponse
-     */
-    protected function forbiddenResponse(
-        string $message = 'You do not have permission to access this resource.'
-    ): JsonResponse {
-        return $this->errorResponse($message, Response::HTTP_FORBIDDEN);
-    }
-
-    /**
-     * Return a not found error response (404).
-     *
-     * @param string $message
-     * @return JsonResponse
-     */
-    protected function notFoundResponse(
-        string $message = 'The requested resource was not found.'
-    ): JsonResponse {
-        return $this->errorResponse($message, Response::HTTP_NOT_FOUND);
-    }
-
-    /**
-     * Return a server error response (500).
-     *
-     * @param string $message
-     * @param string|null $errorCode
-     * @param string|null $hint
-     * @param \Throwable|null $exception
-     * @return JsonResponse
-     */
-    protected function serverErrorResponse(
-        string $message = 'An error occurred while processing your request.',
-        ?string $errorCode = 'INTERNAL_SERVER_ERROR',
-        ?string $hint = null,
-        ?\Throwable $exception = null
-    ): JsonResponse {
-        // If exception is provided, extract meaningful message
-        if ($exception !== null) {
-            $exceptionMessage = $this->extractExceptionMessage($exception);
-            if ($exceptionMessage !== null) {
-                $message = $exceptionMessage;
-            }
-        }
-
-        $defaultHint = $hint ?? 'Please try again later. If the problem persists, contact support.';
-        return $this->errorResponse($message, Response::HTTP_INTERNAL_SERVER_ERROR, null, $errorCode, $defaultHint);
-    }
-
-    /**
-     * Extract readable message from exception.
-     *
-     * @param \Throwable $exception
-     * @return string|null
-     */
-    protected function extractExceptionMessage(\Throwable $exception): ?string
-    {
-        $message = $exception->getMessage();
-
-        // Handle database exceptions
-        if ($exception instanceof \Illuminate\Database\QueryException) {
-            if (str_contains($message, 'cannot be null')) {
-                $column = $this->extractColumnName($message);
-                return "The field '{$column}' is required and cannot be empty.";
-            }
-            if (str_contains($message, 'Duplicate entry')) {
-                return "This record already exists. Please use a different value.";
-            }
-            if (str_contains($message, 'foreign key constraint')) {
-                return "Cannot perform this operation. The referenced record does not exist.";
-            }
-        }
-
-        // Handle validation exceptions
-        if ($exception instanceof \Illuminate\Validation\ValidationException) {
-            return "Validation failed. Please check your input.";
-        }
-
-        // Use exception message if it's user-friendly
-        if (!empty($message) && !str_contains($message, 'SQLSTATE') && !str_contains($message, 'Call to')) {
-            return $message;
-        }
-
-        return null;
-    }
-
-    /**
-     * Extract column name from error message.
-     *
-     * @param string $message
-     * @return string
-     */
-    protected function extractColumnName(string $message): string
-    {
-        if (preg_match("/Column '([^']+)' cannot be null/", $message, $matches)) {
-            return str_replace('_', ' ', ucwords($matches[1], '_'));
-        }
-        return 'field';
+            'status' => 'success', // Indicates a successful operation
+            'message' => trans($message), // Translates the success message
+            'data' => $paginator->items(), // Retrieves the current page's data
+            'pagination' => [
+                'total' => $paginator->total(), // Total number of records
+                'count' => count($paginator), // Number of records on the current page
+                'per_page' => $paginator->perPage(), // Records per page
+                'current_page' => $paginator->currentPage(), // The current page number
+                'total_pages' => $paginator->lastPage(), // The last page number
+            ],
+        ], $status, options: JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
     }
 }

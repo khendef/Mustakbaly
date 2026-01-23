@@ -28,7 +28,7 @@ class SetPrimaryInstructorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'instructor_id' => ['required', 'integer', 'exists:users,user_id'],
+            'instructor_id' => ['required', 'integer', 'exists:users,id'],
         ];
     }
 

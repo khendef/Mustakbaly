@@ -42,6 +42,9 @@ class Course extends Model
         'prerequisites',
         'actual_duration_hours',
         'course_type_id',
+        'program_id',
+        'allocated_budget',
+        'required_budget',
         'language',
         'status',
         'min_score_to_pass',
@@ -65,9 +68,22 @@ class Course extends Model
             'is_offline_available' => 'boolean',
             'min_score_to_pass' => 'decimal:2',
             'average_rating' => 'decimal:2',
+            'allocated_budget' => 'decimal:2',
+            'required_budget' => 'decimal:2',
+            'program_id' => 'integer',
             'published_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 
     /**
@@ -94,13 +110,25 @@ class Course extends Model
     }
 
     /**
+     * Get the program that owns the course.
+     *
+     * @return BelongsTo
+     */
+    // public function program(): BelongsTo
+    // {
+    //     // Note: Program model is not yet implemented in LearningModule, but relation is added as requested.
+    //     // Assuming Program model will be in Modules\LearningModule\Models\Program
+    //     return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    // }
+
+    /**
      * Get the user who created the course.
      *
      * @return BelongsTo
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by', 'user_id');
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
     /**
@@ -111,7 +139,8 @@ class Course extends Model
     public function instructors(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'course_instructor', 'course_id', 'instructor_id')
-            ->using(CourseInstructor::class);
+            ->using(CourseInstructor::class)
+            ->withPivot(['course_instructor_id', 'is_primary', 'assigned_at', 'assigned_by']);
     }
 
     /**
@@ -142,7 +171,17 @@ class Course extends Model
     public function learners(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'enrollments', 'course_id', 'learner_id')
-            ->using(Enrollment::class);
+            ->using(Enrollment::class)
+            ->withPivot([
+                'enrollment_id',
+                'enrollment_type',
+                'enrollment_status',
+                'enrolled_at',
+                'enrolled_by',
+                'completed_at',
+                'progress_percentage',
+                'final_grade'
+            ]);
     }
 
     /**
@@ -163,16 +202,7 @@ class Course extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly([
-                'title',
-                'description',
-                'status',
-                'language',
-                'difficulty_level',
-                'is_offline_available',
-                'published_at',
-                'min_score_to_pass',
-            ])
+            ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {

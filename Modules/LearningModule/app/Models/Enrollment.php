@@ -6,11 +6,11 @@ use App\Traits\LogsActivity;
 use Modules\LearningModule\Builders\EnrollmentBuilder;
 use Modules\LearningModule\Enums\EnrollmentStatus;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Activitylog\LogOptions;
 
-class Enrollment extends Model
+class Enrollment extends Pivot
 {
     use LogsActivity;
 
@@ -30,6 +30,13 @@ class Enrollment extends Model
     protected $primaryKey = 'enrollment_id';
 
     /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -43,6 +50,7 @@ class Enrollment extends Model
         'enrolled_by',
         'completed_at',
         'progress_percentage',
+        'final_grade'
     ];
 
     /**
@@ -58,6 +66,7 @@ class Enrollment extends Model
             'enrolled_at' => 'datetime',
             'completed_at' => 'datetime',
             'progress_percentage' => 'decimal:2',
+            'final_grade' => 'decimal:2',
         ];
     }
 
@@ -96,7 +105,7 @@ class Enrollment extends Model
      */
     public function learner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'learner_id', 'user_id');
+        return $this->belongsTo(User::class, 'learner_id', 'id');
     }
 
     /**
@@ -106,7 +115,7 @@ class Enrollment extends Model
      */
     public function enrolledBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'enrolled_by', 'user_id');
+        return $this->belongsTo(User::class, 'enrolled_by', 'id');
     }
 
     /**
@@ -117,12 +126,7 @@ class Enrollment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly([
-                'enrollment_status',
-                'enrollment_type',
-                'progress_percentage',
-                'completed_at',
-            ])
+            ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {

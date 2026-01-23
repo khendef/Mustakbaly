@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Traits\CachesQueries;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Modules\LearningModule\Http\Requests\Lesson\FilterLessonsRequest;
 use Modules\LearningModule\Http\Requests\Lesson\MoveLessonRequest;
 use Modules\LearningModule\Http\Requests\Lesson\ReorderLessonsRequest;
 use Modules\LearningModule\Http\Requests\Lesson\StoreLessonRequest;
@@ -44,10 +46,10 @@ class LessonController extends Controller
     /**
      * Display a listing of lessons.
      *
-     * @param Request $request
+     * @param FilterLessonsRequest $request
      * @return JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(FilterLessonsRequest $request): JsonResponse
     {
         try {
             $cacheKey = 'lessons.index.' . md5($request->getQueryString());
@@ -62,9 +64,13 @@ class LessonController extends Controller
                     ->through(fn($lesson) => new LessonResource($lesson));
             }, ['lessons']);
 
-            return $this->successResponse($lessons, 'Lessons retrieved successfully.');
+            return self::paginated($lessons, 'Lessons retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve lessons.');
+            Log::error('Unexpected error retrieving lessons', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve lessons at this time.', 500);
         }
     }
 
@@ -77,18 +83,34 @@ class LessonController extends Controller
     public function store(StoreLessonRequest $request): JsonResponse
     {
         try {
-            $unit = Unit::findOrFail($request->input('unit_id'));
+            $unit = Unit::find($request->input('unit_id'));
+
+            if (!$unit) {
+                throw new Exception('Unit not found.', 404);
+            }
+
             $data = $request->validated();
             unset($data['unit_id']); // Remove unit_id as service sets it from unit object
             $lesson = $this->lessonService->create($unit, $data);
+
+            if (!$lesson) {
+                throw new Exception('Failed to create lesson. Please check your input and try again.', 422);
+            }
+
             $lesson->load(['unit']);
 
-            return $this->createdResponse(
+            return self::success(
                 new LessonResource($lesson),
-                'Lesson created successfully.'
+                'Lesson created successfully.',
+                201
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to create lesson.');
+            Log::error('Unexpected error creating lesson', [
+                'unit_id' => $request->input('unit_id'),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while creating the lesson.', 500);
         }
     }
 
@@ -108,12 +130,16 @@ class LessonController extends Controller
                 return new LessonResource($lesson);
             }, ['lessons', "lesson.{$lesson->lesson_id}"]);
 
-            return $this->successResponse(
+            return self::success(
                 $lessonData,
                 'Lesson retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Lesson not found.');
+            Log::error('Unexpected error retrieving lesson', [
+                'lesson_id' => $lesson->lesson_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve lesson details.', 500);
         }
     }
 
@@ -128,14 +154,24 @@ class LessonController extends Controller
     {
         try {
             $updatedLesson = $this->lessonService->update($lesson, $request->validated());
+
+            if (!$updatedLesson) {
+                throw new Exception('Failed to update lesson. Please check your input and try again.', 422);
+            }
+
             $updatedLesson->load(['unit']);
 
-            return $this->successResponse(
+            return self::success(
                 new LessonResource($updatedLesson),
                 'Lesson updated successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to update lesson.');
+            Log::error('Unexpected error updating lesson', [
+                'lesson_id' => $lesson->lesson_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while updating the lesson.', 500);
         }
     }
 
@@ -148,22 +184,31 @@ class LessonController extends Controller
     public function destroy(Lesson $lesson): JsonResponse
     {
         try {
-            $this->lessonService->delete($lesson);
+            $deleted = $this->lessonService->delete($lesson);
 
-            return $this->successResponse(null, 'Lesson deleted successfully.');
+            if (!$deleted) {
+                throw new Exception('Failed to delete lesson.', 422);
+            }
+
+            return self::success(null, 'Lesson deleted successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to delete lesson.');
+            Log::error('Unexpected error deleting lesson', [
+                'lesson_id' => $lesson->lesson_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while deleting the lesson.', 500);
         }
     }
 
     /**
      * Get lessons by unit.
      *
-     * @param Request $request
+     * @param FilterLessonsRequest $request
      * @param Unit $unit
      * @return JsonResponse
      */
-    public function byUnit(Request $request, Unit $unit): JsonResponse
+    public function byUnit(FilterLessonsRequest $request, Unit $unit): JsonResponse
     {
         try {
             $cacheKey = "lessons.unit.{$unit->unit_id}." . md5($request->getQueryString());
@@ -178,9 +223,13 @@ class LessonController extends Controller
                     ->through(fn($lesson) => new LessonResource($lesson));
             }, ['lessons', "unit.{$unit->unit_id}"]);
 
-            return $this->successResponse($lessons, 'Unit lessons retrieved successfully.');
+            return self::paginated($lessons, 'Unit lessons retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve unit lessons.');
+            Log::error('Unexpected error retrieving unit lessons', [
+                'unit_id' => $unit->unit_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve lessons for this unit.', 500);
         }
     }
 
@@ -194,11 +243,20 @@ class LessonController extends Controller
     public function reorder(ReorderLessonsRequest $request, Unit $unit): JsonResponse
     {
         try {
-            $this->lessonService->reorder($unit, $request->input('lesson_orders'));
+            $reordered = $this->lessonService->reorder($unit, $request->input('lesson_orders'));
 
-            return $this->successResponse(null, 'Lessons reordered successfully.');
+            if (!$reordered) {
+                throw new Exception('Failed to reorder lessons. Please ensure all orders are unique.', 422);
+            }
+
+            return self::success(null, 'Lessons reordered successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to reorder lessons.');
+            Log::error('Unexpected error reordering lessons', [
+                'unit_id' => $unit->unit_id ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while reordering lessons.', 500);
         }
     }
 
@@ -215,12 +273,17 @@ class LessonController extends Controller
             $updatedLesson = $this->lessonService->moveToPosition($lesson, $request->input('lesson_order'));
             $updatedLesson->load(['unit']);
 
-            return $this->successResponse(
+            return self::success(
                 new LessonResource($updatedLesson),
                 'Lesson moved to position successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to move lesson to position.');
+            Log::error('Unexpected error moving lesson', [
+                'lesson_id' => $lesson->lesson_id ?? null,
+                'new_order' => $request->input('lesson_order'),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while moving the lesson.', 500);
         }
     }
 
@@ -235,7 +298,7 @@ class LessonController extends Controller
         try {
             $duration = $this->lessonService->getDuration($lesson);
 
-            return $this->successResponse(
+            return self::success(
                 [
                     'lesson_id' => $lesson->lesson_id,
                     'duration_minutes' => $duration,
@@ -244,7 +307,11 @@ class LessonController extends Controller
                 'Lesson duration retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve lesson duration.', null, null, $e);
+            Log::error('Unexpected error retrieving lesson duration', [
+                'lesson_id' => $lesson->lesson_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve lesson duration.', 500);
         }
     }
 
@@ -259,7 +326,7 @@ class LessonController extends Controller
         try {
             $count = $this->lessonService->getLessonCount($unit);
 
-            return $this->successResponse(
+            return self::success(
                 [
                     'unit_id' => $unit->unit_id,
                     'lessons_count' => $count,
@@ -267,7 +334,11 @@ class LessonController extends Controller
                 'Lesson count retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve lesson count.');
+            Log::error('Unexpected error retrieving lesson count', [
+                'unit_id' => $unit->unit_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve lesson count.', 500);
         }
     }
 }

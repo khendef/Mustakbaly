@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
@@ -9,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Throwable;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class Handler extends ExceptionHandler
 {
@@ -26,29 +28,30 @@ class Handler extends ExceptionHandler
 
     /**
      * Register the exception handling callbacks for the application.
+     * Logging is handled in service classes, so no need to log here.
      */
     public function register(): void
     {
-        $this->reportable(function (Throwable $e) {
-            //
-        });
+        // No logging here - handled in service classes
     }
 
     /**
      * Render an exception into an HTTP response.
      *
      * @param Request $request
-     * @param Throwable $e
+     * @param \Throwable $e
      * @return JsonResponse|\Illuminate\Http\Response
-     * @throws Throwable
+     * @throws \Throwable
      */
-    public function render($request, Throwable $e)
+    public function render($request, \Throwable $e)
     {
-        // Handle API requests with JSON responses
-        if ($request->expectsJson() || $request->is('api/*')) {
+        // Handle all requests with consistent JSON responses
+        // For web requests that don't expect JSON, Laravel will handle them appropriately
+        if ($request->expectsJson() || $request->is('api/*') || $request->wantsJson()) {
             return $this->handleApiException($request, $e);
         }
 
+        // For web requests, use Laravel's default handling but ensure proper error pages
         return parent::render($request, $e);
     }
 
@@ -56,19 +59,34 @@ class Handler extends ExceptionHandler
      * Handle API exceptions and return readable JSON responses.
      *
      * @param Request $request
-     * @param Throwable $e
+     * @param \Throwable $e
      * @return JsonResponse
      */
-    protected function handleApiException(Request $request, Throwable $e): JsonResponse
+    protected function handleApiException(Request $request, \Throwable $e): JsonResponse
     {
+        // Handle authentication exceptions
+        if ($e instanceof AuthenticationException) {
+            return $this->handleAuthenticationException($e);
+        }
+
+        // Handle authorization exceptions
+        if ($e instanceof AuthorizationException) {
+            return $this->handleAuthorizationException($e);
+        }
+
+        // Handle Spatie Permission exceptions
+        if ($e instanceof \Spatie\Permission\Exceptions\UnauthorizedException) {
+            return $this->handleUnauthorizedException($e);
+        }
+
         // Handle validation exceptions
         if ($e instanceof ValidationException) {
             return $this->handleValidationException($e);
         }
 
-        // Handle database query exceptions
-        if ($e instanceof QueryException) {
-            return $this->handleQueryException($e);
+        // Handle model not found exceptions
+        if ($e instanceof ModelNotFoundException) {
+            return $this->handleModelNotFoundException($e);
         }
 
         // Handle HTTP exceptions (404, 403, etc.)
@@ -76,13 +94,66 @@ class Handler extends ExceptionHandler
             return $this->handleHttpException($e);
         }
 
-        // Handle model not found exceptions
-        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return $this->handleModelNotFoundException($e);
+        // Handle database query exceptions
+        if ($e instanceof QueryException) {
+            return $this->handleQueryException($e);
         }
 
         // Handle generic exceptions
         return $this->handleGenericException($e);
+    }
+
+    /**
+     * Handle authentication exceptions.
+     *
+     * @param AuthenticationException $e
+     * @return JsonResponse
+     */
+    protected function handleAuthenticationException(AuthenticationException $e): JsonResponse
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unauthenticated. Please login to access this resource.',
+            'data' => null,
+            'error_code' => 'UNAUTHORIZED',
+            'hint' => 'Please authenticate to access this resource.',
+        ], 401, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    /**
+     * Handle authorization exceptions.
+     *
+     * @param AuthorizationException $e
+     * @return JsonResponse
+     */
+    protected function handleAuthorizationException(AuthorizationException $e): JsonResponse
+    {
+        $message = $e->getMessage() ?: 'You do not have permission to perform this action.';
+
+        return response()->json([
+            'status' => 'error',
+            'message' => $message,
+            'data' => null,
+            'error_code' => 'FORBIDDEN',
+            'hint' => 'You do not have permission to perform this action.',
+        ], 403, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    /**
+     * Handle Spatie Permission unauthorized exceptions.
+     *
+     * @param \Spatie\Permission\Exceptions\UnauthorizedException $e
+     * @return JsonResponse
+     */
+    protected function handleUnauthorizedException(\Spatie\Permission\Exceptions\UnauthorizedException $e): JsonResponse
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Unauthorized. You do not have the required permissions.',
+            'data' => null,
+            'error_code' => 'FORBIDDEN',
+            'hint' => 'You do not have permission to perform this action.',
+        ], 403, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
     }
 
     /**
@@ -354,10 +425,10 @@ class Handler extends ExceptionHandler
     /**
      * Handle model not found exceptions.
      *
-     * @param \Illuminate\Database\Eloquent\ModelNotFoundException $e
+     * @param ModelNotFoundException $e
      * @return JsonResponse
      */
-    protected function handleModelNotFoundException(\Illuminate\Database\Eloquent\ModelNotFoundException $e): JsonResponse
+    protected function handleModelNotFoundException(ModelNotFoundException $e): JsonResponse
     {
         $model = class_basename($e->getModel());
         $modelName = str_replace('_', ' ', strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $model)));
@@ -374,10 +445,10 @@ class Handler extends ExceptionHandler
     /**
      * Handle generic exceptions.
      *
-     * @param Throwable $e
+     * @param \Throwable $e
      * @return JsonResponse
      */
-    protected function handleGenericException(Throwable $e): JsonResponse
+    protected function handleGenericException(\Throwable $e): JsonResponse
     {
         $message = $e->getMessage();
         $code = $e->getCode();
@@ -421,12 +492,12 @@ class Handler extends ExceptionHandler
     /**
      * Generate helpful hint based on exception and status code.
      *
-     * @param Throwable $e
+     * @param \Throwable $e
      * @param int $statusCode
      * @param string $message
      * @return string
      */
-    protected function generateHintForException(Throwable $e, int $statusCode, string $message): string
+    protected function generateHintForException(\Throwable $e, int $statusCode, string $message): string
     {
         // LearningModule-specific hints
         if (str_contains($message, 'not found')) {

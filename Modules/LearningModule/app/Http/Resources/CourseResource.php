@@ -29,6 +29,9 @@ class CourseResource extends JsonResource
             'objectives' => $this->objectives,
             'prerequisites' => $this->prerequisites,
             'actual_duration_hours' => $this->actual_duration_hours,
+            'program_id' => $this->program_id,
+            'allocated_budget' => $this->allocated_budget,
+            'required_budget' => $this->required_budget,
             'language' => $this->language,
             'status' => $this->status,
             'min_score_to_pass' => $this->min_score_to_pass,
@@ -54,7 +57,7 @@ class CourseResource extends JsonResource
 
             'creator' => $this->whenLoaded('creator', function () {
                 return [
-                    'id' => $this->creator->user_id,
+                    'id' => $this->creator->id,
                     'name' => $this->creator->name,
                     'email' => $this->creator->email,
                 ];
@@ -63,7 +66,7 @@ class CourseResource extends JsonResource
             'instructors' => $this->whenLoaded('instructors', function () {
                 return $this->instructors->map(function ($instructor) {
                     return [
-                        'id' => $instructor->user_id,
+                        'id' => $instructor->id,
                         'name' => $instructor->name,
                         'email' => $instructor->email,
                         'is_primary' => $instructor->pivot->is_primary ?? false,

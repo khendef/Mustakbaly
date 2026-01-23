@@ -5,6 +5,7 @@ namespace Modules\ReportingModule\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Modules\ReportingModule\Http\Requests\Report\GenerateLearnerReportRequest;
 use Modules\ReportingModule\Http\Resources\LearnerPerformanceReportResource;
 use Modules\ReportingModule\Services\LearnerAnalyticsService;
@@ -44,13 +45,16 @@ class LearnerReportController extends Controller
         try {
             $filters = $request->validated();
             $report = $this->analyticsService->generatePerformanceReport($filters);
-            
-            return $this->successResponse(
+
+            return self::success(
                 new LearnerPerformanceReportResource($report),
                 'Performance report generated successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to generate performance report.', null, null, $e);
+            Log::error('Unexpected error generating performance report', [
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to generate performance report.', 500);
         }
     }
 
@@ -66,10 +70,13 @@ class LearnerReportController extends Controller
         try {
             $filters = $request->validated();
             $report = $this->analyticsService->getCompletionRates($filters);
-            
-            return $this->successResponse($report, 'Completion rates retrieved successfully.');
+
+            return self::success($report, 'Completion rates retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve completion rates.', null, null, $e);
+            Log::error('Unexpected error retrieving completion rates', [
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to retrieve completion rates.', 500);
         }
     }
 
@@ -85,11 +92,13 @@ class LearnerReportController extends Controller
         try {
             $filters = $request->validated();
             $report = $this->analyticsService->getLearningTimeAnalysis($filters);
-            
-            return $this->successResponse($report, 'Learning time analysis retrieved successfully.');
+
+            return self::success($report, 'Learning time analysis retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve learning time analysis.', null, null, $e);
+            Log::error('Unexpected error retrieving learning time analysis', [
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to retrieve learning time analysis.', 500);
         }
     }
 }
-

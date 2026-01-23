@@ -21,22 +21,14 @@ class UnitService
     /**
      * Create a new unit.
      *
-     * @param Course|int $course
+     * @param Course $course
      * @param array $data
      * @return Unit
      * @throws Exception
      */
-    public function create($course, array $data): Unit
+    public function create(Course $course, array $data): ?Unit
     {
         try {
-            // Resolve course if ID provided
-            if (is_int($course)) {
-                $course = Course::find($course);
-                if (!$course) {
-                    throw new Exception("Course not found.", 404);
-                }
-            }
-
             $data['course_id'] = $course->course_id;
 
             // Set unit_order if not provided (set to next available order)
@@ -62,11 +54,12 @@ class UnitService
             return $unit;
         } catch (Exception $e) {
             Log::error("Failed to create unit", [
-                'course_id' => is_int($course) ? $course : $course->course_id,
+                'course_id' => $course->course_id,
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -78,7 +71,7 @@ class UnitService
      * @return Unit
      * @throws Exception
      */
-    public function update(Unit $unit, array $data): Unit
+    public function update(Unit $unit, array $data): ?Unit
     {
         try {
             // Handle order change
@@ -102,8 +95,9 @@ class UnitService
                 'unit_id' => $unit->unit_id,
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -116,14 +110,18 @@ class UnitService
      */
     public function delete(Unit $unit): bool
     {
+        // Check if unit has lessons
+        $lessonsCount = $unit->lessons()->count();
+
+        if ($lessonsCount > 0) {
+            Log::warning("Attempted to delete unit with lessons", [
+                'unit_id' => $unit->unit_id,
+                'lessons_count' => $lessonsCount,
+            ]);
+            return false;
+        }
+
         try {
-            // Check if unit has lessons
-            $lessonsCount = $unit->lessons()->count();
-
-            if ($lessonsCount > 0) {
-                throw new Exception("Cannot delete unit with {$lessonsCount} lesson(s).", 422);
-            }
-
             $unitId = $unit->unit_id;
             $unitTitle = $unit->title;
             $courseId = $unit->course_id;
@@ -144,8 +142,9 @@ class UnitService
             Log::error("Failed to delete unit", [
                 'unit_id' => $unit->unit_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -157,15 +156,18 @@ class UnitService
      * @return void
      * @throws Exception
      */
-    public function reorder(Course $course, array $unitOrders): void
+    public function reorder(Course $course, array $unitOrders): bool
     {
-        try {
-            // Validate all orders are unique
-            $orders = array_values($unitOrders);
-            if (count($orders) !== count(array_unique($orders))) {
-                throw new Exception("Duplicate orders found.", 422);
-            }
+        // Validate all orders are unique
+        $orders = array_values($unitOrders);
+        if (count($orders) !== count(array_unique($orders))) {
+            Log::warning("Attempted to reorder units with duplicate orders", [
+                'course_id' => $course->course_id,
+            ]);
+            return false;
+        }
 
+        try {
             DB::transaction(function () use ($course, $unitOrders) {
                 foreach ($unitOrders as $unitId => $order) {
                     Unit::where('course_id', $course->course_id)
@@ -178,12 +180,14 @@ class UnitService
                 'course_id' => $course->course_id,
                 'units_count' => count($unitOrders),
             ]);
+            return true;
         } catch (Exception $e) {
             Log::error("Failed to reorder units", [
                 'course_id' => $course->course_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -195,7 +199,7 @@ class UnitService
      * @return Unit
      * @throws Exception
      */
-    public function moveToPosition(Unit $unit, int $newOrder): Unit
+    public function moveToPosition(Unit $unit, int $newOrder): ?Unit
     {
         try {
             return DB::transaction(function () use ($unit, $newOrder) {
@@ -219,21 +223,22 @@ class UnitService
                 'unit_id' => $unit->unit_id,
                 'new_order' => $newOrder,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
     /**
      * Get units for a course.
      *
-     * @param Course|int $course
+     * @param Course $course
      * @param array $filters
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getUnitsByCourse($course, array $filters = [])
+    public function getUnitsByCourse(Course $course, array $filters = [])
     {
-        $courseId = is_int($course) ? $course : $course->course_id;
+        $courseId = $course->course_id;
 
         $query = Unit::where('course_id', $courseId)
             ->with(['lessons']);
@@ -256,12 +261,15 @@ class UnitService
      * @return Unit
      * @throws Exception
      */
-    public function getById(int $unitId): Unit
+    public function getById(int $unitId): ?Unit
     {
         $unit = Unit::find($unitId);
 
         if (!$unit) {
-            throw new Exception("Unit not found.", 404);
+            Log::warning("Unit not found", [
+                'unit_id' => $unitId,
+            ]);
+            return null;
         }
 
         return $unit;
@@ -304,6 +312,7 @@ class UnitService
 
     /**
      * Clear unit related cache.
+     * Uses Redis tags for efficient bulk invalidation.
      *
      * @param Unit $unit
      * @param Course|null $course Optional course to clear course cache
@@ -311,22 +320,10 @@ class UnitService
      */
     protected function clearUnitCache(Unit $unit, ?Course $course = null): void
     {
-        if ($this->supportsCacheTags()) {
-            // Use tags for efficient bulk invalidation
-            $this->flushTags(['units', "unit.{$unit->unit_id}"]);
-            if ($course) {
-                $this->flushTags(["course.{$course->course_id}"]);
-            }
-        } else {
-            // Fallback to individual key deletion
-            $keys = [
-                "unit.{$unit->unit_id}",
-            ];
-            if ($course) {
-                $keys[] = "course.{$course->course_id}";
-                $keys[] = "units.course.{$course->course_id}";
-            }
-            $this->forgetMany($keys);
+        // Use Redis tags for efficient bulk invalidation
+        $this->flushTags(['units', "unit.{$unit->unit_id}"]);
+        if ($course) {
+            $this->flushTags(["course.{$course->course_id}"]);
         }
     }
 }

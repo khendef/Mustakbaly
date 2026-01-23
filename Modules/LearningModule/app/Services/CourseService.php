@@ -30,17 +30,20 @@ class CourseService
      * @return Course
      * @throws Exception
      */
-    public function create(array $data): Course
+    public function create(array $data): ?Course
     {
-        try {
-            // Validate course type exists
-            if (isset($data['course_type_id'])) {
-                $courseType = CourseType::find($data['course_type_id']);
-                if (!$courseType) {
-                    throw new Exception("Course type not found.", 404);
-                }
+        // Validate course type exists
+        if (isset($data['course_type_id'])) {
+            $courseType = CourseType::find($data['course_type_id']);
+            if (!$courseType) {
+                Log::warning("Attempted to create course with invalid course type", [
+                    'course_type_id' => $data['course_type_id'],
+                ]);
+                return null;
             }
+        }
 
+        try {
             // Generate slug if not provided
             if (empty($data['slug']) && !empty($data['title'])) {
                 $data['slug'] = $this->generateUniqueSlug($data['title'], Course::class);
@@ -75,8 +78,9 @@ class CourseService
             Log::error("Failed to create course", [
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -88,17 +92,21 @@ class CourseService
      * @return Course
      * @throws Exception
      */
-    public function update(Course $course, array $data): Course
+    public function update(Course $course, array $data): ?Course
     {
-        try {
-            // Validate course type if being changed
-            if (isset($data['course_type_id']) && $data['course_type_id'] != $course->course_type_id) {
-                $courseType = CourseType::find($data['course_type_id']);
-                if (!$courseType) {
-                    throw new Exception("Course type not found.", 404);
-                }
+        // Validate course type if being changed
+        if (isset($data['course_type_id']) && $data['course_type_id'] != $course->course_type_id) {
+            $courseType = CourseType::find($data['course_type_id']);
+            if (!$courseType) {
+                Log::warning("Attempted to update course with invalid course type", [
+                    'course_id' => $course->course_id,
+                    'course_type_id' => $data['course_type_id'],
+                ]);
+                return null;
             }
+        }
 
+        try {
             // Handle slug update
             if (isset($data['title']) && empty($data['slug'])) {
                 // If title changed and slug not provided, generate new slug
@@ -124,8 +132,9 @@ class CourseService
                 'course_id' => $course->course_id,
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -136,15 +145,18 @@ class CourseService
      * @return Course
      * @throws Exception
      */
-    public function publish(Course $course): Course
+    public function publish(Course $course): ?Course
     {
-        try {
-            if (!$this->isPublishable($course)) {
-                $reasons = $this->getUnpublishabilityReasons($course);
-                $message = 'Course cannot be published. Reasons: ' . implode(', ', $reasons);
-                throw new Exception($message, 422);
-            }
+        if (!$this->isPublishable($course)) {
+            $reasons = $this->getUnpublishabilityReasons($course);
+            Log::warning("Attempted to publish course that cannot be published", [
+                'course_id' => $course->course_id,
+                'reasons' => $reasons,
+            ]);
+            return null;
+        }
 
+        try {
             $course->update([
                 'status' => CourseStatus::PUBLISHED->value,
                 'published_at' => now(),
@@ -163,8 +175,9 @@ class CourseService
             Log::error("Failed to publish course", [
                 'course_id' => $course->course_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -195,19 +208,23 @@ class CourseService
      * @return Course
      * @throws Exception
      */
-    public function changeStatus(Course $course, string $newStatus): Course
+    public function changeStatus(Course $course, string $newStatus): ?Course
     {
-        try {
-            $validStatuses = [
-                CourseStatus::DRAFT->value,
-                CourseStatus::REVIEW->value,
-                CourseStatus::PUBLISHED->value,
-                CourseStatus::ARCHIVED->value,
-            ];
-            if (!in_array($newStatus, $validStatuses)) {
-                throw new Exception("Invalid status: {$newStatus}", 422);
-            }
+        $validStatuses = [
+            CourseStatus::DRAFT->value,
+            CourseStatus::REVIEW->value,
+            CourseStatus::PUBLISHED->value,
+            CourseStatus::ARCHIVED->value,
+        ];
+        if (!in_array($newStatus, $validStatuses)) {
+            Log::warning("Attempted to change course status to invalid value", [
+                'course_id' => $course->course_id,
+                'new_status' => $newStatus,
+            ]);
+            return null;
+        }
 
+        try {
             $currentStatus = $course->status;
 
             // Handle special status changes
@@ -239,8 +256,9 @@ class CourseService
                 'course_id' => $course->course_id,
                 'new_status' => $newStatus,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -318,11 +336,14 @@ class CourseService
      */
     public function delete(Course $course): bool
     {
-        try {
-            if (!$this->canBeDeleted($course)) {
-                throw new Exception("Course cannot be deleted because it has active enrollments.", 422);
-            }
+        if (!$this->canBeDeleted($course)) {
+            Log::warning("Attempted to delete course with active enrollments", [
+                'course_id' => $course->course_id,
+            ]);
+            return false;
+        }
 
+        try {
             $courseId = $course->course_id;
             $deleted = $course->delete();
 
@@ -341,8 +362,9 @@ class CourseService
             Log::error("Failed to delete course", [
                 'course_id' => $course->course_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -411,12 +433,15 @@ class CourseService
      * @return Course
      * @throws Exception
      */
-    public function getById(int $courseId): Course
+    public function getById(int $courseId): ?Course
     {
         $course = Course::query()->find($courseId);
 
         if (!$course) {
-            throw new Exception("Course not found.", 404);
+            Log::warning("Course not found", [
+                'course_id' => $courseId,
+            ]);
+            return null;
         }
 
         return $course;
@@ -435,25 +460,17 @@ class CourseService
 
     /**
      * Clear course related cache.
+     * Uses Redis tags for efficient bulk invalidation.
      *
      * @param Course|null $course Optional course to clear specific cache
      * @return void
      */
     protected function clearCourseCache(?Course $course = null): void
     {
-        if ($this->supportsCacheTags()) {
-            // Use tags for efficient bulk invalidation
-            $this->flushTags(['courses']);
-            if ($course) {
-                $this->flushTags(["course.{$course->course_id}"]);
-            }
-        } else {
-            // Fallback to individual key deletion
-            if ($course) {
-                $this->forget("course.{$course->course_id}");
-            }
-            // Note: Without tags, we can't easily clear all courses.index.* keys
-            // They will expire naturally based on TTL
+        // Use Redis tags for efficient bulk invalidation
+        $this->flushTags(['courses']);
+        if ($course) {
+            $this->flushTags(["course.{$course->course_id}"]);
         }
     }
 }

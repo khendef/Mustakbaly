@@ -224,6 +224,64 @@ class EnrollmentBuilder extends Builder
     }
 
     // ============================================
+    // SCOPE METHODS - Final Grade Filtering
+    // ============================================
+
+    /**
+     * Filter enrollments by minimum final grade
+     *
+     * @param float $grade
+     * @return self
+     */
+    public function minFinalGrade(float $grade): self
+    {
+        return $this->where('final_grade', '>=', $grade);
+    }
+
+    /**
+     * Filter enrollments by maximum final grade
+     *
+     * @param float $grade
+     * @return self
+     */
+    public function maxFinalGrade(float $grade): self
+    {
+        return $this->where('final_grade', '<=', $grade);
+    }
+
+    /**
+     * Filter enrollments within final grade range
+     *
+     * @param float $min
+     * @param float $max
+     * @return self
+     */
+    public function finalGradeBetween(float $min, float $max): self
+    {
+        return $this->whereBetween('final_grade', [$min, $max]);
+    }
+
+    /**
+     * Filter enrollments with final grade set (not null)
+     *
+     * @return self
+     */
+    public function withFinalGrade(): self
+    {
+        return $this->whereNotNull('final_grade');
+    }
+
+    /**
+     * Filter enrollments without final grade (null)
+     *
+     * @return self
+     */
+    public function withoutFinalGrade(): self
+    {
+        return $this->whereNull('final_grade');
+    }
+
+    // ============================================
     // SCOPE METHODS - Date Filtering
     // ============================================
 
@@ -341,6 +399,8 @@ class EnrollmentBuilder extends Builder
      * - search: string - Search in learner/course names (requires join)
      * - min_progress: float - Minimum progress percentage
      * - max_progress: float - Maximum progress percentage
+     * - min_final_grade: float - Minimum final grade
+     * - max_final_grade: float - Maximum final grade
      * - enrolled_after: date - Filter enrollments after this date
      * - enrolled_before: date - Filter enrollments before this date
      *
@@ -376,6 +436,15 @@ class EnrollmentBuilder extends Builder
 
         if ($request->filled('max_progress')) {
             $this->maxProgress((float)$request->get('max_progress'));
+        }
+
+        // Filter by final grade range
+        if ($request->filled('min_final_grade')) {
+            $this->minFinalGrade((float)$request->get('min_final_grade'));
+        }
+
+        if ($request->filled('max_final_grade')) {
+            $this->maxFinalGrade((float)$request->get('max_final_grade'));
         }
 
         // Filter by enrollment date range
@@ -431,6 +500,7 @@ class EnrollmentBuilder extends Builder
             'enrollment_type',
             'enrollment_status',
             'progress_percentage',
+            'final_grade',
             'enrolled_at',
             'completed_at',
             'created_at',

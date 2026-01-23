@@ -3,10 +3,10 @@
 namespace Modules\ReportingModule\Services;
 
 use App\Models\User;
+use App\Traits\CachesQueries;
 use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\LearningModule\Enums\EnrollmentStatus;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardService
 {
+    use CachesQueries;
     /**
      * Get learner dashboard data
      *
@@ -25,7 +26,7 @@ class DashboardService
     {
         $cacheKey = "learner_dashboard_{$learnerId}";
 
-        return Cache::remember($cacheKey, 300, function () use ($learnerId) {
+        return $this->remember($cacheKey, 300, function () use ($learnerId) {
             $enrollments = Enrollment::where('learner_id', $learnerId)
                 ->with(['course', 'course.courseType'])
                 ->get();
@@ -59,7 +60,7 @@ class DashboardService
                 'recent_courses' => $recentCourses,
                 'progress_by_course' => $this->getLearnerProgressByCourse($learnerId),
             ];
-        });
+        }, ['dashboards', "learner.{$learnerId}"]);
     }
 
     /**
@@ -72,7 +73,7 @@ class DashboardService
     {
         $cacheKey = "instructor_dashboard_{$instructorId}";
 
-        return Cache::remember($cacheKey, 300, function () use ($instructorId) {
+        return $this->remember($cacheKey, 300, function () use ($instructorId) {
             $courses = Course::whereHas('instructors', function ($query) use ($instructorId) {
                 $query->where('instructor_id', $instructorId);
             })
@@ -105,7 +106,7 @@ class DashboardService
                 'course_statistics' => $courseStats,
                 'top_performing_courses' => $this->getTopPerformingCourses($instructorId),
             ];
-        });
+        }, ['dashboards', "instructor.{$instructorId}"]);
     }
 
     /**
@@ -117,13 +118,32 @@ class DashboardService
     {
         $cacheKey = "admin_dashboard";
 
-        return Cache::remember($cacheKey, 300, function () {
+        return $this->remember($cacheKey, 300, function () {
             $totalLearners = User::whereHas('enrollments')->count();
             $activeLearners = Enrollment::where('enrollment_status', EnrollmentStatus::ACTIVE)
                 ->distinct('learner_id')
                 ->count('learner_id');
 
             $totalCourses = Course::count();
+            // $totalPrograms = program::count();
+
+            // $coursesByProgram = Program::with('courses:course_id,program_id,title') // Load specific columns for efficiency
+            //     ->withCount('courses')
+            //     ->get()
+            //     ->map(function ($program) {
+            //         return [
+            //             'program_id' => $program->program_id,
+            //             'program_name' => $program->name,
+            //             'courses_count' => $program->courses_count,
+            //             'courses' => $program->courses->map(function ($course) {
+            //                 return [
+            //                     'id' => $course->course_id,
+            //                     'title' => $course->title,
+            //                 ];
+            //             }),
+            //         ];
+            //     });
+
             $publishedCourses = Course::whereNotNull('published_at')->count();
 
             $totalEnrollments = Enrollment::count();
@@ -151,6 +171,8 @@ class DashboardService
                     'total_learners' => $totalLearners,
                     'active_learners' => $activeLearners,
                     'total_courses' => $totalCourses,
+                    // 'total_programs' => $totalprograms,
+                    // 'coursesByProgram' => $coursesByProgram,
                     'published_courses' => $publishedCourses,
                     'total_enrollments' => $totalEnrollments,
                     'completion_rate' => $completionRate,
@@ -158,7 +180,7 @@ class DashboardService
                 'popular_courses' => $popularCourses,
                 'learning_gaps' => $learningGaps
             ];
-        });
+        }, ['dashboards', 'admin']);
     }
 
     /**

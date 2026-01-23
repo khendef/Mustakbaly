@@ -35,7 +35,7 @@ class AssignInstructorRequest extends FormRequest
             'instructor_id' => [
                 'required',
                 'integer',
-                'exists:users,user_id',
+                'exists:users,id',
                 Rule::unique('course_instructor', 'instructor_id')
                     ->where('course_id', $courseId)
             ],

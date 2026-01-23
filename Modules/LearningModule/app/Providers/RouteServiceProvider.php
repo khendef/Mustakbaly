@@ -18,25 +18,21 @@ class RouteServiceProvider extends ServiceProvider
     {
         parent::boot();
 
-        // Configure route model binding for models with custom primary keys
+        // Configure route model binding for models with slug support
+        // Course and CourseType need explicit binding for slug + ID fallback support
+
         Route::bind('course', function ($value) {
-            return \Modules\LearningModule\Models\Course::where('course_id', $value)->firstOrFail();
-        });
-
-        Route::bind('unit', function ($value) {
-            return \Modules\LearningModule\Models\Unit::where('unit_id', $value)->firstOrFail();
-        });
-
-        Route::bind('lesson', function ($value) {
-            return \Modules\LearningModule\Models\Lesson::where('lesson_id', $value)->firstOrFail();
-        });
-
-        Route::bind('enrollment', function ($value) {
-            return \Modules\LearningModule\Models\Enrollment::where('enrollment_id', $value)->firstOrFail();
+            // Try slug first, fallback to course_id for backward compatibility
+            return \Modules\LearningModule\Models\Course::where('slug', $value)
+                ->orWhere('course_id', $value)
+                ->firstOrFail();
         });
 
         Route::bind('courseType', function ($value) {
-            return \Modules\LearningModule\Models\CourseType::where('course_type_id', $value)->firstOrFail();
+            // Try slug first, fallback to course_type_id for backward compatibility
+            return \Modules\LearningModule\Models\CourseType::where('slug', $value)
+                ->orWhere('course_type_id', $value)
+                ->firstOrFail();
         });
     }
 

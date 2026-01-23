@@ -64,6 +64,17 @@ class CourseBuilder extends Builder
     }
 
     /**
+     * Filter courses by program
+     *
+     * @param int $programId
+     * @return self
+     */
+    public function byProgram(int $programId): self
+    {
+        return $this->where('program_id', $programId);
+    }
+
+    /**
      * Filter courses by language
      *
      * @param string $language
@@ -411,6 +422,11 @@ class CourseBuilder extends Builder
         // Filter by course type
         if ($request->has('course_type_id')) {
             $query = $query->byCourseType($request->input('course_type_id'));
+        }
+
+        // Filter by program
+        if ($request->has('program_id')) {
+            $query = $query->byProgram($request->input('program_id'));
         }
 
         // Filter by language

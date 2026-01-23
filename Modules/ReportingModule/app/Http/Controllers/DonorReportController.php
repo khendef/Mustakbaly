@@ -5,6 +5,7 @@ namespace Modules\ReportingModule\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Modules\ReportingModule\Http\Requests\Report\GenerateDonorReportRequest;
 use Modules\ReportingModule\Http\Resources\DonorReportResource;
 use Modules\ReportingModule\Services\DonorReportService;
@@ -43,15 +44,18 @@ class DonorReportController extends Controller
     {
         try {
             $filters = $request->validated();
-            $report = $this->reportService->generateComprehensiveReport($filters);
-            
-            return $this->successResponse(
+            $report = $this->reportService->generateComprehensiveReport($filters['program_id'], $filters);
+
+            return self::success(
                 new DonorReportResource($report),
                 'Donor report generated successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to generate donor report.', null, null, $e);
+            Log::error('Unexpected error generating donor report', [
+                'program_id' => $filters['program_id'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to generate donor report.', 500);
         }
     }
 }
-

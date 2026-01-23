@@ -49,7 +49,10 @@ class UpdateCourseRequest extends FormRequest
             'objectives' => ['sometimes', 'nullable', 'string'],
             'prerequisites' => ['sometimes', 'nullable', 'string'],
             'course_type_id' => ['sometimes', 'required', 'integer', 'exists:course_types,course_type_id'],
+            'program_id' => ['sometimes', 'required', 'integer'],
             'actual_duration_hours' => ['sometimes', 'required', 'integer', 'min:1'],
+            'allocated_budget' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'required_budget' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'language' => ['sometimes', 'nullable', 'string', 'max:10', Rule::in(['ar', 'en'])],
             'status' => ['sometimes', 'nullable', 'string', Rule::in(['draft', 'review', 'published', 'archived'])],
             'min_score_to_pass' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
@@ -92,7 +95,10 @@ class UpdateCourseRequest extends FormRequest
     {
         return [
             'course_type_id' => 'course type',
+            'program_id' => 'program',
             'actual_duration_hours' => 'actual duration',
+            'allocated_budget' => 'allocated budget',
+            'required_budget' => 'required budget',
             'min_score_to_pass' => 'minimum score to pass',
             'is_offline_available' => 'offline availability',
             'course_delivery_type' => 'delivery type',

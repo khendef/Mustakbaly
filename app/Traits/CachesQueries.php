@@ -10,24 +10,26 @@ use Illuminate\Support\Facades\Log;
  *
  * Provides reusable caching methods for services and controllers.
  * Centralizes cache key generation and cache management logic.
- * Supports cache tags for better invalidation (requires Redis).
+ * 
+ * This trait is designed to work exclusively with Redis cache driver.
+ * All methods support cache tags for better invalidation and organization.
  */
 trait CachesQueries
 {
     /**
      * Remember a value in cache with a given key and duration.
-     * Supports cache tags for better invalidation.
+     * Uses Redis cache tags when provided for better invalidation.
      *
      * @param string $key Cache key
      * @param int $seconds Cache duration in seconds
      * @param callable $callback Callback to execute if cache miss
-     * @param array $tags Optional cache tags for grouped invalidation
+     * @param array $tags Optional cache tags for grouped invalidation (Redis only)
      * @return mixed
      */
     protected function remember(string $key, int $seconds, callable $callback, array $tags = [])
     {
         try {
-            if (!empty($tags) && $this->supportsCacheTags()) {
+            if (!empty($tags)) {
                 return Cache::tags($tags)->remember($key, $seconds, $callback);
             }
             return Cache::remember($key, $seconds, $callback);
@@ -35,6 +37,7 @@ trait CachesQueries
             // If cache fails, execute callback directly
             Log::warning("Cache operation failed, executing callback directly", [
                 'key' => $key,
+                'tags' => $tags,
                 'error' => $e->getMessage(),
             ]);
             return $callback();
@@ -43,21 +46,23 @@ trait CachesQueries
 
     /**
      * Forget a cache key.
+     * Uses Redis cache tags when provided.
      *
      * @param string $key Cache key to forget
-     * @param array $tags Optional cache tags
+     * @param array $tags Optional cache tags (Redis only)
      * @return bool
      */
     protected function forget(string $key, array $tags = []): bool
     {
         try {
-            if (!empty($tags) && $this->supportsCacheTags()) {
+            if (!empty($tags)) {
                 return Cache::tags($tags)->forget($key);
             }
             return Cache::forget($key);
         } catch (\Exception $e) {
             Log::warning("Cache forget operation failed", [
                 'key' => $key,
+                'tags' => $tags,
                 'error' => $e->getMessage(),
             ]);
             return false;
@@ -68,7 +73,7 @@ trait CachesQueries
      * Forget multiple cache keys.
      *
      * @param array $keys Array of cache keys to forget
-     * @param array $tags Optional cache tags
+     * @param array $tags Optional cache tags (Redis only)
      * @return void
      */
     protected function forgetMany(array $keys, array $tags = []): void
@@ -80,14 +85,15 @@ trait CachesQueries
 
     /**
      * Flush all cache entries with given tags.
+     * This is a powerful operation that removes all cached items tagged with the specified tags.
      *
      * @param array $tags Cache tags to flush
      * @return bool
      */
     protected function flushTags(array $tags): bool
     {
-        if (!$this->supportsCacheTags()) {
-            Log::warning("Cache tags not supported, cannot flush by tags", ['tags' => $tags]);
+        if (empty($tags)) {
+            Log::warning("Cannot flush empty tags array");
             return false;
         }
 
@@ -113,18 +119,5 @@ trait CachesQueries
     protected function cacheKey(string ...$parts): string
     {
         return implode('.', $parts);
-    }
-
-    /**
-     * Check if the current cache driver supports tags.
-     *
-     * @return bool
-     */
-    protected function supportsCacheTags(): bool
-    {
-        $driver = config('cache.default');
-        $supportedDrivers = ['redis', 'memcached'];
-
-        return in_array($driver, $supportedDrivers);
     }
 }

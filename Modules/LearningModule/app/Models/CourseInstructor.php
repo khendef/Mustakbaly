@@ -4,11 +4,11 @@ namespace Modules\LearningModule\Models;
 
 use App\Models\User;
 use App\Traits\LogsActivity;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Activitylog\LogOptions;
 
-class CourseInstructor extends Model
+class CourseInstructor extends Pivot
 {
     use LogsActivity;
 
@@ -23,6 +23,13 @@ class CourseInstructor extends Model
      * @var string
      */
     protected $primaryKey = 'course_instructor_id';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
 
     /**
      * The table associated with the model.
@@ -83,7 +90,7 @@ class CourseInstructor extends Model
      */
     public function instructor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'instructor_id', 'user_id');
+        return $this->belongsTo(User::class, 'instructor_id', 'id');
     }
 
     /**
@@ -93,7 +100,7 @@ class CourseInstructor extends Model
      */
     public function assignedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_by', 'user_id');
+        return $this->belongsTo(User::class, 'assigned_by', 'id');
     }
 
     /**
@@ -104,10 +111,7 @@ class CourseInstructor extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly([
-                'is_primary',
-                'assigned_at',
-            ])
+            ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {

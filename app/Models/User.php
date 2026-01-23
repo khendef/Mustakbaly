@@ -19,12 +19,6 @@ class User extends Authenticatable implements JWTSubject
      * Handles authentication, user profiles, and relationships with courses, enrollments, and various role-specific profiles.
      */
 
-    /**
-     * The primary key for the model.
-     *
-     * @var string
-     */
-    protected $primaryKey = 'user_id';
 
     /*
      * The attributes that are mass assignable.
@@ -69,7 +63,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function createdCourses(): HasMany
     {
-        return $this->hasMany(Course::class, 'created_by', 'user_id');
+        return $this->hasMany(Course::class, 'created_by', 'id');
     }
 
     /**
@@ -80,7 +74,8 @@ class User extends Authenticatable implements JWTSubject
     public function instructorCourses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class, 'course_instructor', 'instructor_id', 'course_id')
-            ->using(CourseInstructor::class);
+            ->using(CourseInstructor::class)
+            ->withPivot(['course_instructor_id', 'is_primary', 'assigned_at', 'assigned_by']);
     }
 
     /**
@@ -90,7 +85,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function enrollments(): HasMany
     {
-        return $this->hasMany(Enrollment::class, 'learner_id', 'user_id');
+        return $this->hasMany(Enrollment::class, 'learner_id', 'id');
     }
 
     /**
@@ -101,7 +96,17 @@ class User extends Authenticatable implements JWTSubject
     public function enrolledCourses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class, 'enrollments', 'learner_id', 'course_id')
-            ->using(Enrollment::class);
+            ->using(Enrollment::class)
+            ->withPivot([
+                'enrollment_id',
+                'enrollment_type',
+                'enrollment_status',
+                'enrolled_at',
+                'enrolled_by',
+                'completed_at',
+                'progress_percentage',
+                'final_grade'
+            ]);
     }
 
     /**
@@ -112,7 +117,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function getActivitylogCauserName(): string
     {
-        return $this->name ?? $this->email ?? "User #{$this->user_id}";
+        return $this->name ?? $this->email ?? "User #{$this->id}";
     }
 
     /**

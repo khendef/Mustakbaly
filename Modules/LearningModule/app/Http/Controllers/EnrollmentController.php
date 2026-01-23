@@ -5,13 +5,16 @@ namespace Modules\LearningModule\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Modules\LearningModule\Enums\EnrollmentStatus;
 use Modules\LearningModule\Http\Requests\Enrollment\ChangeStatusEnrollmentRequest;
+use Modules\LearningModule\Http\Requests\Enrollment\FilterEnrollmentsRequest;
 use Modules\LearningModule\Http\Requests\Enrollment\StoreEnrollmentRequest;
 use Modules\LearningModule\Http\Requests\Enrollment\UpdateEnrollmentRequest;
 use Modules\LearningModule\Http\Resources\EnrollmentCollection;
 use Modules\LearningModule\Http\Resources\EnrollmentResource;
+use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\LearningModule\Services\EnrollmentService;
 
@@ -61,10 +64,10 @@ class EnrollmentController extends Controller
      * - per_page: Items per page (default: 15)
      * - page: Page number (default: 1)
      *
-     * @param Request $request
+     * @param FilterEnrollmentsRequest $request
      * @return JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(FilterEnrollmentsRequest $request): JsonResponse
     {
         try {
             $query = Enrollment::query();
@@ -76,12 +79,13 @@ class EnrollmentController extends Controller
                 ->paginateFromRequest($request)
                 ->through(fn($enrollment) => new EnrollmentResource($enrollment));
 
-            return $this->successResponse(
-                new EnrollmentCollection($enrollments),
-                'Enrollments retrieved successfully.'
-            );
+            return self::paginated($enrollments, 'Enrollments retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve enrollments.');
+            Log::error('Unexpected error retrieving enrollments', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve enrollments at this time.', 500);
         }
     }
 
@@ -98,28 +102,38 @@ class EnrollmentController extends Controller
     {
         try {
             $validated = $request->validated();
+            $course = Course::find($validated['course_id']);
+
+            if (!$course) {
+                throw new Exception('Course not found.', 404);
+            }
 
             $enrollment = $this->enrollmentService->enroll(
-                $validated['course_id'],
+                $course,
                 $validated['learner_id'],
                 $validated['enrollment_type'] ?? 'self',
                 $validated['enrolled_by'] ?? null
             );
 
-            $enrollment->load(['learner', 'course', 'enrolledBy']);
-
-            return $this->createdResponse(
-                new EnrollmentResource($enrollment),
-                'Enrollment created successfully.'
-            );
-        } catch (Exception $e) {
-            if ($e->getCode() === 404) {
-                return $this->notFoundResponse($e->getMessage());
-            } elseif ($e->getCode() === 422) {
-                return $this->errorResponse($e->getMessage(), 422);
+            if (!$enrollment) {
+                throw new Exception('Failed to create enrollment. The course may not be available for enrollment or the learner is already enrolled.', 422);
             }
 
-            return $this->serverErrorResponse('Failed to create enrollment.');
+            $enrollment->load(['learner', 'course', 'enrolledBy']);
+
+            return self::success(
+                new EnrollmentResource($enrollment),
+                'Enrollment created successfully.',
+                201
+            );
+        } catch (Exception $e) {
+            Log::error('Unexpected error creating enrollment', [
+                'course_id' => $validated['course_id'] ?? null,
+                'learner_id' => $validated['learner_id'] ?? null,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while creating the enrollment.', 500);
         }
     }
 
@@ -134,12 +148,50 @@ class EnrollmentController extends Controller
         try {
             $enrollment->load(['learner', 'course', 'enrolledBy']);
 
-            return $this->successResponse(
+            return self::success(
                 new EnrollmentResource($enrollment),
                 'Enrollment retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve enrollment.');
+            Log::error('Unexpected error retrieving enrollment', [
+                'enrollment_id' => $enrollment->enrollment_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve enrollment details.', 500);
+        }
+    }
+
+    /**
+     * Update the specified enrollment.
+     *
+     * Updates enrollment fields such as enrollment_type, progress_percentage, and final_grade.
+     *
+     * @param UpdateEnrollmentRequest $request
+     * @param Enrollment $enrollment
+     * @return JsonResponse
+     */
+    public function update(UpdateEnrollmentRequest $request, Enrollment $enrollment): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $updatedEnrollment = $this->enrollmentService->update($enrollment, $validated);
+
+            if (!$updatedEnrollment) {
+                throw new Exception('Failed to update enrollment.', 422);
+            }
+
+            $updatedEnrollment->load(['learner', 'course', 'enrolledBy']);
+
+            return self::success(
+                new EnrollmentResource($updatedEnrollment),
+                'Enrollment updated successfully.'
+            );
+        } catch (Exception $e) {
+            Log::error('Unexpected error updating enrollment', [
+                'enrollment_id' => $enrollment->enrollment_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while updating the enrollment.', 500);
         }
     }
 
@@ -157,20 +209,25 @@ class EnrollmentController extends Controller
     {
         try {
             $status = EnrollmentStatus::from($request->validated()['status']);
-            $enrollment = $this->enrollmentService->updateStatus($enrollment, $status);
+            $updatedEnrollment = $this->enrollmentService->updateStatus($enrollment, $status);
 
-            $enrollment->load(['learner', 'course', 'enrolledBy']);
+            if (!$updatedEnrollment) {
+                throw new Exception('Failed to update enrollment status.', 422);
+            }
 
-            return $this->successResponse(
-                new EnrollmentResource($enrollment),
+            $updatedEnrollment->load(['learner', 'course', 'enrolledBy']);
+
+            return self::success(
+                new EnrollmentResource($updatedEnrollment),
                 'Enrollment status updated successfully.'
             );
         } catch (Exception $e) {
-            if ($e->getCode() === 422) {
-                return $this->errorResponse($e->getMessage(), 422);
-            }
-
-            return $this->serverErrorResponse('Failed to update enrollment status.');
+            Log::error('Unexpected error updating enrollment status', [
+                'enrollment_id' => $enrollment->enrollment_id ?? null,
+                'status' => $request->validated()['status'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('An error occurred while updating the enrollment status.', 500);
         }
     }
 
@@ -192,36 +249,17 @@ class EnrollmentController extends Controller
         try {
             $progress = $this->enrollmentService->getProgressDetails($enrollment);
 
-            return $this->successResponse($progress, 'Progress details retrieved successfully.');
-        } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve progress details.');
-        }
-    }
-
-    /**
-     * Reactivate a suspended or dropped enrollment.
-     *
-     * Changes enrollment status back to active.
-     *
-     * @param Enrollment $enrollment
-     * @return JsonResponse
-     */
-    public function reactivate(Enrollment $enrollment): JsonResponse
-    {
-        try {
-            $enrollment = $this->enrollmentService->reactivate($enrollment);
-            $enrollment->load(['learner', 'course', 'enrolledBy']);
-
-            return $this->successResponse(
-                new EnrollmentResource($enrollment),
-                'Enrollment reactivated successfully.'
-            );
-        } catch (Exception $e) {
-            if ($e->getCode() === 422) {
-                return $this->errorResponse($e->getMessage(), 422);
+            if (!$progress) {
+                throw new Exception('Failed to retrieve progress details. Course information may be missing.', 404);
             }
 
-            return $this->serverErrorResponse('Failed to reactivate enrollment.');
+            return self::success($progress, 'Progress details retrieved successfully.');
+        } catch (Exception $e) {
+            Log::error('Unexpected error retrieving progress details', [
+                'enrollment_id' => $enrollment->enrollment_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Unable to retrieve enrollment progress.', 500);
         }
     }
 }

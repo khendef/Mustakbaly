@@ -35,7 +35,10 @@ class StoreCourseRequest extends FormRequest
             'objectives' => ['nullable', 'string'],
             'prerequisites' => ['nullable', 'string'],
             'course_type_id' => ['required', 'integer', 'exists:course_types,course_type_id'],
+            'program_id' => ['required', 'integer'], // No exists rule yet as Program table doesn't exist
             'actual_duration_hours' => ['required', 'integer', 'min:1'],
+            'allocated_budget' => ['nullable', 'numeric', 'min:0'],
+            'required_budget' => ['nullable', 'numeric', 'min:0'],
             'language' => ['nullable', 'string', 'max:10', Rule::in(['ar', 'en'])],
             'status' => ['nullable', 'string', Rule::in(['draft', 'review', 'published', 'archived'])],
             'min_score_to_pass' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -78,7 +81,10 @@ class StoreCourseRequest extends FormRequest
     {
         return [
             'course_type_id' => 'course type',
+            'program_id' => 'program',
             'actual_duration_hours' => 'actual duration',
+            'allocated_budget' => 'allocated budget',
+            'required_budget' => 'required budget',
             'min_score_to_pass' => 'minimum score to pass',
             'is_offline_available' => 'offline availability',
             'course_delivery_type' => 'delivery type',

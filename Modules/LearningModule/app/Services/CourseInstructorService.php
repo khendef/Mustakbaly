@@ -30,17 +30,21 @@ class CourseInstructorService
         int $instructorId,
         bool $isPrimary = false,
         ?int $assignedBy = null
-    ): CourseInstructor {
+    ): ?CourseInstructor {
+        // Check if instructor is already assigned
+        $existingAssignment = CourseInstructor::where('course_id', $course->course_id)
+            ->where('instructor_id', $instructorId)
+            ->first();
+
+        if ($existingAssignment) {
+            Log::warning("Attempted to assign already assigned instructor", [
+                'course_id' => $course->course_id,
+                'instructor_id' => $instructorId,
+            ]);
+            return null;
+        }
+
         try {
-            // Check if instructor is already assigned
-            $existingAssignment = CourseInstructor::where('course_id', $course->course_id)
-                ->where('instructor_id', $instructorId)
-                ->first();
-
-            if ($existingAssignment) {
-                throw new \Exception("Instructor is already assigned to this course.", 422);
-            }
-
             $assignment = CourseInstructor::create([
                 'course_id' => $course->course_id,
                 'instructor_id' => $instructorId,
@@ -62,8 +66,9 @@ class CourseInstructorService
                 'course_id' => $course->course_id,
                 'instructor_id' => $instructorId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -77,13 +82,17 @@ class CourseInstructorService
      */
     public function remove(Course $course, int $instructorId): bool
     {
+        $instructorCount = $course->instructors()->count();
+
+        if ($instructorCount <= 1) {
+            Log::warning("Attempted to remove last instructor from course", [
+                'course_id' => $course->course_id,
+                'instructor_id' => $instructorId,
+            ]);
+            return false;
+        }
+
         try {
-            $instructorCount = $course->instructors()->count();
-
-            if ($instructorCount <= 1) {
-                throw new \Exception("Cannot remove the last instructor from the course.", 422);
-            }
-
             // find and delete the instructor from the course not need to load model
             $deleted = CourseInstructor::where('course_id', $course->course_id)
                 ->where('instructor_id', $instructorId)
@@ -102,8 +111,9 @@ class CourseInstructorService
                 'course_id' => $course->course_id,
                 'instructor_id' => $instructorId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -115,17 +125,21 @@ class CourseInstructorService
      * @return CourseInstructor
      * @throws \Exception
      */
-    public function setPrimary(Course $course, int $instructorId): CourseInstructor
+    public function setPrimary(Course $course, int $instructorId): ?CourseInstructor
     {
+        $assignment = CourseInstructor::where('course_id', $course->course_id)
+            ->where('instructor_id', $instructorId)
+            ->first();
+
+        if (!$assignment) {
+            Log::warning("Attempted to set primary instructor that is not assigned", [
+                'course_id' => $course->course_id,
+                'instructor_id' => $instructorId,
+            ]);
+            return null;
+        }
+
         try {
-            $assignment = CourseInstructor::where('course_id', $course->course_id)
-                ->where('instructor_id', $instructorId)
-                ->first();
-
-            if (!$assignment) {
-                throw new \Exception("Instructor is not assigned to this course.", 404);
-            }
-
             // Set this instructor as primary (without unsetting others)
             $assignment->update(['is_primary' => true]);
 
@@ -140,8 +154,9 @@ class CourseInstructorService
                 'course_id' => $course->course_id,
                 'instructor_id' => $instructorId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 

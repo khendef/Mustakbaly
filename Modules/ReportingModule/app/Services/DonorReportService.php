@@ -14,15 +14,21 @@ use App\Models\User;
 class DonorReportService
 {
     /**
-     * Generate comprehensive donor report
+     * Generate comprehensive donor report for a program
      *
      * @param array $filters
      * @return array
      */
-    public function generateComprehensiveReport(array $filters): array
+    public function generateComprehensiveReport(int $program_id, array $filters): array
     {
+        // $program = Program::find($program_id);
+        // if (!$program) {
+        //     throw new \Exception('Program not found');
+        // }
         // query to get the enrollments with the learner, course, and course type
-        $query = Enrollment::query();
+        $query = Enrollment::query()->whereHas('course', function ($q) use ($program_id) {
+            $q->where('program_id', $program_id);
+        });
 
         if (isset($filters['date_from'])) {
             $query->where('enrolled_at', '>=', $filters['date_from']);

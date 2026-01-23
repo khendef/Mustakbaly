@@ -41,41 +41,43 @@ class EnrollmentService
     /**
      * Enroll a learner in a course.
      *
-     * @param Course|int $course
+     * @param Course $course
      * @param int $learnerId
      * @param string $enrollmentType
      * @param int|null $enrolledBy
      * @return Enrollment
      * @throws \Exception
      */
-    public function enroll($course, int $learnerId, string $enrollmentType = 'self', ?int $enrolledBy = null): Enrollment
+    public function enroll(Course $course, int $learnerId, string $enrollmentType = 'self', ?int $enrolledBy = null): ?Enrollment
     {
+        // Validate course is available for enrollment
+        if (!$this->courseService->isAvailableForEnrollment($course)) {
+            Log::warning("Attempted to enroll in course that is not available", [
+                'course_id' => $course->course_id,
+                'learner_id' => $learnerId,
+            ]);
+            return null;
+        }
+
+        // Check if already enrolled
+        $existingEnrollment = Enrollment::where('learner_id', $learnerId)
+            ->where('course_id', $course->course_id)
+            ->first();
+
+        if ($existingEnrollment) {
+            // If enrollment exists but is dropped/suspended, reactivate it by updating status to active
+            if (in_array($existingEnrollment->enrollment_status, [EnrollmentStatus::DROPPED->value, EnrollmentStatus::SUSPENDED->value])) {
+                return $this->updateStatus($existingEnrollment, EnrollmentStatus::ACTIVE);
+            }
+
+            Log::warning("Attempted to enroll learner who is already enrolled", [
+                'course_id' => $course->course_id,
+                'learner_id' => $learnerId,
+            ]);
+            return null;
+        }
+
         try {
-
-            $course = Course::find($course);
-            if (!$course) {
-                throw new Exception("Course not found.");
-            }
-
-            // Validate course is available for enrollment
-            if (!$this->courseService->isAvailableForEnrollment($course)) {
-                throw new \Exception("Course is not available for enrollment.", 422);
-            }
-
-            // Check if already enrolled
-            $existingEnrollment = Enrollment::where('learner_id', $learnerId)
-                ->where('course_id', $course->course_id)
-                ->first();
-
-            if ($existingEnrollment) {
-                // If enrollment exists but is dropped/suspended, reactivate it
-                if (in_array($existingEnrollment->enrollment_status, [EnrollmentStatus::DROPPED->value, EnrollmentStatus::SUSPENDED->value])) {
-                    return $this->reactivate($existingEnrollment);
-                }
-
-                throw new \Exception("Learner is already enrolled in this course.", 422);
-            }
-
             return DB::transaction(function () use ($course, $learnerId, $enrollmentType, $enrolledBy) {
                 // Determine enrolled_by based on enrollment type
                 // For self enrollment: learner enrolled themselves (use learner_id)
@@ -109,18 +111,53 @@ class EnrollmentService
             });
         } catch (ModelNotFoundException $e) {
             Log::error("Course not found for enrollment", [
-                'course_id' => is_int($course) ? $course : $course->course_id,
+                'course_id' => $course->course_id,
                 'learner_id' => $learnerId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw new \Exception("Course not found.", 404);
+            return null;
         } catch (\Exception $e) {
             Log::error("Failed to enroll learner", [
-                'course_id' => is_int($course) ? $course : $course->course_id,
+                'course_id' => $course->course_id,
                 'learner_id' => $learnerId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
+        }
+    }
+
+    /**
+     * Update enrollment fields.
+     *
+     * @param Enrollment $enrollment
+     * @param array $data
+     * @return Enrollment|null
+     * @throws \Exception
+     */
+    public function update(Enrollment $enrollment, array $data): ?Enrollment
+    {
+        try {
+            $enrollment->update($data);
+
+            // Clear enrollment cache after update
+            $this->clearEnrollmentCache($enrollment->learner_id, $enrollment->course_id);
+
+            Log::info("Enrollment updated", [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'updated_fields' => array_keys($data),
+            ]);
+
+            return $enrollment->fresh();
+        } catch (\Exception $e) {
+            Log::error("Failed to update enrollment", [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'data' => $data,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return null;
         }
     }
 
@@ -132,7 +169,7 @@ class EnrollmentService
      * @return Enrollment
      * @throws \Exception
      */
-    public function updateStatus(Enrollment $enrollment, EnrollmentStatus $status): Enrollment
+    public function updateStatus(Enrollment $enrollment, EnrollmentStatus $status): ?Enrollment
     {
         try {
             $oldStatus = $enrollment->enrollment_status;
@@ -142,7 +179,7 @@ class EnrollmentService
             // Handle completion
             if ($status === EnrollmentStatus::COMPLETED && !$enrollment->completed_at) {
                 $updateData['completed_at'] = now();
-                $updateData['progress_percentage'] = 100.00;
+                // $updateData['progress_percentage'] = 100.00;
             }
 
             // Clear completion date if moving away from completed
@@ -167,26 +204,10 @@ class EnrollmentService
                 'enrollment_id' => $enrollment->enrollment_id,
                 'status' => $status->value,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
-    }
-
-
-    /**
-     * Reactivate a suspended or dropped enrollment.
-     *
-     * @param Enrollment $enrollment
-     * @return Enrollment
-     * @throws \Exception
-     */
-    public function reactivate(Enrollment $enrollment): Enrollment
-    {
-        if (!in_array($enrollment->enrollment_status, [EnrollmentStatus::SUSPENDED->value, EnrollmentStatus::DROPPED->value])) {
-            throw new \Exception("Enrollment must be suspended or dropped to be reactivated.", 422);
-        }
-
-        return $this->updateStatus($enrollment, EnrollmentStatus::ACTIVE);
     }
 
     /**
@@ -196,15 +217,18 @@ class EnrollmentService
      * @return float
      * @throws \Exception
      */
-    public function calculateProgress(Enrollment $enrollment): float
+    public function calculateProgress(Enrollment $enrollment): ?float
     {
+        $course = $enrollment->course;
+
+        if (!$course) {
+            Log::warning("Course not found for enrollment when calculating progress", [
+                'enrollment_id' => $enrollment->enrollment_id,
+            ]);
+            return null;
+        }
+
         try {
-            $course = $enrollment->course;
-
-            if (!$course) {
-                throw new \Exception("Course not found for enrollment.", 404);
-            }
-
             // Get total lessons count
             $totalLessons = $this->getTotalLessonsCount($course);
 
@@ -213,7 +237,7 @@ class EnrollmentService
                 $progress = 0.00;
             } else {
                 // Get completed lessons count
-                $completedLessons = $this->getCompletedLessonsCount($enrollment);
+                $completedLessons = $this->getCompletedLessonsCount($course);
 
                 $progress = round(($completedLessons / $totalLessons) * 100, 2);
             }
@@ -236,8 +260,9 @@ class EnrollmentService
             Log::error("Failed to calculate enrollment progress", [
                 'enrollment_id' => $enrollment->enrollment_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -261,13 +286,8 @@ class EnrollmentService
      * @param Enrollment $enrollment
      * @return int
      */
-    protected function getCompletedLessonsCount(Enrollment $enrollment): int
+    protected function getCompletedLessonsCount(Course $course): int
     {
-        $course = $enrollment->course;
-        if (!$course) {
-            return 0;
-        }
-
         return Lesson::whereHas('unit', function ($query) use ($course) {
             $query->where('course_id', $course->course_id);
         })->where('is_completed', true)->count();
@@ -350,6 +370,7 @@ class EnrollmentService
 
     /**
      * Clear enrollment related cache.
+     * Uses Redis tags for efficient bulk invalidation.
      *
      * @param int $learnerId
      * @param int $courseId
@@ -357,20 +378,8 @@ class EnrollmentService
      */
     protected function clearEnrollmentCache(int $learnerId, int $courseId): void
     {
-        if ($this->supportsCacheTags()) {
-            // Use tags for efficient bulk invalidation
-            $this->flushTags(["learner.{$learnerId}", "course.{$courseId}"]);
-        } else {
-            // Fallback to individual key deletion
-            $keys = [
-                "enrollment.check.{$learnerId}.{$courseId}",
-                "enrollment.{$learnerId}.{$courseId}",
-                "enrollments.learner.{$learnerId}.active",
-                "enrollments.course.{$courseId}.active",
-            ];
-
-            $this->forgetMany($keys);
-        }
+        // Use Redis tags for efficient bulk invalidation
+        $this->flushTags(["learner.{$learnerId}", "course.{$courseId}"]);
     }
 
     /**
@@ -380,18 +389,21 @@ class EnrollmentService
      * @return array
      * @throws \Exception
      */
-    public function getProgressDetails(Enrollment $enrollment): array
+    public function getProgressDetails(Enrollment $enrollment): ?array
     {
+        $course = $enrollment->course;
+
+        if (!$course) {
+            Log::warning("Course not found for enrollment when getting progress details", [
+                'enrollment_id' => $enrollment->enrollment_id,
+            ]);
+            return null;
+        }
+
         try {
-            $course = $enrollment->course;
-
-            if (!$course) {
-                throw new \Exception("Course not found for enrollment.", 404);
-            }
-
             $totalUnits = Unit::where('course_id', $course->course_id)->count();
             $totalLessons = $this->getTotalLessonsCount($course);
-            $completedLessons = $this->getCompletedLessonsCount($enrollment);
+            $completedLessons = $this->getCompletedLessonsCount($course);
 
 
             return [
@@ -407,8 +419,9 @@ class EnrollmentService
             Log::error("Failed to get progress details", [
                 'enrollment_id' => $enrollment->enrollment_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -421,15 +434,18 @@ class EnrollmentService
      */
     public function checkAndHandleCourseCompletion(Enrollment $enrollment): void
     {
+        $course = $enrollment->course;
+
+        if (!$course) {
+            Log::warning("Course not found for enrollment when checking completion", [
+                'enrollment_id' => $enrollment->enrollment_id,
+            ]);
+            return;
+        }
+
         try {
-            $course = $enrollment->course;
-
-            if (!$course) {
-                throw new \Exception("Course not found for enrollment.", 404);
-            }
-
             $totalLessons = $this->getTotalLessonsCount($course);
-            $completedLessons = $this->getCompletedLessonsCount($enrollment);
+            $completedLessons = $this->getCompletedLessonsCount($course);
 
             // If all lessons are completed, update progress to 100% and set completed_at
             if ($totalLessons > 0 && $completedLessons === $totalLessons) {
@@ -458,8 +474,8 @@ class EnrollmentService
             Log::error("Failed to check course completion", [
                 'enrollment_id' => $enrollment->enrollment_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
         }
     }
 }

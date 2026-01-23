@@ -37,6 +37,7 @@ class EnrollmentResource extends JsonResource
 
             // Progress and timing
             'progress_percentage' => (float)$this->progress_percentage,
+            'final_grade' => $this->final_grade !== null ? (float)$this->final_grade : null,
             'enrolled_at' => $this->enrolled_at?->toDateTimeString(),
             'completed_at' => $this->completed_at?->toDateTimeString(),
             'enrolled_by' => $this->enrolled_by,
@@ -52,7 +53,7 @@ class EnrollmentResource extends JsonResource
             // Relationships (only included if loaded)
             'learner' => $this->whenLoaded('learner', function () {
                 return [
-                    'id' => $this->learner->user_id,
+                    'id' => $this->learner->id,
                     'name' => $this->learner->name,
                     'email' => $this->learner->email,
                 ];
@@ -72,7 +73,7 @@ class EnrollmentResource extends JsonResource
 
             'enrolled_by_user' => $this->whenLoaded('enrolledBy', function () {
                 return [
-                    'id' => $this->enrolledBy->user_id,
+                    'id' => $this->enrolledBy->id,
                     'name' => $this->enrolledBy->name,
                     'email' => $this->enrolledBy->email,
                 ];

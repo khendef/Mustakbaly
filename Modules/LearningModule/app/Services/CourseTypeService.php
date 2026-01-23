@@ -23,10 +23,9 @@ class CourseTypeService
      * @return CourseType
      * @throws Exception
      */
-    public function create(array $data): CourseType
+    public function create(array $data): ?CourseType
     {
         try {
-
             // Ensure name is unique
             if (isset($data['name'])) {
                 $this->validateUniqueName($data['name'], CourseType::class);
@@ -58,8 +57,9 @@ class CourseTypeService
             Log::error("Failed to create course type", [
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -71,10 +71,9 @@ class CourseTypeService
      * @return CourseType
      * @throws Exception
      */
-    public function update(CourseType $courseType, array $data): CourseType
+    public function update(CourseType $courseType, array $data): ?CourseType
     {
         try {
-
             // Validate name uniqueness if being changed
             if (isset($data['name']) && $data['name'] !== $courseType->name) {
                 $this->validateUniqueName($data['name'], CourseType::class, 'course_type_id', $courseType->course_type_id);
@@ -105,8 +104,9 @@ class CourseTypeService
                 'course_type_id' => $courseType->course_type_id,
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -117,13 +117,13 @@ class CourseTypeService
      * @return CourseType
      * @throws Exception
      */
-    public function activate(CourseType $courseType): CourseType
+    public function activate(CourseType $courseType): ?CourseType
     {
-        try {
-            if ($courseType->is_active) {
-                return $courseType;
-            }
+        if ($courseType->is_active) {
+            return $courseType;
+        }
 
+        try {
             $courseType->update(['is_active' => true]);
 
             // Clear cache after activation
@@ -139,8 +139,9 @@ class CourseTypeService
             Log::error("Failed to activate course type", [
                 'course_type_id' => $courseType->course_type_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -151,22 +152,26 @@ class CourseTypeService
      * @return CourseType
      * @throws Exception
      */
-    public function deactivate(CourseType $courseType): CourseType
+    public function deactivate(CourseType $courseType): ?CourseType
     {
+        if (!$courseType->is_active) {
+            return $courseType;
+        }
+
+        // Check if course type has active courses
+        $activeCoursesCount = $courseType->courses()
+            ->where('status', 'published')
+            ->count();
+
+        if ($activeCoursesCount > 0) {
+            Log::warning("Attempted to deactivate course type with active published courses", [
+                'course_type_id' => $courseType->course_type_id,
+                'active_courses_count' => $activeCoursesCount,
+            ]);
+            return null;
+        }
+
         try {
-            if (!$courseType->is_active) {
-                return $courseType;
-            }
-
-            // Check if course type has active courses
-            $activeCoursesCount = $courseType->courses()
-                ->where('status', 'published')
-                ->count();
-
-            if ($activeCoursesCount > 0) {
-                throw new Exception("Cannot deactivate course type with {$activeCoursesCount} active published course(s).", 422);
-            }
-
             $courseType->update(['is_active' => false]);
 
             // Clear cache after deactivation
@@ -182,8 +187,9 @@ class CourseTypeService
             Log::error("Failed to deactivate course type", [
                 'course_type_id' => $courseType->course_type_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -196,14 +202,18 @@ class CourseTypeService
      */
     public function delete(CourseType $courseType): bool
     {
+        // Check if course type has courses
+        $coursesCount = $courseType->courses()->count();
+
+        if ($coursesCount > 0) {
+            Log::warning("Attempted to delete course type with courses", [
+                'course_type_id' => $courseType->course_type_id,
+                'courses_count' => $coursesCount,
+            ]);
+            return false;
+        }
+
         try {
-            // Check if course type has courses
-            $coursesCount = $courseType->courses()->count();
-
-            if ($coursesCount > 0) {
-                throw new Exception("Cannot delete course type with {$coursesCount} course(s).", 422);
-            }
-
             $courseTypeId = $courseType->course_type_id;
             $courseTypeName = $courseType->name;
             $deleted = $courseType->delete();
@@ -223,8 +233,9 @@ class CourseTypeService
             Log::error("Failed to delete course type", [
                 'course_type_id' => $courseType->course_type_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -306,7 +317,10 @@ class CourseTypeService
             $courseType = CourseType::find($courseTypeId);
 
             if (!$courseType) {
-                throw new Exception("Course type not found.", 404);
+                Log::warning("Course type not found", [
+                    'course_type_id' => $courseTypeId,
+                ]);
+                return null;
             }
 
             return $courseType;
@@ -343,33 +357,17 @@ class CourseTypeService
 
     /**
      * Clear course type related cache.
+     * Uses Redis tags for efficient bulk invalidation.
      *
      * @param CourseType|null $courseType Optional course type to clear specific cache
      * @return void
      */
     protected function clearCourseTypeCache(?CourseType $courseType = null): void
     {
-        if ($this->supportsCacheTags()) {
-            // Use tags for efficient bulk invalidation
-            $this->flushTags(['course_types']);
-            if ($courseType) {
-                $this->flushTags(["course_type.{$courseType->course_type_id}"]);
-            }
-        } else {
-            // Fallback to individual key deletion
-            $keys = [
-                'course_types.active',
-                'course_types.all',
-            ];
-
-            if ($courseType) {
-                $keys[] = "course_type.{$courseType->course_type_id}";
-                $keys[] = "course_type.slug.{$courseType->slug}";
-                $keys[] = "course_type.{$courseType->course_type_id}.active_count";
-                $keys[] = "course_type.{$courseType->course_type_id}.count";
-            }
-
-            $this->forgetMany($keys);
+        // Use Redis tags for efficient bulk invalidation
+        $this->flushTags(['course_types']);
+        if ($courseType) {
+            $this->flushTags(["course_type.{$courseType->course_type_id}"]);
         }
     }
 }

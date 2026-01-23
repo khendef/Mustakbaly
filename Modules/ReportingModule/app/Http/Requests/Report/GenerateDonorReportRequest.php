@@ -27,6 +27,7 @@ class GenerateDonorReportRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'program_id' => ['required', 'integer', 'exists:programs,program_id'],
             'course_type_id' => ['nullable', 'integer', 'exists:course_types,course_type_id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -41,6 +42,9 @@ class GenerateDonorReportRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'program_id.required' => 'The program ID is required.',
+            'program_id.integer' => 'The program ID must be an integer.',
+            'program_id.exists' => 'The selected program does not exist.',
             'course_type_id.integer' => 'The course type ID must be an integer.',
             'course_type_id.exists' => 'The selected course type does not exist.',
             'date_from.date' => 'The date from must be a valid date.',
@@ -49,4 +53,3 @@ class GenerateDonorReportRequest extends FormRequest
         ];
     }
 }
-

@@ -37,22 +37,14 @@ class LessonService
     /**
      * Create a new lesson.
      *
-     * @param Unit|int $unit
+     * @param Unit $unit
      * @param array $data
      * @return Lesson
      * @throws Exception
      */
-    public function create($unit, array $data): Lesson
+    public function create(Unit $unit, array $data): ?Lesson
     {
         try {
-            // Resolve unit if ID provided
-            if (is_int($unit)) {
-                $unit = Unit::find($unit);
-                if (!$unit) {
-                    throw new Exception("Unit not found.", 404);
-                }
-            }
-
             $data['unit_id'] = $unit->unit_id;
 
             // Set lesson_order if not provided (set to next available order)
@@ -78,11 +70,12 @@ class LessonService
             return $lesson;
         } catch (Exception $e) {
             Log::error("Failed to create lesson", [
-                'unit_id' => is_int($unit) ? $unit : $unit->unit_id,
+                'unit_id' => $unit->unit_id,
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -94,7 +87,7 @@ class LessonService
      * @return Lesson
      * @throws Exception
      */
-    public function update(Lesson $lesson, array $data): Lesson
+    public function update(Lesson $lesson, array $data): ?Lesson
     {
         try {
             // Handle order change
@@ -130,8 +123,9 @@ class LessonService
                 'lesson_id' => $lesson->lesson_id,
                 'data' => $data,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
@@ -166,8 +160,9 @@ class LessonService
             Log::error("Failed to delete lesson", [
                 'lesson_id' => $lesson->lesson_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -179,15 +174,18 @@ class LessonService
      * @return void
      * @throws Exception
      */
-    public function reorder(Unit $unit, array $lessonOrders): void
+    public function reorder(Unit $unit, array $lessonOrders): bool
     {
-        try {
-            // Validate all orders are unique
-            $orders = array_values($lessonOrders);
-            if (count($orders) !== count(array_unique($orders))) {
-                throw new Exception("Duplicate orders found.", 422);
-            }
+        // Validate all orders are unique
+        $orders = array_values($lessonOrders);
+        if (count($orders) !== count(array_unique($orders))) {
+            Log::warning("Attempted to reorder lessons with duplicate orders", [
+                'unit_id' => $unit->unit_id,
+            ]);
+            return false;
+        }
 
+        try {
             DB::transaction(function () use ($unit, $lessonOrders) {
                 foreach ($lessonOrders as $lessonId => $order) {
                     Lesson::where('unit_id', $unit->unit_id)
@@ -200,12 +198,14 @@ class LessonService
                 'unit_id' => $unit->unit_id,
                 'lessons_count' => count($lessonOrders),
             ]);
+            return true;
         } catch (Exception $e) {
             Log::error("Failed to reorder lessons", [
                 'unit_id' => $unit->unit_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return false;
         }
     }
 
@@ -217,7 +217,7 @@ class LessonService
      * @return Lesson
      * @throws Exception
      */
-    public function moveToPosition(Lesson $lesson, int $newOrder): Lesson
+    public function moveToPosition(Lesson $lesson, int $newOrder): ?Lesson
     {
         try {
             return DB::transaction(function () use ($lesson, $newOrder) {
@@ -241,21 +241,22 @@ class LessonService
                 'lesson_id' => $lesson->lesson_id,
                 'new_order' => $newOrder,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
     /**
      * Get lessons for a unit.
      *
-     * @param Unit|int $unit
+     * @param Unit $unit
      * @param array $filters
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getLessonsByUnit($unit, array $filters = [])
+    public function getLessonsByUnit(Unit $unit, array $filters = [])
     {
-        $unitId = is_int($unit) ? $unit : $unit->unit_id;
+        $unitId = $unit->unit_id;
 
         $query = Lesson::where('unit_id', $unitId);
 
@@ -277,12 +278,15 @@ class LessonService
      * @return Lesson
      * @throws Exception
      */
-    public function getById(int $lessonId): Lesson
+    public function getById(int $lessonId): ?Lesson
     {
         $lesson = Lesson::find($lessonId);
 
         if (!$lesson) {
-            throw new Exception("Lesson not found.", 404);
+            Log::warning("Lesson not found", [
+                'lesson_id' => $lessonId,
+            ]);
+            return null;
         }
 
         return $lesson;
@@ -318,13 +322,13 @@ class LessonService
      * @return Lesson
      * @throws Exception
      */
-    public function markAsCompleted(Lesson $lesson): Lesson
+    public function markAsCompleted(Lesson $lesson): ?Lesson
     {
-        try {
-            if ($lesson->is_completed) {
-                return $lesson; // Already completed
-            }
+        if ($lesson->is_completed) {
+            return $lesson; // Already completed
+        }
 
+        try {
             $lesson->update(['is_completed' => true]);
 
             Log::info("Lesson marked as completed", [
@@ -343,13 +347,15 @@ class LessonService
             Log::error("Failed to mark lesson as completed", [
                 'lesson_id' => $lesson->lesson_id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return null;
         }
     }
 
     /**
      * Clear lesson related cache.
+     * Uses Redis tags for efficient bulk invalidation.
      *
      * @param Lesson $lesson
      * @param Unit|null $unit Optional unit to clear unit cache
@@ -357,24 +363,11 @@ class LessonService
      */
     protected function clearLessonCache(Lesson $lesson, ?Unit $unit = null): void
     {
-        if ($this->supportsCacheTags()) {
-            // Use tags for efficient bulk invalidation
-            $this->flushTags(['lessons', "lesson.{$lesson->lesson_id}"]);
-            $unit = $unit ?? $lesson->unit;
-            if ($unit) {
-                $this->flushTags(["unit.{$unit->unit_id}"]);
-            }
-        } else {
-            // Fallback to individual key deletion
-            $keys = [
-                "lesson.{$lesson->lesson_id}",
-            ];
-            $unit = $unit ?? $lesson->unit;
-            if ($unit) {
-                $keys[] = "unit.{$unit->unit_id}";
-                $keys[] = "lessons.unit.{$unit->unit_id}";
-            }
-            $this->forgetMany($keys);
+        // Use Redis tags for efficient bulk invalidation
+        $this->flushTags(['lessons', "lesson.{$lesson->lesson_id}"]);
+        $unit = $unit ?? $lesson->unit;
+        if ($unit) {
+            $this->flushTags(["unit.{$unit->unit_id}"]);
         }
     }
 }

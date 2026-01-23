@@ -5,6 +5,7 @@ namespace Modules\ReportingModule\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Modules\ReportingModule\Http\Requests\Dashboard\GetDashboardRequest;
 use Modules\ReportingModule\Http\Resources\DashboardResource;
 use Modules\ReportingModule\Services\DashboardService;
@@ -42,15 +43,19 @@ class DashboardController extends Controller
     public function learnerDashboard(GetDashboardRequest $request): JsonResponse
     {
         try {
-            $userId = $request->user()->user_id;
+            $userId = $request->user()->id;
             $dashboard = $this->dashboardService->getLearnerDashboard($userId);
-            
-            return $this->successResponse(
+
+            return self::success(
                 new DashboardResource($dashboard),
                 'Learner dashboard retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve learner dashboard.', null, null, $e);
+            Log::error('Unexpected error retrieving learner dashboard', [
+                'user_id' => $request->user()->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to retrieve learner dashboard.', 500);
         }
     }
 
@@ -64,15 +69,19 @@ class DashboardController extends Controller
     public function instructorDashboard(GetDashboardRequest $request): JsonResponse
     {
         try {
-            $instructorId = $request->user()->user_id;
+            $instructorId = $request->user()->id;
             $dashboard = $this->dashboardService->getInstructorDashboard($instructorId);
-            
-            return $this->successResponse(
+
+            return self::success(
                 new DashboardResource($dashboard),
                 'Instructor dashboard retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve instructor dashboard.', null, null, $e);
+            Log::error('Unexpected error retrieving instructor dashboard', [
+                'instructor_id' => $request->user()->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to retrieve instructor dashboard.', 500);
         }
     }
 
@@ -87,14 +96,17 @@ class DashboardController extends Controller
     {
         try {
             $dashboard = $this->dashboardService->getAdminDashboard();
-            
-            return $this->successResponse(
+
+            return self::success(
                 new DashboardResource($dashboard),
                 'Admin dashboard retrieved successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve admin dashboard.', null, null, $e);
+            Log::error('Unexpected error retrieving admin dashboard', [
+                'user_id' => $request->user()->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to retrieve admin dashboard.', 500);
         }
     }
 }
-

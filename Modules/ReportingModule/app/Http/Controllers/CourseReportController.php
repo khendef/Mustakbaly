@@ -5,6 +5,7 @@ namespace Modules\ReportingModule\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Modules\ReportingModule\Http\Requests\Report\GenerateCourseReportRequest;
 use Modules\ReportingModule\Http\Resources\CoursePopularityReportResource;
 use Modules\ReportingModule\Services\CourseAnalyticsService;
@@ -44,13 +45,16 @@ class CourseReportController extends Controller
         try {
             $filters = $request->validated();
             $report = $this->analyticsService->generatePopularityReport($filters);
-            
-            return $this->successResponse(
+
+            return self::success(
                 new CoursePopularityReportResource($report),
                 'Popularity report generated successfully.'
             );
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to generate popularity report.', null, null, $e);
+            Log::error('Unexpected error generating popularity report', [
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to generate popularity report.', 500);
         }
     }
 
@@ -66,15 +70,18 @@ class CourseReportController extends Controller
         try {
             $courseId = $request->input('course_id');
             $report = $this->analyticsService->getContentPerformance($courseId);
-            
+
             if (isset($report['error'])) {
-                return $this->errorResponse($report['error'], 404);
+                throw new Exception($report['error'], 404);
             }
-            
-            return $this->successResponse($report, 'Content performance retrieved successfully.');
+
+            return self::success($report, 'Content performance retrieved successfully.');
         } catch (Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve content performance.', null, null, $e);
+            Log::error('Unexpected error retrieving content performance', [
+                'course_id' => $courseId ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            throw new Exception('Failed to retrieve content performance.', 500);
         }
     }
 }
-
