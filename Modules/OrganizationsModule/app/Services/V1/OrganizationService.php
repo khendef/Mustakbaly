@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\OrganizationsModule\Services;
+namespace Modules\OrganizationsModule\Services\V1;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Container\Attributes\DB;

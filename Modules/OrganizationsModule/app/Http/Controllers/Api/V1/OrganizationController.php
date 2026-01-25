@@ -1,14 +1,14 @@
 <?php
 
-namespace Modules\OrganizationsModule\Http\Controllers;
+namespace Modules\OrganizationsModule\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Modules\OrganizationsModule\Http\Requests\StoreOrganizationRequest;
-use Modules\OrganizationsModule\Http\Requests\UpdateOrganizationRequest;
-
+use App\Http\Controllers\Controller;
 use Modules\OrganizationsModule\Models\Organization;
 use Modules\OrganizationsModule\Services\OrganizationService;
+
+use Modules\OrganizationsModule\Http\Requests\StoreOrganizationRequest;
+use Modules\OrganizationsModule\Http\Requests\UpdateOrganizationRequest;
 
 class OrganizationController extends Controller
 {

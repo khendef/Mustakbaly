@@ -1,15 +1,13 @@
 <?php
-namespace Modules\OrganizationsModule\Http\Controllers;
+namespace Modules\OrganizationsModule\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Modules\OrganizationsModule\Models\Program;
-use Modules\OrganizationsModule\Models\Organization;
 
 use Modules\OrganizationsModule\Services\ProgramService;
-use Modules\OrganizationsModule\Http\Requests\ProgramRequest;
 use Modules\OrganizationsModule\Repositories\ProgramRepository;
-use Modules\OrganizationsModule\Http\Requests\StoreProgramRequest;
-use Modules\OrganizationsModule\Http\Requests\ProgramFilterRequest;
-use Modules\OrganizationsModule\Http\Requests\UpdateProgramRequest;
+use Modules\OrganizationsModule\Http\Requests\V1\Program\StoreProgramRequest;
+use Modules\OrganizationsModule\Http\RequestsV1\Program\ProgramFilterRequest;
+use Modules\OrganizationsModule\Http\Requests\V1\Program\UpdateProgramRequest;
 /**
  * Controller for managing programs.
  */
@@ -19,24 +17,31 @@ class ProgramController extends Controller
      * Constructor to initialize ProgramService.
      */
     public function __construct(
-        protected ProgramRepository $programrepository,
         protected ProgramService $programservice
     ) {}
 
 public function index(ProgramFilterRequest $request)
 {
     return self::success(
-        $this->programrepository->paginateFiltered(
-            $request->validated()
-        ),
+        $this->programservice->getPrograms($request->filters()),
         'Programs retrieved successfully',
         200
     );
 }
 
-//create program
+    /**
+     * Show single program
+     */
+    public function show(int $id)
+    {
+        return self::success($this->programservice->getProgramById($id), 'Program retrieved successfully',200);
 
-    public function store(ProgramRequest $request)
+    }
+
+    /**
+     * Store program
+     */
+    public function store(StoreProgramRequest $request)
     {
         return self::success(
             $this->programservice->create($request->validated()),
@@ -44,9 +49,10 @@ public function index(ProgramFilterRequest $request)
             201
         );
     }
-//update program
-
-    public function update(ProgramRequest $request, Program $program)
+    /**
+     * Update program
+     */
+    public function update(UpdateProgramRequest $request, Program $program)
     {
         return self::success(
             $this->programservice->update($program, $request->validated()),
@@ -54,8 +60,9 @@ public function index(ProgramFilterRequest $request)
             200
         );
     }
-    /* ================= DELETE ================= */
-
+     /**
+     * Delete program (soft delete)
+     */
     public function destroy(Program $program)
     {
         $this->programservice->delete($program);

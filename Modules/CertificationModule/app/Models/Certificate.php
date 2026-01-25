@@ -2,6 +2,7 @@
 namespace Modules\CertificationModule\Models;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Modules\OrganizationsModule\Models\Organization;
 
 class Certificate extends Model
@@ -39,4 +40,20 @@ class Certificate extends Model
         return $this->issue_date?->format('Y-m-d');
     }
 
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when($filters['organization_id'] ?? null,
+                fn ($q, $value) => $q->where('organization_id', $value)
+            )
+            ->when($filters['issue_date_from'] ?? null,
+                fn ($q, $value) => $q->whereDate('issue_date', '>=', $value)
+            )
+            ->when($filters['issue_date_to'] ?? null,
+                fn ($q, $value) => $q->whereDate('issue_date', '<=', $value)
+            )
+            ->when($filters['certificate_number'] ?? null,
+                fn ($q, $value) => $q->where('certificate_number', 'like', "%{$value}%")
+            );
+    }
 }

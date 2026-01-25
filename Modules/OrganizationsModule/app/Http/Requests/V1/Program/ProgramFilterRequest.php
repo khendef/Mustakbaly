@@ -1,5 +1,5 @@
 <?php
-namespace Modules\OrganizationsModule\Http\Requests;
+namespace Modules\OrganizationsModule\Http\RequestsV1\Program;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProgramFilterRequest extends FormRequest
@@ -42,4 +42,14 @@ class ProgramFilterRequest extends FormRequest
             'max_budget.min' => 'The maximum budget must be at least 0.',
         ];
     }
+
+        public function filters(): array
+    {
+        $filters = $this->validated();
+
+        ksort($filters);
+
+        return $filters;
+    }
+
 }

@@ -1,53 +1,128 @@
 <?php
 namespace Modules\CertificationModule\Services;
-
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Container\Attributes\Log;
 use Modules\CertificationModule\Models\Certificate;
-use Modules\CertificationModule\Repositories\CertificateRepository;
 /**
  * Service class for managing certificates.
  */
 class CertificateService
 {
-    public function __construct(
-        protected CertificateRepository $repository
-    ) {}
+    private const TAG_GLOBAL = 'certificates';
+    private const TAG_PREFIX_CERTIFICATE = 'certificate_';
+    private const CACHE_TTL = 3600;
+
+    /**
+     * Get certificates list with filters
+     */
+    public function getCertificates(array $filters = [])
+    {
+        try {
+            ksort($filters);
+
+            $cacheKey = 'list:' . md5(json_encode($filters));
+
+            return Cache::tags([self::TAG_GLOBAL])
+                ->remember($cacheKey, self::CACHE_TTL, fn () =>
+                    Certificate::query()
+                        ->filter($filters)
+                        ->orderByDesc('issue_date')
+                        ->get()
+                );
+
+        } catch (\Throwable $e) {
+            Log::error('Failed to fetch certificates', [
+                'filters' => $filters,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Get certificate by ID
+     */
+    public function getById(int $id): Certificate
+    {
+        try {
+            return Cache::tags([
+                self::TAG_GLOBAL,
+                self::TAG_PREFIX_CERTIFICATE . $id,
+            ])->remember(
+                self::TAG_PREFIX_CERTIFICATE . $id,
+                self::CACHE_TTL,
+                fn () => Certificate::findOrFail($id)
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch certificate', [
+                'certificate_id' => $id,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
+    }
 
     public function create(array $data): Certificate
     {
-        return DB::transaction(function () use ($data) {
+        try {
+            $certificate = Certificate::create($data);
 
-            $data['certificate_number'] ??=
-                $this->generateCertificateNumber();
+            Cache::tags([self::TAG_GLOBAL])->flush();
 
-            return Certificate::create($data);
-        });
+            return $certificate;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create certificate', [
+                'data' => $data,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
     }
 
-    public function update(
-        Certificate $certificate,
-        array $data
-    ): Certificate {
-
-        return DB::transaction(function () use ($certificate, $data) {
-
+    public function update(Certificate $certificate, array $data): Certificate
+    {
+        try {
             $certificate->update($data);
 
+            Cache::tags([
+                self::TAG_GLOBAL,
+                self::TAG_PREFIX_CERTIFICATE . $certificate->id,
+            ])->flush();
+
             return $certificate->refresh();
-        });
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update certificate', [
+                'certificate_id' => $certificate->id,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
     }
 
     public function delete(Certificate $certificate): void
     {
-        DB::transaction(function () use ($certificate) {
+        try {
             $certificate->delete();
-        });
-    }
 
-    private function generateCertificateNumber(): string
-    {
-        return 'CERT-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
+            Cache::tags([
+                self::TAG_GLOBAL,
+                self::TAG_PREFIX_CERTIFICATE . $certificate->id,
+            ])->flush();
+
+        } catch (\Exception $e) {
+            Log::error('Failed to delete certificate', [
+                'certificate_id' => $certificate->id,
+                'exception' => $e,
+            ]);
+
+            throw $e;
+        }
     }
 }

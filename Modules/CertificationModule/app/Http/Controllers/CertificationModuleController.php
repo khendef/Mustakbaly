@@ -12,14 +12,13 @@ use Modules\CertificationModule\Http\Requests\UpdateCertificateRequest;
 class CertificationModuleController extends Controller
 {
 public function __construct(
-        protected CertificateRepository $repository,
         protected CertificateService $service
     ) {}
 
 public function index(CertificateFilterRequest $request)
 {
     return self::success(
-        $this->repository->paginateFiltered(
+        $this->service->getCertificates(
             $request->validated()
         ),
         'Certificates retrieved successfully',
@@ -49,7 +48,15 @@ public function index(CertificateFilterRequest $request)
             200
         );
     }
-
+    public function show(int $id)
+    {
+        return self::success(
+            $this->service->getById($id
+            ),
+            'Certificate retrieved successfully',
+            200
+        );
+    }
     public function destroy(Certificate $certificate)
     {
         $this->service->delete($certificate);

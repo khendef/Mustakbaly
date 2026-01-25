@@ -34,6 +34,7 @@ class Organization extends Model
         'description' => 'array',
         'name' => 'array',
     ];
+
     // Add an accessor for a short description
     public function getShortDescriptionAttribute(): string
     {

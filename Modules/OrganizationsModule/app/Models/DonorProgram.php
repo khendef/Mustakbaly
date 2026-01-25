@@ -1,9 +1,10 @@
 <?php
 namespace Modules\OrganizationsModule\Models;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Database\Eloquent\Model;
+use Modules\OrganizationsModule\Casts\MoneyCast;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class DonorProgram extends Model
+class DonorProgram extends Pivot
 {
     protected $table = 'donor_program';
 
@@ -14,8 +15,7 @@ class DonorProgram extends Model
     ];
 
     // Relationship with Donor
-    public function donor()
-    {
+    public function donor() {
         return $this->belongsTo(Donor::class);
     }
 
@@ -27,26 +27,7 @@ class DonorProgram extends Model
 
 
     protected $casts = [
-        'contribution_amount' => 'float',
+        'contribution_amount' => MoneyCast::class,
     ];
 
-        /* ================= Mutators ================= */
-
-    public function setContributionAmountAttribute($value)
-    {
-        $this->attributes['contribution_amount'] = max(0, (float) $value);
-    }
-    /* ================= Events ================= */
-
-    protected static function booted()
-    {
-        static::saved(fn ($pivot) => $pivot->invalidateCaches());
-        static::deleted(fn ($pivot) => $pivot->invalidateCaches());
-    }
-
-    private function invalidateCaches(): void
-    {
-        Cache::forget("donor:{$this->donor_id}:total_donated");
-        Cache::forget("program:{$this->program_id}");
-    }
 }

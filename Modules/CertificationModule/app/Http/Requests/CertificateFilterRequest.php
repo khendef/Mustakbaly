@@ -20,6 +20,7 @@ class CertificateFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'enrollment_id' => 'nullable|integer|exists:enrollments,id',
             'organization_id' => 'nullable|integer|exists:organizations,id',
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',

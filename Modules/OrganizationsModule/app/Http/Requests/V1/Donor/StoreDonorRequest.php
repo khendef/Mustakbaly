@@ -1,9 +1,8 @@
 <?php
 namespace Modules\OrganizationsModule\Http\Requests;
-
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateDonorRequest extends FormRequest
+class StoreDonorRequest extends FormRequest
 {
 
     /**
@@ -22,19 +21,20 @@ class UpdateDonorRequest extends FormRequest
     public function rules(): array
     {
         return [
-           'user_id' => ['sometimes', 'required', 'exists:users,id'],
+            'user_id'     => ['required', 'exists:users,id'],
+            'name'        => ['required', 'array'],
+            'name.*'      => ['string'],
             'description' => ['nullable', 'array'],
-            'name' => ['sometimes', 'required', 'array','string'],
+            'description.*' => ['string'],
         ];
     }
 
     public function messages(): array
     {
         return [
+            'user_id.required' => 'The user ID is required.',
+            'user_id.exists' => 'The specified user does not exist.',
             'name.required' => 'The donor name is required.',
-            'email.required' => 'The donor email is required.',
-            'email.email' => 'The donor email must be a valid email address.',
-            'email.unique' => 'The donor email must be unique.',
         ];
     }
 }

@@ -1,7 +1,7 @@
 <?php
-namespace Modules\OrganizationsModule\Http\Requests;
+namespace Modules\OrganizationsModule\Http\Requests\V1\Program;
 use Illuminate\Foundation\Http\FormRequest;
-class ProgramRequest extends FormRequest
+class StoreProgramRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

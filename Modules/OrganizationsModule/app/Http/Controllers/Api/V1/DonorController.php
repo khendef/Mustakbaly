@@ -1,13 +1,12 @@
 <?php
-namespace Modules\OrganizationsModule\Http\Controllers;
+namespace Modules\OrganizationsModule\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Modules\OrganizationsModule\Models\Donor;
 
 use Modules\OrganizationsModule\Services\DonorService;
-use Modules\OrganizationsModule\Repositories\DonorRepository;
-
 use Modules\OrganizationsModule\Http\Requests\StoreDonorRequest;
 use Modules\OrganizationsModule\Http\Requests\UpdateDonorRequest;
+use Modules\OrganizationsModule\Http\Requests\V1\Donor\DonorFilterRequest;
 
 class DonorController extends Controller
 {
@@ -15,7 +14,6 @@ class DonorController extends Controller
      * Constructor to initialize DonorService.
      */
     public function __construct(
-        protected DonorRepository $donorrepository,
         protected DonorService $donorservice
     ) {}
 
@@ -23,10 +21,19 @@ class DonorController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(DonorFilterRequest $request)
     {
-        $donors = $this->donorrepository->paginateCached();
+        $donors = $this->donorservice->getDonors($request->filters());
         return self::success($donors, 'Donors retrieved successfully.', 200);
+    }
+
+        /**
+     * Display the specified resource.
+     */
+    public function show(int $id)
+    {
+        $donor =  $this->donorservice->getDonorById($id);
+        return self::success($donor, 'Donor retrieved successfully.', 200);
     }
 
     /**
@@ -36,15 +43,6 @@ class DonorController extends Controller
     {
         $donor = $this->donorservice->create($request->validated());
         return self::success($donor, 'Donor created successfully.', 201);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Donor $donor)
-    {
-        $donor = $this->donorrepository->findCached($donor->id);
-        return self::success($donor, 'Donor retrieved successfully.', 200);
     }
 
     /**

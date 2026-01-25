@@ -1,6 +1,6 @@
 <?php
 namespace Modules\OrganizationsModule\Models;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -29,6 +29,7 @@ class Program extends Model
     public function donors()
     {
         return $this->belongsToMany(Donor::class, 'donor_program')
+           ->using(DonorProgram::class)
             ->withPivot('contribution_amount');
     }
 
@@ -56,6 +57,30 @@ class Program extends Model
     public function setRequiredBudgetAttribute($value)
     {
         $this->attributes['required_budget'] = max(0, (float) $value);
+    }
+
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        if (!empty($filters)) {
+            ksort($filters);
+        }
+
+        return $query
+            ->when($filters['organization_id'] ?? null, fn ($q, $orgId) =>
+                $q->where('organization_id', $orgId)
+            )
+            ->when($filters['status'] ?? null, fn ($q, $status) =>
+                $q->where('status', $status)
+            )
+            ->when($filters['created_from'] ?? null, fn ($q, $date) =>
+                $q->whereDate('created_at', '>=', $date)
+            )
+            ->when($filters['created_to'] ?? null, fn ($q, $date) =>
+                $q->whereDate('created_at', '<=', $date)
+            )
+            ->when(($filters['with_deleted'] ?? false) === true, fn ($q) =>
+                $q->withTrashed()
+            );
     }
 
     protected $casts = [

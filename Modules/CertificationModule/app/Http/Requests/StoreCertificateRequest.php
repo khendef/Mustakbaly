@@ -20,17 +20,19 @@ class StoreCertificateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'organization_id' => 'required|integer|exists:organizations,id',
-            'recipient_name' => 'required|string|max:255',
-            'course_name' => 'required|string|max:255',
-            'completion_date' => 'required|date',
-            'issue_date' => 'required|date',
+            'enrollment_id' => ['required', 'exists:enrollments,id'],
+            'organization_id' => ['required', 'exists:organizations,id'],
+            'certificate_number' => ['required', 'string', 'max:255', 'unique:certificates,certificate_number'],
+            'completion_date' => ['required', 'date'],
+            'issue_date' => ['required', 'date', 'after_or_equal:completion_date'],
         ];
     }
 
     public function messages(): array
     {
         return [
+            'enrollment_id.required' => 'the enrollment ID I=is required',
+             'enrollment_id.exists' => 'The specified enrollment_id does not exist.',
             'organization_id.required' => 'The organization ID is required.',
             'organization_id.integer' => 'The organization ID must be an integer.',
             'organization_id.exists' => 'The specified organization does not exist.',

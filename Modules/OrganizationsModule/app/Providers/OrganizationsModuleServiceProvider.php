@@ -31,8 +31,8 @@ class OrganizationsModuleServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
-        Program::observe(ProgramObserver::class);
-        Donor::observe(DonorObserver::class);
+     //   Program::observe(ProgramObserver::class);
+       // Donor::observe(DonorObserver::class);
     }
 
     /**
