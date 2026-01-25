@@ -1,0 +1,43 @@
+<?php
+
+namespace Modules\UserManagementModule\Http\Requests\Api\V1\Instructor;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
+
+class InstructorUpdateRequest extends FormRequest
+{
+    /**
+     * Get the validation rules that apply to the request.
+     */
+    public function rules(): array
+    {
+        return [
+            'name'=>'sometimes|string|max:255',
+            'email'=>'sometimes|string',  //unique:users,email
+            'password'=>['sometimes','string','confirmed',
+            Password::min(8)
+                ->mixedCase()
+                ->symbols()
+                ->letters()
+                ->numbers()
+            ],
+            'phone'=>'sometimes|string|phone',
+            'date_of_birth'=>'sometimes|date',
+            'gender'=>['sometimes',Rule::in(['male','female'])],
+            'address'=>'sometimes|nullable|max:500',
+            'specialization'=>'sometimes|string|max:255',
+            'bio'=>'sometimes|nullable|string|max:1500',
+            'years_of_experience'=>'sometimes|integer'
+        ];
+    }
+
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+}
