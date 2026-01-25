@@ -1,68 +1,82 @@
 <?php
-
 namespace App\Http\Controllers;
-use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-abstract class Controller extends BaseController
+abstract class Controller
 {
     /**
-     * Standardized success response.
+     * Return a success JSON response.
      *
-     * @param mixed $data
-     * @param string $message
-     * @param int $code
+     * @param  mixed|null  $data  The response data (optional).
+     * @param  string  $message  The success message (default: "Operation successful").
+     * @param  int  $status  The HTTP status code (default: 200).
      * @return \Illuminate\Http\JsonResponse
      */
-    protected static function success($data, $message = 'Operation successful', $code = 200)
+    public static function success($data = null, $message = 'Operation successful', $status = 200)
     {
-        return response()->json([
-            'status' => 'success',
-            'message' => $message,
-            'data' => $data
-        ], $code);
+        return response()->json(
+            [
+                'status' => 'success', // Indicates a successful operation
+                'message' => trans($message), // Translates the message
+                'data' => $data, // Contains the response data (if any)
+            ],
+            $status,
+            options: JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
+        );
     }
 
     /**
-     * Standardized error response.
+     * Return an error JSON response.
      *
-     * @param string $message
-     * @param int $code
-     * @param mixed $errors
+     * @param  string|array  $message  The error message or an array containing additional error details.
+     * @param  int  $status  The HTTP status code (default: 400).
+     * @param  mixed|null  $data  Additional data to include in the response (optional).
      * @return \Illuminate\Http\JsonResponse
      */
-    protected static function error($message = 'An error occurred', $code = 500, $errors = null)
+    public static function error($message = 'Operation failed', $status = 400, $data = null)
     {
-        $response = [
-            'status' => 'error',
-            'message' => $message,
-        ];
-
-        if ($errors) {
-            $response['errors'] = $errors;
+        // If the message is an array, don't translate it directly (handle structured error messages)
+        if (is_array($message)) {
+            // $messageArray = $message; // Preserve the existing message array
+            // $messageArray['message'] = trans($message['message']); // Translate only the message key
+            $translatedMessage = trans($message['message']);
+        } else {
+            // $messageArray['message'] = trans($message);
+            $translatedMessage = trans($message);
         }
 
-        return response()->json($response, $code);
+        return response()->json(
+            [
+                'status' => 'error', // Indicates an error response
+                'message' => $translatedMessage, // Contains the error message(s)
+                'data' => $data, // Optional additional data
+            ],
+            $status,
+            options: JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
+        );
     }
 
     /**
-     * Standardized paginate response.
+     * Return a paginated JSON response.
      *
-     * @param \Illuminate\Pagination\LengthAwarePaginator $paginateData
-     * @param string $message
+     * @param  LengthAwarePaginator  $paginator  The paginator instance containing paginated results.
+     * @param  string  $message  The success message (default: "Operation successful").
+     * @param  int  $status  The HTTP status code (default: 200).
      * @return \Illuminate\Http\JsonResponse
      */
-    protected static function paginate($paginateData, $message = 'Data retrieved successfully')
+    public static function paginated(LengthAwarePaginator $paginator, $message = 'Operation successful', $status = 200)
     {
         return response()->json([
-            'status' => 'success',
-            'message' => $message,
-            'data' => $paginateData->items(),
-            'meta' => [
-                'current_page' => $paginateData->currentPage(),
-                'per_page' => $paginateData->perPage(),
-                'total' => $paginateData->total(),
-                'last_page' => $paginateData->lastPage()
-            ]
-        ], 200);
+            'status' => 'success', // Indicates a successful operation
+            'message' => trans($message), // Translates the success message
+            'data' => $paginator->items(), // Retrieves the current page's data
+            'pagination' => [
+                'total' => $paginator->total(), // Total number of records
+                'count' => count($paginator), // Number of records on the current page
+                'per_page' => $paginator->perPage(), // Records per page
+                'current_page' => $paginator->currentPage(), // The current page number
+                'total_pages' => $paginator->lastPage(), // The last page number
+            ],
+        ], $status);
     }
 }
