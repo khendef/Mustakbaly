@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 |
 | All routes are versioned under /api/v1 prefix.
-| NOTE: Authentication middleware removed for testing purposes.
+| All routes require authentication via JWT.
 |
 */
 
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('auth:api')->group(function () {
     // Import all versioned route files
     require __DIR__ . '/v1/course-types.php';
     require __DIR__ . '/v1/courses.php';

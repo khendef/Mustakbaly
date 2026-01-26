@@ -39,7 +39,7 @@ class CourseService
                 Log::warning("Attempted to create course with invalid course type", [
                     'course_type_id' => $data['course_type_id'],
                 ]);
-                return null;
+                throw new Exception("Course type with ID {$data['course_type_id']} does not exist.", 422);
             }
         }
 
@@ -54,7 +54,7 @@ class CourseService
                 $data['slug'] = $this->ensureUniqueSlug($data['slug'], Course::class);
             }
 
-            // Set created_by (use 1 as default for testing when auth is disabled)
+            // Set created_by
             $data['created_by'] = Auth::id();
 
             // Set default status if not provided
@@ -74,13 +74,30 @@ class CourseService
             ]);
 
             return $course;
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Database error creating course", [
+                'data' => $data,
+                'error' => $e->getMessage(),
+                'sql' => $e->getSql() ?? null,
+                'bindings' => $e->getBindings() ?? null,
+            ]);
+
+            // Check for specific database errors
+            if (str_contains($e->getMessage(), 'foreign key constraint')) {
+                throw new Exception("Database constraint violation: " . $e->getMessage(), 422);
+            }
+            if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                throw new Exception("A course with this slug already exists.", 422);
+            }
+
+            throw new Exception("Database error: " . $e->getMessage(), 500);
         } catch (Exception $e) {
             Log::error("Failed to create course", [
                 'data' => $data,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return null;
+            throw $e;
         }
     }
 

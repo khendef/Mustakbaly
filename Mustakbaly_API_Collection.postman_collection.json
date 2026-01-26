@@ -464,7 +464,7 @@
                                                                  ],
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n    \"title\": \"Introduction to Laravel\",\n    \"slug\": \"introduction-to-laravel\",\n    \"description\": \"Learn the fundamentals of Laravel framework\",\n    \"objectives\": \"Understand Laravel basics, routing, and MVC pattern\",\n    \"prerequisites\": \"Basic PHP knowledge\",\n    \"course_type_id\": 1,\n    \"expected_duration_hours\": 40,\n    \"language\": \"en\",\n    \"status\": \"draft\",\n    \"min_score_to_pass\": 70,\n    \"is_offline_available\": false,\n    \"course_delivery_type\": \"self_paced\",\n    \"difficulty_level\": \"beginner\"\n}"
+                                                                   "raw":  "{\n    \"title\": \"Introduction to Laravel\",\n    \"slug\": \"introduction-to-laravel\",\n    \"description\": \"Learn the fundamentals of Laravel framework\",\n    \"objectives\": \"Understand Laravel basics, routing, and MVC pattern\",\n    \"prerequisites\": \"Basic PHP knowledge\",\n    \"course_type_id\": 1,\n    \"program_id\": 1,\n    \"actual_duration_hours\": 40,\n    \"language\": \"en\",\n    \"status\": \"draft\",\n    \"min_score_to_pass\": 70,\n    \"is_offline_available\": false,\n    \"course_delivery_type\": \"self_paced\",\n    \"difficulty_level\": \"beginner\"\n}"
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{base_url}}/api/v1/courses",
@@ -527,7 +527,7 @@
                                                                  ],
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n    \"title\": \"Updated Course Title\",\n    \"description\": \"Updated description\",\n    \"expected_duration_hours\": 50\n}"
+                                                                   "raw":  "{\n    \"title\": \"Updated Course Title\",\n    \"description\": \"Updated description\",\n    \"program_id\": 1,\n    \"actual_duration_hours\": 50\n}"
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{base_url}}/api/v1/courses/:courseId",

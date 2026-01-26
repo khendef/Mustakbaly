@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Traits\CachesQueries;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\App;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Modules\LearningModule\Models\Course;
@@ -113,8 +114,15 @@ class CourseController extends Controller
             Log::error('Unexpected error creating course', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw new Exception('An error occurred while creating the course. Please try again.', 500);
+
+            // Show actual error in development, generic message in production
+            $errorMessage = App::environment('local', 'testing')
+                ? $e->getMessage()
+                : 'An error occurred while creating the course. Please try again.';
+
+            throw new Exception($errorMessage, 500);
         }
     }
 
@@ -175,8 +183,15 @@ class CourseController extends Controller
                 'course_id' => $course->course_id ?? null,
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw new Exception('An error occurred while updating the course. Please try again.', 500);
+
+            // Show actual error in development, generic message in production
+            $errorMessage = App::environment('local', 'testing')
+                ? $e->getMessage()
+                : 'An error occurred while updating the course. Please try again.';
+
+            throw new Exception($errorMessage, 500);
         }
     }
 

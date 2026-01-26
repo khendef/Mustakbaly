@@ -45,9 +45,14 @@ class Handler extends ExceptionHandler
      */
     public function render($request, \Throwable $e)
     {
-        // Handle all requests with consistent JSON responses
-        // For web requests that don't expect JSON, Laravel will handle them appropriately
-        if ($request->expectsJson() || $request->is('api/*') || $request->wantsJson()) {
+        // Handle all API requests with consistent JSON responses
+        // Check if it's an API route or if the request expects JSON
+        $isApiRequest = $request->is('api/*') 
+            || $request->expectsJson() 
+            || $request->wantsJson()
+            || str_starts_with($request->path(), 'api/');
+        
+        if ($isApiRequest) {
             return $this->handleApiException($request, $e);
         }
 
@@ -412,7 +417,36 @@ class Handler extends ExceptionHandler
     protected function handleHttpException(HttpException $e): JsonResponse
     {
         $statusCode = $e->getStatusCode();
-        $message = $e->getMessage() ?: $this->getDefaultHttpMessage($statusCode);
+        
+        // For 404 errors, provide more user-friendly messages
+        if ($statusCode === 404) {
+            $message = $e->getMessage();
+            
+            // Check if it's a model not found error (converted to NotFoundHttpException)
+            if (str_contains($message, 'No query results for model')) {
+                // Extract model name from message
+                if (preg_match('/model \[([^\]]+)\]/', $message, $matches)) {
+                    $modelClass = $matches[1];
+                    $modelName = class_basename($modelClass);
+                    $modelName = str_replace('_', ' ', strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelName)));
+                    
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "The requested {$modelName} was not found.",
+                        'data' => null,
+                        'error_code' => 'RESOURCE_NOT_FOUND',
+                        'hint' => "Please verify the ID and try again.",
+                    ], 404, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+                }
+            }
+            
+            // For any 404, provide a user-friendly message
+            $message = $message && !str_contains($message, 'Symfony') && !str_contains($message, 'HttpKernel')
+                ? $message
+                : 'The requested resource was not found.';
+        } else {
+            $message = $e->getMessage() ?: $this->getDefaultHttpMessage($statusCode);
+        }
 
         return response()->json([
             'status' => 'error',
@@ -428,7 +462,7 @@ class Handler extends ExceptionHandler
      * @param ModelNotFoundException $e
      * @return JsonResponse
      */
-    protected function handleModelNotFoundException(ModelNotFoundException $e): JsonResponse
+    public function handleModelNotFoundException(ModelNotFoundException $e): JsonResponse
     {
         $model = class_basename($e->getModel());
         $modelName = str_replace('_', ' ', strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $model)));

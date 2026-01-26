@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
+use App\Exceptions\Handler;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,11 +25,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('activitylog:clean')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Exception rendering is handled by Handler class
-        // Handler::render() will process all exceptions globally
-        $exceptions->render(function (Request $request, \Throwable $e) {
-            // Return null to let Handler::render() handle all exceptions
+        // Handle ModelNotFoundException before it gets converted to NotFoundHttpException
+        $exceptions->render(function (Request $request, \Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Only handle for API requests
+            if ($request->expectsJson() || $request->is('api/*') || $request->wantsJson() || str_starts_with($request->path(), 'api/')) {
+                $handler = app(Handler::class);
+                return $handler->handleModelNotFoundException($e);
+            }
+            // Let Laravel handle it for web requests
             return null;
+        });
+        
+        // Delegate all other exception rendering to the custom Handler class
+        $exceptions->render(function (Request $request, \Throwable $e) {
+            $handler = app(Handler::class);
+            return $handler->render($request, $e);
         });
     })
     ->create();
