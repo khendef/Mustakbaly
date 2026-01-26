@@ -1,0 +1,73 @@
+<?php
+
+namespace Modules\UserManagementModule\Services\V1;
+
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Modules\UserManagementModule\Enums\UserRole;
+use Modules\UserManagementModule\Models\User;
+
+class StudentService
+{
+    public function list($filters, int $perPage=15)
+    {
+        $students = User::whereHas('studentProfile')
+                    ->with('studentProfile', 'courses:id,name')
+                    ->filters($filters)
+                    ->paginate($perPage);
+        return $students;
+    }
+
+    public function findById(int $id)
+    {
+        return User::with('studentProfile','courses:id,name')
+        ->findOrFail($id);
+    }
+
+    public function create(array $data)
+    {
+        return DB::transaction(function() use($data) {
+
+            //1. seperate basic information of student specific informtion
+            $userData = Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']);
+            $studentData = Arr::except($data,['name','email','password','gender','date_of_birth','phone','address']);
+
+            //2. create user
+            $user = User::firstOrCreate(['email' => $userData['email']],$userData);
+            
+
+            //3. create student profile
+
+            // user_id = $user->id
+            $student = $user->studentProfile()->updateOrCreate(['user_id' => $user->id],$studentData);
+            //4. attach to organization
+            $user->organizations()->attach($data['organization_id'],['role'=>UserRole::STUDENT->value]);
+            //5. assign role
+            $user->assignRole(UserRole::STUDENT->value);
+            return $student;
+       });
+    }
+
+    public function update(User $user,array $data)
+    {
+        return DB::transaction(function () use ($data, $user) {
+        
+            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));           
+            $user->studentProfile()->updateOrCreate(
+                ['user_id' => $user->id],
+                Arr::except($data,['name','email','password','gender','date_of_birth','phone','address'])
+            );
+            return $user->refresh();
+
+        });
+    }
+
+    public function delete(User $user)
+    {
+        DB::transaction(function() use($user){
+            $user->studentProfile()->delete();
+            $user->delete();
+        });
+        
+    }
+}
