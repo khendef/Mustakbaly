@@ -8,6 +8,7 @@ use Modules\LearningModule\Enums\EnrollmentStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Activitylog\LogOptions;
 
 class Enrollment extends Pivot
@@ -116,6 +117,18 @@ class Enrollment extends Pivot
     public function enrolledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'enrolled_by', 'id');
+    }
+
+    /**
+     * Get the lessons completed by this enrollment.
+     *
+     * @return BelongsToMany
+     */
+    public function completedLessons(): BelongsToMany
+    {
+        return $this->belongsToMany(Lesson::class, 'enrollment_lesson', 'enrollment_id', 'lesson_id')
+            ->withPivot(['completed_at'])
+            ->withTimestamps();
     }
 
     /**

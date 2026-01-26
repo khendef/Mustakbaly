@@ -75,16 +75,6 @@ class UnitBuilder extends Builder
     }
 
     /**
-     * Eager load all relationships
-     *
-     * @return self
-     */
-    public function withAllRelations(): self
-    {
-        return $this->with(['course', 'lessons']);
-    }
-
-    /**
      * Eager load course relationship
      *
      * @return self

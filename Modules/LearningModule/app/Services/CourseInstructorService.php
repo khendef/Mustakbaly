@@ -140,15 +140,17 @@ class CourseInstructorService
         }
 
         try {
-            // Set this instructor as primary (without unsetting others)
-            $assignment->update(['is_primary' => true]);
+            return DB::transaction(function () use ($assignment, $course, $instructorId) {
+                // Set this instructor as primary (without unsetting others)
+                $assignment->update(['is_primary' => true]);
 
-            Log::info("Instructor set as primary", [
-                'course_id' => $course->course_id,
-                'instructor_id' => $instructorId,
-            ]);
+                Log::info("Instructor set as primary", [
+                    'course_id' => $course->course_id,
+                    'instructor_id' => $instructorId,
+                ]);
 
-            return $assignment->fresh();
+                return $assignment->fresh();
+            });
         } catch (\Exception $e) {
             Log::error("Failed to set primary instructor", [
                 'course_id' => $course->course_id,
@@ -158,26 +160,6 @@ class CourseInstructorService
             ]);
             return null;
         }
-    }
-
-    /**
-     * Unset primary flag for instructors of a course.
-     * This is an explicit action - call this when you want to unset primary instructors.
-     *
-     * @param Course $course
-     * @param int|null $excludeInstructorId Optional instructor ID to exclude from unsetting
-     * @return int Number of instructors unset
-     */
-    public function unsetPrimaryInstructors(Course $course, ?int $excludeInstructorId = null): int
-    {
-        $query = CourseInstructor::where('course_id', $course->course_id)
-            ->where('is_primary', true);
-
-        if ($excludeInstructorId) {
-            $query->where('instructor_id', '!=', $excludeInstructorId);
-        }
-
-        return $query->update(['is_primary' => false]);
     }
 
     /**

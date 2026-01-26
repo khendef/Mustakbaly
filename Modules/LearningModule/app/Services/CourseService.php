@@ -344,60 +344,31 @@ class CourseService
         }
 
         try {
-            $courseId = $course->course_id;
-            $deleted = $course->delete();
+            return DB::transaction(function () use ($course) {
+                $courseId = $course->course_id;
+                $courseTitle = $course->title;
+                $deleted = $course->delete();
 
-            if ($deleted) {
-                // Clear course cache after deletion
-                $this->clearCourseCache($course);
+                if ($deleted) {
+                    // Clear course cache after deletion
+                    $this->clearCourseCache($course);
 
-                Log::info("Course deleted", [
-                    'course_id' => $courseId,
-                    'title' => $course->title,
-                ]);
-            }
+                    Log::info("Course deleted", [
+                        'course_id' => $courseId,
+                        'title' => $courseTitle,
+                    ]);
+                }
 
-            return $deleted;
+                return $deleted;
+            });
         } catch (Exception $e) {
             Log::error("Failed to delete course", [
-                'course_id' => $course->course_id,
+                'course_id' => $course->course_id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
             return false;
         }
-    }
-
-
-    /**
-     * Update course rating.
-     *
-     * @param Course $course
-     * @param float $newRating
-     * @return Course
-     */
-    public function updateRating(Course $course, float $newRating): Course
-    {
-        $totalRatings = $course->total_ratings;
-        $currentAverage = $course->average_rating;
-
-        if ($totalRatings === 0) {
-            // First rating
-            $course->update([
-                'average_rating' => $newRating,
-                'total_ratings' => 1,
-            ]);
-        } else {
-            // Calculate new average
-            $newAverage = (($currentAverage * $totalRatings) + $newRating) / ($totalRatings + 1);
-
-            $course->update([
-                'average_rating' => round($newAverage, 2),
-                'total_ratings' => $totalRatings + 1,
-            ]);
-        }
-
-        return $course->fresh();
     }
 
     /**
@@ -424,27 +395,6 @@ class CourseService
         }
 
         return true;
-    }
-
-    /**
-     * Get course by ID.
-     *
-     * @param int $courseId
-     * @return Course
-     * @throws Exception
-     */
-    public function getById(int $courseId): ?Course
-    {
-        $course = Course::query()->find($courseId);
-
-        if (!$course) {
-            Log::warning("Course not found", [
-                'course_id' => $courseId,
-            ]);
-            return null;
-        }
-
-        return $course;
     }
 
     /**

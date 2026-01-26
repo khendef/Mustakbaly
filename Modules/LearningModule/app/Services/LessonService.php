@@ -95,22 +95,10 @@ class LessonService
                 $this->validateOrder(Lesson::class, 'unit_id', $lesson->unit_id, $data['lesson_order'], 'lesson_order', 'lesson_id', $lesson->lesson_id, 'Lesson');
             }
 
-            $wasCompleted = $lesson->is_completed;
             $lesson->update($data);
 
             // Clear lesson and unit cache after update
             $this->clearLessonCache($lesson);
-
-            // If lesson was just marked as completed, trigger cascade logic
-            if (isset($data['is_completed']) && $data['is_completed'] && !$wasCompleted) {
-                $lesson->refresh(); // Refresh to get updated relationships
-
-                // Check and update enrollments for the course
-                $course = $lesson->unit->course;
-                if ($course) {
-                    $this->enrollmentService->checkAndHandleCourseCompletion($course);
-                }
-            }
 
             Log::info("Lesson updated", [
                 'lesson_id' => $lesson->lesson_id,
@@ -139,23 +127,25 @@ class LessonService
     public function delete(Lesson $lesson): bool
     {
         try {
-            $lessonId = $lesson->lesson_id;
-            $lessonTitle = $lesson->title;
-            $unitId = $lesson->unit_id;
-            $deleted = $lesson->delete();
+            return DB::transaction(function () use ($lesson) {
+                $lessonId = $lesson->lesson_id;
+                $lessonTitle = $lesson->title;
+                $unitId = $lesson->unit_id;
+                $deleted = $lesson->delete();
 
-            if ($deleted) {
-                // Clear lesson and unit cache after deletion
-                $this->clearLessonCache($lesson);
+                if ($deleted) {
+                    // Clear lesson and unit cache after deletion
+                    $this->clearLessonCache($lesson);
 
-                Log::info("Lesson deleted", [
-                    'lesson_id' => $lessonId,
-                    'title' => $lessonTitle,
-                    'unit_id' => $unitId,
-                ]);
-            }
+                    Log::info("Lesson deleted", [
+                        'lesson_id' => $lessonId,
+                        'title' => $lessonTitle,
+                        'unit_id' => $unitId,
+                    ]);
+                }
 
-            return $deleted;
+                return $deleted;
+            });
         } catch (Exception $e) {
             Log::error("Failed to delete lesson", [
                 'lesson_id' => $lesson->lesson_id,
@@ -256,9 +246,7 @@ class LessonService
      */
     public function getLessonsByUnit(Unit $unit, array $filters = [])
     {
-        $unitId = $unit->unit_id;
-
-        $query = Lesson::where('unit_id', $unitId);
+        $query = Lesson::where('unit_id', $unit->unit_id);
 
         // Apply filters
         if (isset($filters['include_deleted']) && $filters['include_deleted']) {
@@ -303,7 +291,6 @@ class LessonService
         return $lesson->actual_duration_minutes ?? 0;
     }
 
-
     /**
      * Get lesson count for a unit.
      *
@@ -313,44 +300,6 @@ class LessonService
     public function getLessonCount(Unit $unit): int
     {
         return Lesson::where('unit_id', $unit->unit_id)->count();
-    }
-
-    /**
-     * Mark a lesson as completed.
-     *
-     * @param Lesson $lesson
-     * @return Lesson
-     * @throws Exception
-     */
-    public function markAsCompleted(Lesson $lesson): ?Lesson
-    {
-        if ($lesson->is_completed) {
-            return $lesson; // Already completed
-        }
-
-        try {
-            $lesson->update(['is_completed' => true]);
-
-            Log::info("Lesson marked as completed", [
-                'lesson_id' => $lesson->lesson_id,
-                'unit_id' => $lesson->unit_id,
-            ]);
-
-            // Check and update enrollments for the course
-            $course = $lesson->unit->course;
-            if ($course) {
-                $this->enrollmentService->checkAndHandleCourseCompletion($course);
-            }
-
-            return $lesson->fresh();
-        } catch (Exception $e) {
-            Log::error("Failed to mark lesson as completed", [
-                'lesson_id' => $lesson->lesson_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return null;
-        }
     }
 
     /**

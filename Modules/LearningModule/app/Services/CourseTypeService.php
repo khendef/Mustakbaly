@@ -214,21 +214,23 @@ class CourseTypeService
         }
 
         try {
-            $courseTypeId = $courseType->course_type_id;
-            $courseTypeName = $courseType->name;
-            $deleted = $courseType->delete();
+            return DB::transaction(function () use ($courseType) {
+                $courseTypeId = $courseType->course_type_id;
+                $courseTypeName = $courseType->name;
+                $deleted = $courseType->delete();
 
-            if ($deleted) {
-                // Clear cache after deletion
-                $this->clearCourseTypeCache();
+                if ($deleted) {
+                    // Clear cache after deletion
+                    $this->clearCourseTypeCache();
 
-                Log::info("Course type deleted", [
-                    'course_type_id' => $courseTypeId,
-                    'name' => $courseTypeName,
-                ]);
-            }
+                    Log::info("Course type deleted", [
+                        'course_type_id' => $courseTypeId,
+                        'name' => $courseTypeName,
+                    ]);
+                }
 
-            return $deleted;
+                return $deleted;
+            });
         } catch (Exception $e) {
             Log::error("Failed to delete course type", [
                 'course_type_id' => $courseType->course_type_id,

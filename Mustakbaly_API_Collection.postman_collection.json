@@ -1,8 +1,8 @@
-﻿{
+{
     "info":  {
                  "_postman_id":  "mustakbaly-api-collection",
                  "name":  "Mustakbaly Learning Module API",
-                 "description":  "Complete API collection for Mustakbaly Learning Management System. Learning Module endpoints (Course Types, Courses, Units, Lessons, Enrollments) do NOT require authentication for testing. Authentication endpoints require JWT.",
+                 "description":  "Complete API collection for Mustakbaly Learning Management System. Learning Module endpoints (Course Types, Courses, Units, Lessons, Enrollments) do NOT require authentication for testing. Authentication endpoints require JWT.\n\n**Latest Updates:**\n- Added enrollment status validation (only ACTIVE enrollments can complete lessons)\n- Added Get Course Duration endpoint\n- Added Update Enrollment endpoint\n- Removed outdated Reactivate Enrollment endpoint (use Update Enrollment Status with 'active' instead)\n- Lesson completion automatically updates enrollment progress and handles course completion",
                  "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
              },
     "item":  [
@@ -715,6 +715,38 @@
                                                                                ]
                                                               },
                                                       "description":  "Check if a course can be published"
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Course Duration",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{base_url}}/api/v1/courses/:courseId/duration",
+                                                                  "host":  [
+                                                                               "{{base_url}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "courses",
+                                                                               ":courseId",
+                                                                               "duration"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "courseId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Get the total duration of a course (calculated from all units and lessons)"
                                                   }
                                   },
                                   {
@@ -1830,6 +1862,45 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Update Enrollment",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Accept",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n    \"progress_percentage\": 75.50,\n    \"final_grade\": null\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{base_url}}/api/v1/enrollments/:enrollmentId",
+                                                                  "host":  [
+                                                                               "{{base_url}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "enrollments",
+                                                                               ":enrollmentId"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "enrollmentId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Update enrollment fields (progress_percentage, final_grade, etc.)"
+                                                  }
+                                  },
+                                  {
                                       "name":  "Update Enrollment Status",
                                       "request":  {
                                                       "method":  "PUT",
@@ -1866,39 +1937,7 @@
                                                                                    }
                                                                                ]
                                                               },
-                                                      "description":  "Update enrollment status (active, suspended, completed, cancelled)"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Reactivate Enrollment",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Accept",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "url":  {
-                                                                  "raw":  "{{base_url}}/api/v1/enrollments/:enrollmentId/reactivate",
-                                                                  "host":  [
-                                                                               "{{base_url}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "enrollments",
-                                                                               ":enrollmentId",
-                                                                               "reactivate"
-                                                                           ],
-                                                                  "variable":  [
-                                                                                   {
-                                                                                       "key":  "enrollmentId",
-                                                                                       "value":  "1"
-                                                                                   }
-                                                                               ]
-                                                              },
-                                                      "description":  "Reactivate a suspended or cancelled enrollment"
+                                                      "description":  "Update enrollment status (active, completed, dropped, suspended). Note: To reactivate a dropped/suspended enrollment, use status 'active'."
                                                   }
                                   },
                                   {

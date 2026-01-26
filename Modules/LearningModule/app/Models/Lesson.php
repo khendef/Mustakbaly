@@ -5,6 +5,7 @@ namespace Modules\LearningModule\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Builders\LessonBuilder;
 use Spatie\Activitylog\LogOptions;
@@ -77,6 +78,18 @@ class Lesson extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class, 'unit_id', 'unit_id');
+    }
+
+    /**
+     * Get the enrollments that have completed this lesson.
+     *
+     * @return BelongsToMany
+     */
+    public function completedByEnrollments(): BelongsToMany
+    {
+        return $this->belongsToMany(Enrollment::class, 'enrollment_lesson', 'lesson_id', 'enrollment_id')
+            ->withPivot(['completed_at'])
+            ->withTimestamps();
     }
 
     /**

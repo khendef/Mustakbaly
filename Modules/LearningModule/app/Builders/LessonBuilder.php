@@ -76,16 +76,6 @@ class LessonBuilder extends Builder
     }
 
     /**
-     * Eager load all relationships
-     *
-     * @return self
-     */
-    public function withAllRelations(): self
-    {
-        return $this->with(['unit']);
-    }
-
-    /**
      * Eager load unit relationship
      *
      * @return self

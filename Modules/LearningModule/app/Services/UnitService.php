@@ -122,22 +122,24 @@ class UnitService
         }
 
         try {
-            $unitId = $unit->unit_id;
-            $unitTitle = $unit->title;
-            $courseId = $unit->course_id;
-            $deleted = $unit->delete();
+            return DB::transaction(function () use ($unit) {
+                $unitId = $unit->unit_id;
+                $unitTitle = $unit->title;
+                $courseId = $unit->course_id;
+                $deleted = $unit->delete();
 
-            if ($deleted) {
-                // Clear unit and course cache after deletion
-                $this->clearUnitCache($unit);
-                Log::info("Unit deleted", [
-                    'unit_id' => $unitId,
-                    'title' => $unitTitle,
-                    'course_id' => $courseId,
-                ]);
-            }
+                if ($deleted) {
+                    // Clear unit and course cache after deletion
+                    $this->clearUnitCache($unit);
+                    Log::info("Unit deleted", [
+                        'unit_id' => $unitId,
+                        'title' => $unitTitle,
+                        'course_id' => $courseId,
+                    ]);
+                }
 
-            return $deleted;
+                return $deleted;
+            });
         } catch (Exception $e) {
             Log::error("Failed to delete unit", [
                 'unit_id' => $unit->unit_id,
@@ -238,9 +240,7 @@ class UnitService
      */
     public function getUnitsByCourse(Course $course, array $filters = [])
     {
-        $courseId = $course->course_id;
-
-        $query = Unit::where('course_id', $courseId)
+        $query = Unit::where('course_id', $course->course_id)
             ->with(['lessons']);
 
         // Apply filters

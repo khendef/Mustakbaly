@@ -211,11 +211,11 @@ class EnrollmentService
     }
 
     /**
-     * Calculate and update enrollment progress.
+     * Calculate enrollment progress percentage.
+     * Only calculates and returns the progress, does not update the enrollment.
      *
      * @param Enrollment $enrollment
-     * @return float
-     * @throws \Exception
+     * @return float|null
      */
     public function calculateProgress(Enrollment $enrollment): ?float
     {
@@ -231,22 +231,17 @@ class EnrollmentService
         try {
             // Get total lessons count
             $totalLessons = $this->getTotalLessonsCount($course);
+            $completedLessons = 0;
 
             if ($totalLessons === 0) {
                 // If no lessons, progress is 0
                 $progress = 0.00;
             } else {
                 // Get completed lessons count
-                $completedLessons = $this->getCompletedLessonsCount($course);
+                $completedLessons = $this->getCompletedLessonsCount($enrollment);
 
                 $progress = round(($completedLessons / $totalLessons) * 100, 2);
             }
-
-            // Update enrollment progress
-            $enrollment->update(['progress_percentage' => $progress]);
-
-            // Check if all lessons are completed and handle completion
-            $this->checkAndHandleCourseCompletion($enrollment);
 
             Log::info("Enrollment progress calculated", [
                 'enrollment_id' => $enrollment->enrollment_id,
@@ -258,6 +253,41 @@ class EnrollmentService
             return $progress;
         } catch (\Exception $e) {
             Log::error("Failed to calculate enrollment progress", [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Update enrollment progress and handle course completion.
+     *
+     * @param Enrollment $enrollment
+     * @return Enrollment|null
+     */
+    public function updateProgress(Enrollment $enrollment): ?Enrollment
+    {
+        try {
+            $progress = $this->calculateProgress($enrollment);
+
+            if ($progress === null) {
+                return null;
+            }
+
+            // Update enrollment progress
+            $enrollment->update(['progress_percentage' => $progress]);
+
+            // Clear enrollment cache after progress update
+            $this->clearEnrollmentCache($enrollment->learner_id, $enrollment->course_id);
+
+            // Check if all lessons are completed and handle completion
+            $this->handleCourseCompletion($enrollment);
+
+            return $enrollment->fresh();
+        } catch (\Exception $e) {
+            Log::error("Failed to update enrollment progress", [
                 'enrollment_id' => $enrollment->enrollment_id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -281,16 +311,19 @@ class EnrollmentService
 
     /**
      * Get completed lessons count for an enrollment.
-     * Counts lessons where is_completed is true for the course.
+     * Counts lessons that have been completed by the learner in this enrollment.
+     * Excludes soft-deleted lessons and units to match getTotalLessonsCount().
      *
      * @param Enrollment $enrollment
      * @return int
      */
-    protected function getCompletedLessonsCount(Course $course): int
+    protected function getCompletedLessonsCount(Enrollment $enrollment): int
     {
-        return Lesson::whereHas('unit', function ($query) use ($course) {
-            $query->where('course_id', $course->course_id);
-        })->where('is_completed', true)->count();
+        return Lesson::whereHas('unit', function ($query) use ($enrollment) {
+            $query->where('course_id', $enrollment->course_id);
+        })->whereHas('completedByEnrollments', function ($query) use ($enrollment) {
+            $query->where('enrollment_id', $enrollment->enrollment_id);
+        })->count();
     }
 
     /**
@@ -403,8 +436,7 @@ class EnrollmentService
         try {
             $totalUnits = Unit::where('course_id', $course->course_id)->count();
             $totalLessons = $this->getTotalLessonsCount($course);
-            $completedLessons = $this->getCompletedLessonsCount($course);
-
+            $completedLessons = $this->getCompletedLessonsCount($enrollment);
 
             return [
                 'enrollment_id' => $enrollment->enrollment_id,
@@ -430,9 +462,8 @@ class EnrollmentService
      *
      * @param Enrollment $enrollment
      * @return void
-     * @throws \Exception
      */
-    public function checkAndHandleCourseCompletion(Enrollment $enrollment): void
+    protected function handleCourseCompletion(Enrollment $enrollment): void
     {
         $course = $enrollment->course;
 
@@ -445,23 +476,24 @@ class EnrollmentService
 
         try {
             $totalLessons = $this->getTotalLessonsCount($course);
-            $completedLessons = $this->getCompletedLessonsCount($course);
+            $completedLessons = $this->getCompletedLessonsCount($enrollment);
 
             // If all lessons are completed, update progress to 100% and set completed_at
             if ($totalLessons > 0 && $completedLessons === $totalLessons) {
-                // Update progress to 100%
-                $enrollment->update(['progress_percentage' => 100.00]);
+                $updateData = ['progress_percentage' => 100.00];
 
                 // Set completed_at if not already set
                 // Note: We don't check exams/assignments here as per user's request
                 if (!$enrollment->completed_at) {
-                    $enrollment->update(['completed_at' => now()]);
+                    $updateData['completed_at'] = now();
                 }
 
                 // Update enrollment status to completed if not already
                 if ($enrollment->enrollment_status !== EnrollmentStatus::COMPLETED->value) {
-                    $this->updateStatus($enrollment, EnrollmentStatus::COMPLETED);
+                    $updateData['enrollment_status'] = EnrollmentStatus::COMPLETED->value;
                 }
+
+                $enrollment->update($updateData);
 
                 Log::info("Course completion handled for enrollment", [
                     'enrollment_id' => $enrollment->enrollment_id,
