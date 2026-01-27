@@ -2,11 +2,15 @@
 
 namespace Modules\OrganizationsModule\Providers;
 
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
+use Modules\OrganizationsModule\Models\Donor;
+use Modules\OrganizationsModule\Models\Program;
+use Modules\OrganizationsModule\Observers\DonorObserver;
+use Modules\OrganizationsModule\Observers\ProgramObserver;
 
 class OrganizationsModuleServiceProvider extends ServiceProvider
 {
@@ -27,6 +31,8 @@ class OrganizationsModuleServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
+     //   Program::observe(ProgramObserver::class);
+       // Donor::observe(DonorObserver::class);
     }
 
     /**
