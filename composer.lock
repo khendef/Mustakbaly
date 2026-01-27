@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4b34a5c7deff380cfc7e31e983a1c2be",
+    "content-hash": "a3dba3a8f853c9a1d4f5937ac094da87",
     "packages": [
         {
             "name": "brick/math",
@@ -442,6 +442,53 @@
             "time": "2025-10-31T18:51:33+00:00"
         },
         {
+            "name": "dyrynda/laravel-cascade-soft-deletes",
+            "version": "4.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/michaeldyrynda/laravel-cascade-soft-deletes.git",
+                "reference": "df5fee4003fc183c8ef46dc9055c1cada4182494"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/michaeldyrynda/laravel-cascade-soft-deletes/zipball/df5fee4003fc183c8ef46dc9055c1cada4182494",
+                "reference": "df5fee4003fc183c8ef46dc9055c1cada4182494",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/database": "^11.0 || ^12.0",
+                "illuminate/events": "^11.0 || ^12.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "pestphp/pest": "^2.34 || ^3.7",
+                "pestphp/pest-plugin-drift": "^2.5"
+            },
+            "type": "utility",
+            "autoload": {
+                "psr-4": {
+                    "Dyrynda\\Database\\Support\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Michael Dyrynda",
+                    "email": "michael@dyrynda.com.au",
+                    "homepage": "https://dyrynda.com.au"
+                }
+            ],
+            "description": "Cascading deletes for Eloquent models that implement soft deletes",
+            "support": {
+                "issues": "https://github.com/michaeldyrynda/laravel-cascade-soft-deletes/issues",
+                "source": "https://github.com/michaeldyrynda/laravel-cascade-soft-deletes/tree/4.5.0"
+            },
+            "time": "2025-02-26T10:22:40+00:00"
+        },
+        {
             "name": "egulias/email-validator",
             "version": "4.0.4",
             "source": {
@@ -578,84 +625,6 @@
                 }
             ],
             "time": "2025-12-03T09:33:47+00:00"
-        },
-        {
-            "name": "giggsey/libphonenumber-for-php-lite",
-            "version": "9.0.21",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/giggsey/libphonenumber-for-php-lite.git",
-                "reference": "ab593d0ced185c149459d283a770d842662dd54e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/giggsey/libphonenumber-for-php-lite/zipball/ab593d0ced185c149459d283a770d842662dd54e",
-                "reference": "ab593d0ced185c149459d283a770d842662dd54e",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^8.1",
-                "symfony/polyfill-mbstring": "^1.17"
-            },
-            "conflict": {
-                "giggsey/libphonenumber-for-php": "*"
-            },
-            "require-dev": {
-                "ext-dom": "*",
-                "friendsofphp/php-cs-fixer": "^3.71",
-                "infection/infection": "^0.29|^0.31.0",
-                "nette/php-generator": "^4.1",
-                "php-coveralls/php-coveralls": "^2.7",
-                "phpstan/extension-installer": "^1.4.3",
-                "phpstan/phpstan": "^2.1.7",
-                "phpstan/phpstan-deprecation-rules": "^2.0.1",
-                "phpstan/phpstan-phpunit": "^2.0.4",
-                "phpstan/phpstan-strict-rules": "^2.0.3",
-                "phpunit/phpunit": "^10.5.45",
-                "symfony/console": "^6.4",
-                "symfony/filesystem": "^6.4",
-                "symfony/process": "^6.4"
-            },
-            "suggest": {
-                "giggsey/libphonenumber-for-php": "Use libphonenumber-for-php for geocoding, carriers, timezones and matching"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "9.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "libphonenumber\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Joshua Gigg",
-                    "email": "giggsey@gmail.com",
-                    "homepage": "https://giggsey.com/"
-                }
-            ],
-            "description": "A lite version of giggsey/libphonenumber-for-php, which is a PHP Port of Google's libphonenumber",
-            "homepage": "https://github.com/giggsey/libphonenumber-for-php-lite",
-            "keywords": [
-                "geocoding",
-                "geolocation",
-                "libphonenumber",
-                "mobile",
-                "phonenumber",
-                "validation"
-            ],
-            "support": {
-                "issues": "https://github.com/giggsey/libphonenumber-for-php-lite/issues",
-                "source": "https://github.com/giggsey/libphonenumber-for-php-lite"
-            },
-            "time": "2025-12-18T14:36:21+00:00"
         },
         {
             "name": "graham-campbell/result-type",
@@ -11147,12 +11116,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
 }
