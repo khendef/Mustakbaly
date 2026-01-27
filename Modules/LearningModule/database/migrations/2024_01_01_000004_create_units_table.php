@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->id('unit_id');
-            $table->foreignId('course_id')->constrained('courses', 'course_id');
+            $table->foreignId('course_id')->constrained('courses', 'course_id')->restrictOnDelete();
             $table->integer('unit_order')->nullable();
             $table->string('title', 255);
             $table->text('description')->nullable();

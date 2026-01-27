@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('lessons', function (Blueprint $table) {
             $table->id('lesson_id');
-            $table->foreignId('unit_id')->constrained('units', 'unit_id')->cascadeOnDelete();
+            $table->foreignId('unit_id')->constrained('units', 'unit_id')->restrictOnDelete();
             $table->integer('lesson_order')->nullable();
             $table->string('title', 255);
             $table->text('description')->nullable();

@@ -16,8 +16,8 @@ return new class extends Migration
     {
         Schema::create('enrollment_lesson', function (Blueprint $table) {
             $table->id('enrollment_lesson_id');
-            $table->foreignId('enrollment_id')->constrained('enrollments', 'enrollment_id')->cascadeOnDelete();
-            $table->foreignId('lesson_id')->constrained('lessons', 'lesson_id')->cascadeOnDelete();
+            $table->foreignId('enrollment_id')->constrained('enrollments', 'enrollment_id')->restrictOnDelete();
+            $table->foreignId('lesson_id')->constrained('lessons', 'lesson_id')->restrictOnDelete();
             $table->timestamp('completed_at')->useCurrent();
             $table->timestamps();
 
