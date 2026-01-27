@@ -3,14 +3,16 @@
 namespace Modules\LearningModule\Models;
 
 use App\Traits\LogsActivity;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Builders\CourseTypeBuilder;
 use Spatie\Activitylog\LogOptions;
 
 class CourseType extends Model
 {
-    use LogsActivity;
+    use LogsActivity, SoftDeletes, CascadeSoftDeletes;
 
     /**
      * Represents a course type or category in the e-learning platform.
@@ -23,6 +25,7 @@ class CourseType extends Model
      * @var string
      */
     protected $primaryKey = 'course_type_id';
+    protected $cascadeDeletes = ['course'];
 
     /**
      * The attributes that are mass assignable.

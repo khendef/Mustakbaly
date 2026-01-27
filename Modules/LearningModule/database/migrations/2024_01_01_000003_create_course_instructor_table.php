@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('course_instructor', function (Blueprint $table) {
             $table->id('course_instructor_id');
-            $table->foreignId('course_id')->constrained('courses', 'course_id')->cascadeOnDelete();
+            $table->foreignId('course_id')->constrained('courses', 'course_id')->restrictOnDelete();
             $table->foreignId('instructor_id')->constrained('users', 'id')->cascadeOnDelete();
             $table->foreignId('assigned_by')->nullable()->constrained('users', 'id')->cascadeOnDelete();
             $table->boolean('is_primary')->default(false);
