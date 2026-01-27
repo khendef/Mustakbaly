@@ -9,7 +9,7 @@ use Modules\AssesmentModule\Http\Controllers\Api\v2\QuestionController;
 use Modules\AssesmentModule\Http\Controllers\Api\v2\QuestionOptionController;
 use Modules\AssesmentModule\Http\Controllers\Api\v2\QuizController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:api'])->prefix('v1')->group(function () {
     Route::apiResource('assesmentmodules', AssesmentModuleController::class)->names('assesmentmodule');
 });
 Route::prefix('v2')->group(function () {

@@ -2,8 +2,18 @@
 namespace App\Http\Controllers;
 use Illuminate\Pagination\LengthAwarePaginator;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+/**
+ * Base controller class for all application controllers.
+ * Provides a common foundation for controller functionality in the Laravel application.
+ */
 abstract class Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Return a success JSON response.
      *
@@ -77,6 +87,6 @@ abstract class Controller
                 'current_page' => $paginator->currentPage(), // The current page number
                 'total_pages' => $paginator->lastPage(), // The last page number
             ],
-        ], $status);
+        ], $status, options: JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
     }
 }
