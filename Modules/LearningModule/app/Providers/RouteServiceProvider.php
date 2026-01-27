@@ -17,6 +17,23 @@ class RouteServiceProvider extends ServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        // Configure route model binding for models with slug support
+        // Course and CourseType need explicit binding for slug + ID fallback support
+
+        Route::bind('course', function ($value) {
+            // Try slug first, fallback to course_id for backward compatibility
+            return \Modules\LearningModule\Models\Course::where('slug', $value)
+                ->orWhere('course_id', $value)
+                ->firstOrFail();
+        });
+
+        Route::bind('courseType', function ($value) {
+            // Try slug first, fallback to course_type_id for backward compatibility
+            return \Modules\LearningModule\Models\CourseType::where('slug', $value)
+                ->orWhere('course_type_id', $value)
+                ->firstOrFail();
+        });
     }
 
     /**
