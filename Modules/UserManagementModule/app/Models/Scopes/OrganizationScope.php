@@ -10,7 +10,16 @@ use Illuminate\Support\Facades\Route;
 class OrganizationScope implements Scope
 {
     /**
-     * Apply the scope to a given Eloquent query builder.
+     --------------------------
+    | OrganizationScope
+     --------------------------
+     * Purpose: Ensures that every database query 
+     *          automatically filters data to the current organization context
+     * logic: When a Manager is logged in, this scope intercepts all Eloquent queries
+     * for the model (Program, Course, Instructor, Student) and injects a 'where' clause 
+     * based on the {organization} parameter in the URL
+     * @param Builder $builder
+     * @param Model $model
      */
     public function apply(Builder $builder, Model $model): void 
     {

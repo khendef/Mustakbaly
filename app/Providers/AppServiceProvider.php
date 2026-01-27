@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\User;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        /**
+          ---------------------------
+         | Gate: manage-organization
+          ---------------------------
+         * Purpose: Verifies that a user with a 'manager' role
+         *          actually has management rights over the requested organization
+         * Logic: 1. Checks the 'organization_user' pivot table
+         * 2. Filters by the current Organization ID
+         * 3. Validates that the pivot 'role' column is set to 'manager'
+         * @param  User  $user
+         * @param  Organization  $organization
+         * @return bool
+         */
         Gate::define('manage-organization', function ($user, $organization) {
 
           return $user->organizations()

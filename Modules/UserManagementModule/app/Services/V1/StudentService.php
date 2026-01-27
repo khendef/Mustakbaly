@@ -5,6 +5,7 @@ namespace Modules\UserManagementModule\Services\V1;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Modules\UserManagementModule\Enums\UserRole;
+use Modules\UserManagementModule\Http\Requests\Api\V1\Student\StudentStoreRequest;
 use Modules\UserManagementModule\Models\User;
 
 class StudentService
@@ -70,4 +71,45 @@ class StudentService
         });
         
     }
+
+    //'/complete-profile' studentController@fillProfileInfo'
+
+    public function fillProfileInfo(array $data)
+    {
+        if(!auth()->check()){
+            return [
+                'message' => 'please sign in'
+            ];
+        }
+
+        $user = auth()->user();
+        $user->studentProfile()->updateOrCreate(['user_id' => $user->id],$data);
+        $user->assignRole('student');
+        return $user;
+    }
+    
+      /**
+     * enrollment process
+     * transaction begins:
+     * 1. check profile
+     * 2. if not redirect to complete profile
+     * 3. assign role student
+     * 4. attach to organization
+     * 5. enroll the course
+     */
+
+    public function registerStudent($orgId)
+    {
+        $user = auth()->user();
+        //$orgId = $course->program->organization_id;
+        if(!$user->studentProfile()->exists()){
+            return [
+                'message' => 'student information incomplete'
+                // redirect to create new profile
+            ];
+        }
+        $user->organizations()->syncWithoutDetaching([$orgId => ['role' => 'student']]);   
+
+    }
+ 
 }
