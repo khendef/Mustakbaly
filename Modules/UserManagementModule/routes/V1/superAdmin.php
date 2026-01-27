@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\LearningModule\Http\Controllers\CourseController;
+use Modules\LearningModule\Http\Controllers\LessonController;
+use Modules\LearningModule\Http\Controllers\UnitController;
+use Modules\OrganizationsModule\Http\Controllers\Api\V1\OrganizationController;
 use Modules\OrganizationsModule\Http\Controllers\Api\V1\ProgramController;
 use Modules\UserManagementModule\Http\Controllers\Api\V1\UserController;
 
@@ -15,7 +19,7 @@ use Modules\UserManagementModule\Http\Controllers\Api\V1\UserController;
  * @access Super Admin Only 
  */
 
-Route::group(['prefix'=>'v1/super-admin','middleware'=>['auth:api','role:super-admin']],function(){
+Route::group(['prefix'=>'/super-admin','middleware'=>['auth:api','role:super-admin']],function(){
 
     /**
      * @name   Super Admin Dashboard
@@ -233,7 +237,7 @@ Route::group(['prefix'=>'v1/super-admin','middleware'=>['auth:api','role:super-a
      * @desc   Retrieve all  lessons belonging to a specific course unit.
      * @controller LessonController@index
     */
-    Route::get('/courses/{course}/units/{unit}/lessons',[lessonController::class,'index']);
+    Route::get('/courses/{course}/units/{unit}/lessons',[LessonController::class,'index']);
 
     /**
      * @name   View Lesson Details
@@ -241,7 +245,7 @@ Route::group(['prefix'=>'v1/super-admin','middleware'=>['auth:api','role:super-a
      * @desc   Fetch full content for a specific lesson.
      * @controller LessonController@show
     */
-    Route::get('/courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'show']);
+    Route::get('/courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'show']);
 
     /**
      * @name   Create Lesson for a course unit
@@ -250,7 +254,7 @@ Route::group(['prefix'=>'v1/super-admin','middleware'=>['auth:api','role:super-a
      * @body   {title: string,....}
      * @controller LessonController@store
     */
-    Route::post('/courses/{course}/units/{unit}/lessons',[lessonController::class,'store']);
+    Route::post('/courses/{course}/units/{unit}/lessons',[LessonController::class,'store']);
 
     /**
      * @name   Update Lesson
@@ -258,7 +262,7 @@ Route::group(['prefix'=>'v1/super-admin','middleware'=>['auth:api','role:super-a
      * @desc   Edit lesson content
      * @controller LessonController@update
     */
-    Route::put('/courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'update']);
+    Route::put('/courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'update']);
 
     /**
      * @name   Delete Lesson
@@ -266,7 +270,7 @@ Route::group(['prefix'=>'v1/super-admin','middleware'=>['auth:api','role:super-a
      * @desc   Soft Deletes a lesson from the unit.
      * @controller LessonController@destroy
     */
-    Route::delete('/courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'destroy']);
+    Route::delete('/courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'destroy']);
 
     /** 
     |--------------------------------------------------------------------------

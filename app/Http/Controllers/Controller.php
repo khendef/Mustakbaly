@@ -1,10 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use Illuminate\Pagination\LengthAwarePaginator;
-
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Base controller class for all application controllers.

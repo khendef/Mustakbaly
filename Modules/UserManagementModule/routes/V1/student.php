@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\LearningModule\Http\Controllers\CourseController;
+use Modules\LearningModule\Http\Controllers\LessonController;
+use Modules\LearningModule\Http\Controllers\UnitController;
 
 /**
  |----------------------------------------------------
@@ -16,7 +19,7 @@ use Illuminate\Support\Facades\Route;
  * @access Student Only
  * @scope  CourseAccessScope (filters courses by student to insure students can only access their enrolled courses)
  */
-Route::group(['prefix'=>'v1','middleware'=>['auth:api','role:student']],function(){
+Route::group(['middleware'=>['auth:api','role:student']],function(){
     /**
      * @name   Student's Enrolled Courses
      * @path   GET /api/v1/student/my-learning

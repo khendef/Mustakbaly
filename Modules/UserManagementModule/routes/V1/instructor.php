@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\LearningModule\Http\Controllers\CourseController;
+use Modules\LearningModule\Http\Controllers\LessonController;
+use Modules\LearningModule\Http\Controllers\UnitController;
 
 
 /**
@@ -17,7 +20,7 @@ use Illuminate\Support\Facades\Route;
  * @access Instructor Only
  * @scope  CourseAccessScope (filters courses by instructor to insure instructors can only access their assigned courses)
  */
-Route::group(['prefix'=>'v1','middleware'=>['auth:api','role:instructor']],function(){
+Route::group(['middleware'=>['auth:api','role:instructor']],function(){
 
     /** 
     |--------------------------------------------------------------------------
@@ -94,34 +97,34 @@ Route::group(['prefix'=>'v1','middleware'=>['auth:api','role:instructor']],funct
      * @path   GET /api/v1/my-courses/{course}/units/{unit}/lessons
      * @desc   List all learning materials in a specific unit within instructor's requested course
     */
-    Route::get('/my-courses/{course}/units/{unit}/lessons',[lessonController::class,'index']);
+    Route::get('/my-courses/{course}/units/{unit}/lessons',[LessonController::class,'index']);
 
     /**
      * @name   View Lesson
      * @path   GET /api/v1/my-courses/{course}/units/{unit}/lessons/{lesson}
      * @desc   Retrieve lesson content for review or editing.
      */
-    Route::get('/my-courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'show']);
+    Route::get('/my-courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'show']);
 
     /**
      * @name   Create Lesson
      * @path   POST /api/v1/my-courses/{course}/units/{unit}/lessons
      * @desc   Add a new lesson
     */
-    Route::post('/my-courses/{course}/units/{unit}/lessons',[lessonController::class,'store']);
+    Route::post('/my-courses/{course}/units/{unit}/lessons',[LessonController::class,'store']);
 
     /**
      * @name   Update Lesson
      * @path   PUT /api/v1/my-courses/{course}/units/{unit}/lessons/{lesson}
      * @desc   Modify lesson content
      */
-    Route::put('/my-courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'update']);
+    Route::put('/my-courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'update']);
 
     /**
      * @name   Delete Lesson
      * @path   DELETE /api/v1/my-courses/{course}/units/{unit}/lessons/{lesson}
      * @desc   Soft Deletes lesson content.
      */
-    Route::delete('/my-courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'destroy']);
+    Route::delete('/my-courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'destroy']);
 
 });

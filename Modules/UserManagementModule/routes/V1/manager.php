@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\LearningModule\Http\Controllers\CourseController;
+use Modules\LearningModule\Http\Controllers\LessonController;
+use Modules\LearningModule\Http\Controllers\UnitController;
+use Modules\OrganizationsModule\Http\Controllers\Api\V1\ProgramController;
 use Modules\UserManagementModule\Http\Controllers\Api\V1\AuditorController;
 use Modules\UserManagementModule\Http\Controllers\Api\V1\InstructorController;
 use Modules\UserManagementModule\Http\Controllers\Api\V1\StudentController;
@@ -23,7 +27,7 @@ use Modules\UserManagementModule\Http\Controllers\Api\V1\StudentController;
  * @middleware can:manage-organization 
  * @scope   OrganizationScope (filters data based on requeste organization to insure data isolation between organizations)
  */
-Route::group(['prefix'=>'v1/{organization}/manage','middleware'=>['auth:api','role:manager','can:manage-organization,organization']],function(){
+Route::group(['prefix'=>'/{organization}/manage','middleware'=>['auth:api','role:manager','can:manage-organization,organization']],function(){
   /** 
     |--------------------------------------------------------------------------
     | Dashboard & Reports
@@ -151,11 +155,11 @@ Route::group(['prefix'=>'v1/{organization}/manage','middleware'=>['auth:api','ro
      * @path   /api/v1/{org}/manage/courses/{course}/units{unit}/lessons
      * @desc   List|Create|Update|Delete lessons for a specific course unit in the requested organization.
     */
-   Route::get('/courses/{course}/units/{unit}/lessons',[lessonController::class,'index']);
-   Route::get('/courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'show']);
-   Route::post('/courses/{course}/units/{unit}/lessons',[lessonController::class,'store']);
-   Route::put('/courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'update']);
-   Route::delete('/courses/{course}/units/{unit}/lessons/{lesson}',[lessonController::class,'destroy']);
+   Route::get('/courses/{course}/units/{unit}/lessons',[LessonController::class,'index']);
+   Route::get('/courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'show']);
+   Route::post('/courses/{course}/units/{unit}/lessons',[LessonController::class,'store']);
+   Route::put('/courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'update']);
+   Route::delete('/courses/{course}/units/{unit}/lessons/{lesson}',[LessonController::class,'destroy']);
 
     /** 
     |--------------------------------------------------------------------------
