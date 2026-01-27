@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('enrollments', function (Blueprint $table) {
             $table->id('enrollment_id');
-            $table->foreignId('learner_id')->constrained('users', 'id')->cascadeOnDelete();
+            $table->foreignId('learner_id')->constrained('users', 'id')->restrictOnDelete();
             $table->foreignId('course_id')->constrained('courses', 'course_id')->restrictOnDelete();
             $table->foreignId('enrolled_by')->nullable()->constrained('users', 'id')->cascadeOnDelete();
             $table->string('enrollment_type', 20)->default('self'); // self, assigned
