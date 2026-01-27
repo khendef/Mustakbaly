@@ -1,5 +1,5 @@
 <?php
-namespace Modules\OrganizationsModule\Http\RequestsV1\Program;
+namespace Modules\OrganizationsModule\Http\Requests\V1\Program;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProgramFilterRequest extends FormRequest
