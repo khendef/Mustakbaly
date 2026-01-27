@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
+use Modules\OrganizationsModule\Models\Organization;
 use Modules\UserManagementModule\App\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
