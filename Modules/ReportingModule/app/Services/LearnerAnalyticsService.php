@@ -134,7 +134,7 @@ class LearnerAnalyticsService
      * @param \Illuminate\Support\Collection $enrollments
      * @return float
      */
-    private function calculateAverageCompletionTime($enrollments): float
+    public function calculateAverageCompletionTime($enrollments): float
     {
         $completed = $enrollments->where('enrollment_status', EnrollmentStatus::COMPLETED)
             ->whereNotNull('completed_at');
@@ -156,7 +156,7 @@ class LearnerAnalyticsService
      * @param \Illuminate\Support\Collection $enrollments
      * @return array
      */
-    private function getPerformanceByCourse($enrollments): array
+    public function getPerformanceByCourse($enrollments): array
     {
         return $enrollments->groupBy('course_id')->map(function ($courseEnrollments) {
             $total = $courseEnrollments->count();
@@ -168,6 +168,51 @@ class LearnerAnalyticsService
                 'total_enrollments' => $total,
                 'average_progress' => round($courseEnrollments->avg('progress_percentage') ?? 0, 2),
                 'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 2) : 0,
+            ];
+        })->values()->toArray();
+    }
+
+
+    /**
+     * Get learner progress by course
+     *
+     * @param int $learnerId
+     * @return array
+     */
+    public function getLearnerProgressByCourse(int $learnerId): array
+    {
+        return Enrollment::where('learner_id', $learnerId)
+            ->with('course')
+            ->get()
+            // map the enrollments from the collection of model to an array of course_id, course_title, progress, and status
+            ->map(function ($enrollment) {
+                return [
+                    'course_id' => $enrollment->course_id,
+                    'course_title' => $enrollment->course->title,
+                    'progress' => (float)$enrollment->progress_percentage,
+                    'status' => $enrollment->enrollment_status->value,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get skills acquired (based on completed courses)
+     *
+     * @param \Illuminate\Support\Collection $completedEnrollments
+     * @return array
+     */
+    public function getSkillsAcquired($completedEnrollments): array
+    {
+        $coursesByType = $completedEnrollments->groupBy(function ($enrollment) {
+            return $enrollment->course->courseType->name ?? 'Unknown';
+        });
+
+        return $coursesByType->map(function ($enrollments, $typeName) {
+            return [
+                'skill_category' => $typeName,
+                'courses_completed' => $enrollments->pluck('course_id')->unique()->count(),
+                'beneficiaries_count' => $enrollments->pluck('learner_id')->unique()->count(),
             ];
         })->values()->toArray();
     }

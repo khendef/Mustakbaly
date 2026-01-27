@@ -27,6 +27,7 @@ class GenerateDonorReportRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'program_id' => ['required', 'integer', 'exists:programs,program_id'],
             'course_type_id' => ['nullable', 'integer', 'exists:course_types,course_type_id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -49,4 +50,3 @@ class GenerateDonorReportRequest extends FormRequest
         ];
     }
 }
-

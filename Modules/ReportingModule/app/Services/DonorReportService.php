@@ -13,8 +13,19 @@ use App\Models\User;
  */
 class DonorReportService
 {
+    protected CourseAnalyticsService $courseAnalyticsService;
+    protected LearnerAnalyticsService $learnerAnalyticsService;
     /**
-     * Generate comprehensive donor report
+     * Create a new service instance
+     *
+     * @param LearnerAnalyticsService $learnerAnalyticsService
+     */
+    public function __construct(LearnerAnalyticsService $learnerAnalyticsService, CourseAnalyticsService $courseAnalyticsService)
+    {
+        $this->learnerAnalyticsService = $learnerAnalyticsService;
+    }
+    /**
+     * Generate comprehensive donor report for a program
      *
      * @param array $filters
      * @return array
@@ -22,7 +33,9 @@ class DonorReportService
     public function generateComprehensiveReport(array $filters): array
     {
         // query to get the enrollments with the learner, course, and course type
-        $query = Enrollment::query();
+        $query = Enrollment::query()->whereHas('course', function ($q) use ($filters) {
+            $q->where('program_id', $filters["program_id"]);
+        });
 
         if (isset($filters['date_from'])) {
             $query->where('enrolled_at', '>=', $filters['date_from']);
@@ -57,61 +70,15 @@ class DonorReportService
                 'completed_beneficiaries' => $completedEnrollments->pluck('learner_id')->unique()->count(),
             ],
             'courses' => [
+                'total_courses' => $enrollments->pluck('course_id')->unique()->count(),
                 'total_enrollments' => $enrollments->count(),
                 'completed_enrollments' => $completedEnrollments->count(),
                 'completion_rate' => $enrollments->count() > 0
                     ? round(($completedEnrollments->count() / $enrollments->count()) * 100, 2)
                     : 0,
-                'courses_by_type' => $this->getCompletedCoursesByType($enrollments),
+                'courses_by_type' => $this->courseAnalyticsService->getPopularityByCourseType($enrollments),
             ],
-            'skills_acquired' => $this->getSkillsAcquired($completedEnrollments),
+            'skills_acquired' => $this->learnerAnalyticsService->getSkillsAcquired($completedEnrollments),
         ];
-    }
-
-    /**
-     * Get report of courses completed by course type
-     *
-     * @param \Illuminate\Support\Collection $enrollments
-     * @return array
-     */
-    private function getCompletedCoursesByType($enrollments): array
-    {
-        return $enrollments->groupBy(function ($enrollment) {
-            return $enrollment->course->courseType->name ?? 'Unknown';
-            // typeName is the name of the course type
-            // typeEnrollments is the collection of enrollments for the course type
-        })->map(function ($typeEnrollments, $typeName) {
-            $completed = $typeEnrollments->where('enrollment_status', EnrollmentStatus::COMPLETED)->count();
-            // return the course type name, total enrollments, completed enrollments, and completion rate
-            return [
-                'course_type' => $typeName,
-                'total_enrollments' => $typeEnrollments->count(),
-                'completed_enrollments' => $completed,
-                'completion_rate' => $typeEnrollments->count() > 0
-                    ? round(($completed / $typeEnrollments->count()) * 100, 2)
-                    : 0,
-            ];
-        })->values()->toArray();
-    }
-
-    /**
-     * Get skills acquired (based on completed courses)
-     *
-     * @param \Illuminate\Support\Collection $completedEnrollments
-     * @return array
-     */
-    private function getSkillsAcquired($completedEnrollments): array
-    {
-        $coursesByType = $completedEnrollments->groupBy(function ($enrollment) {
-            return $enrollment->course->courseType->name ?? 'Unknown';
-        });
-
-        return $coursesByType->map(function ($enrollments, $typeName) {
-            return [
-                'skill_category' => $typeName,
-                'courses_completed' => $enrollments->pluck('course_id')->unique()->count(),
-                'beneficiaries_count' => $enrollments->pluck('learner_id')->unique()->count(),
-            ];
-        })->values()->toArray();
     }
 }

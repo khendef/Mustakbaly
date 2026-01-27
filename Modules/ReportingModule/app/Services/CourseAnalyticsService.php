@@ -102,7 +102,7 @@ class CourseAnalyticsService
      * @param \Illuminate\Support\Collection $courses
      * @return array
      */
-    private function getPopularityByCourseType($courses): array
+    public function getPopularityByCourseType($courses): array
     {
         return $courses->groupBy('course_type_id')->map(function ($typeCourses) {
             return [
@@ -112,5 +112,94 @@ class CourseAnalyticsService
                 'total_enrollments' => $typeCourses->sum('enrollments_count'),
             ];
         })->values()->toArray();
+    }
+
+
+    /**
+     * Get top performing courses for instructor
+     *
+     * @param int $instructorId
+     * @return array
+     */
+    public function getTopPerformingCourses(int $instructorId): array
+    {
+        return Course::whereHas('instructors', function ($query) use ($instructorId) {
+            $query->where('instructor_id', $instructorId);
+        })
+            ->with(['enrollments' => function ($query) {
+                $query->where('enrollment_status', EnrollmentStatus::COMPLETED);
+            }])
+            ->get()
+            ->map(function ($course) {
+                $avgProgress = $course->enrollments->avg('progress_percentage') ?? 0;
+                return [
+                    'course_id' => $course->course_id,
+                    'title' => $course->title,
+                    'average_progress' => round($avgProgress, 2),
+                    'completion_count' => $course->enrollments->count(),
+                ];
+            })
+            ->sortByDesc('average_progress')
+            ->take(5)
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Identify learning gaps
+     *
+     * @return array
+     */
+    public function identifyLearningGaps(): array
+    {
+        // Courses with low completion rates
+        $lowCompletionCourses = Course::withCount(['enrollments as completed_count' => function ($query) {
+            $query->where('enrollment_status', EnrollmentStatus::COMPLETED);
+        }])
+            ->withCount('enrollments')
+            ->havingRaw('enrollments_count > 0')
+            ->get()
+            ->filter(function ($course) {
+                if ($course->enrollments_count == 0) {
+                    return false;
+                }
+                $completionRate = ($course->completed_count / $course->enrollments_count) * 100;
+                return $completionRate < 30;
+            })
+            ->take(5)
+            ->map(function ($course) {
+                $completionRate = $course->enrollments_count > 0
+                    ? round(($course->completed_count / $course->enrollments_count) * 100, 2)
+                    : 0;
+                return [
+                    'course_id' => $course->course_id,
+                    'title' => $course->title,
+                    'completion_rate' => $completionRate,
+                    'total_enrollments' => $course->enrollments_count,
+                ];
+            })
+            ->values();
+
+        // Courses with low average progress
+        $lowProgressCourses = Course::with('enrollments')
+            ->get()
+            ->map(function ($course) {
+                $avgProgress = $course->enrollments->avg('progress_percentage') ?? 0;
+                return [
+                    'course_id' => $course->course_id,
+                    'title' => $course->title,
+                    'average_progress' => round($avgProgress, 2),
+                ];
+            })
+            ->filter(function ($course) {
+                return $course['average_progress'] < 30;
+            })
+            ->take(5)
+            ->values();
+
+        return [
+            'low_completion_courses' => $lowCompletionCourses,
+            'low_progress_courses' => $lowProgressCourses,
+        ];
     }
 }
