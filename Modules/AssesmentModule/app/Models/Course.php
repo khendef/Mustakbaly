@@ -1,0 +1,13 @@
+<?php
+
+namespace Modules\AssesmentModule\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+class Course extends Model
+{
+     use HasFactory;
+    protected $fillable = [
+        'id',
+    ];
+}
