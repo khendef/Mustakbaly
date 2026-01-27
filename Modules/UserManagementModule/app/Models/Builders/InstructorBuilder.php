@@ -1,5 +1,5 @@
 <?php
-namespace Modules\UserManagementModule\App\Models\Builders;
+namespace Modules\UserManagementModule\Models\Builders;
 
 use Illuminate\Database\Eloquent\Builder;
 
