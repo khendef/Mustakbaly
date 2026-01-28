@@ -1,8 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\ReportingModule\Http\Controllers\ReportingModuleController;
+
+/*
+|--------------------------------------------------------------------------
+| Reporting Module Web Routes
+|--------------------------------------------------------------------------
+|
+| Web routes for the Reporting Module.
+| Note: Add your web routes here when needed.
+|
+*/
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('reportingmodules', ReportingModuleController::class)->names('reportingmodule');
+    // Add web routes here as needed
+    // Example: Route::get('/reporting', [YourController::class, 'index'])->name('reporting.index');
 });
