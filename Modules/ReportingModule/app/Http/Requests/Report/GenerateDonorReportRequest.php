@@ -1,0 +1,52 @@
+<?php
+
+namespace Modules\ReportingModule\Http\Requests\Report;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+/**
+ * Form request for generating donor report
+ */
+class GenerateDonorReportRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'program_id' => ['required', 'integer', 'exists:programs,program_id'],
+            'course_type_id' => ['nullable', 'integer', 'exists:course_types,course_type_id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'course_type_id.integer' => 'The course type ID must be an integer.',
+            'course_type_id.exists' => 'The selected course type does not exist.',
+            'date_from.date' => 'The date from must be a valid date.',
+            'date_to.date' => 'The date to must be a valid date.',
+            'date_to.after_or_equal' => 'The date to must be after or equal to date from.',
+        ];
+    }
+}

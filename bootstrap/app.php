@@ -4,6 +4,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -33,43 +34,41 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Request $request, Throwable $exception) {
 
-           // Unauthenticated
-        if ($exception instanceof AuthenticationException) {
-            return Controller::error('Unauthenticated', 401);
-        }
+            // Unauthenticated
+            if ($exception instanceof AuthenticationException) {
+                return Controller::error('Unauthenticated', 401);
+            }
 
-        // Not found
-        if ($exception instanceof NotFoundHttpException) {
-            return Controller::error('Not found', 404);
-        }
+            // Not found
+            if ($exception instanceof NotFoundHttpException) {
+                return Controller::error('Not found', 404);
+            }
 
-        if ($exception instanceof ModelNotFoundException) {
-            $model = class_basename($exception->getModel());
-            return Controller::error("$model Not found", 404);
-        }
+            if ($exception instanceof ModelNotFoundException) {
+                $model = class_basename($exception->getModel());
+                return Controller::error("$model Not found", 404);
+            }
 
-        // Validation
+            // Validation
 
-  if ($exception instanceof ValidationException) {
-            return Controller::error($exception->errors(), 422);
-        }
+            if ($exception instanceof ValidationException) {
+                return Controller::error($exception->errors(), 422);
+            }
 
-        // HttpException
-        if ($exception instanceof HttpException) {
-            return Controller::error($exception->getMessage() ?: 'Error', $exception->getStatusCode());
-        }
+            // HttpException
+            if ($exception instanceof HttpException) {
+                return Controller::error($exception->getMessage() ?: 'Error', $exception->getStatusCode());
+            }
 
-        //role
-        if ($exception instanceof \Spatie\Permission\Exceptions\UnauthorizedException) {
-            return Controller::error('Unauthorized', 403);
-        }
-        // Authorization
-       if ($exception instanceof AuthorizationException) {
-        return Controller::error($exception->getMessage(), 403);
+            //role
+            if ($exception instanceof \Spatie\Permission\Exceptions\UnauthorizedException) {
+                return Controller::error('Unauthorized', 403);
+            }
+            // Authorization
+            if ($exception instanceof AuthorizationException) {
+                return Controller::error($exception->getMessage(), 403);
+            }
 
-    }
-
-        return null;
-    });
-
-})->create();
+            return null;
+        });
+    })->create();
