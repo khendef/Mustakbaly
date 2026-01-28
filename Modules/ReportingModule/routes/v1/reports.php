@@ -1,9 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\ReportingModule\Http\Controllers\LearnerReportController;
-use Modules\ReportingModule\Http\Controllers\CourseReportController;
-use Modules\ReportingModule\Http\Controllers\DonorReportController;
+use Modules\ReportingModule\Http\Controllers\AdminDashboardController;
+use Modules\ReportingModule\Http\Controllers\ManagerPartnerOrganizationDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,31 +11,42 @@ use Modules\ReportingModule\Http\Controllers\DonorReportController;
 */
 
 Route::prefix('reports')->group(function () {
-    // Learner Reports
+    // Learner Reports (using AdminDashboardController)
     Route::prefix('learners')->group(function () {
-        Route::get('/performance', [LearnerReportController::class, 'performanceReport'])
+        Route::get('/performance', [AdminDashboardController::class, 'generatePerformanceReport'])
             ->name('reports.learners.performance');
         
-        Route::get('/completion-rates', [LearnerReportController::class, 'completionRates'])
+        Route::get('/completion-rates', [AdminDashboardController::class, 'getCompletionRates'])
             ->name('reports.learners.completion-rates');
         
-        Route::get('/learning-time', [LearnerReportController::class, 'learningTime'])
+        Route::get('/learning-time', [AdminDashboardController::class, 'getLearningTimeAnalysis'])
             ->name('reports.learners.learning-time');
     });
 
-    // Course Reports
+    // Course Reports (using AdminDashboardController and ManagerPartnerOrganizationDashboardController)
     Route::prefix('courses')->group(function () {
-        Route::get('/popularity', [CourseReportController::class, 'popularityReport'])
+        Route::get('/popularity', [AdminDashboardController::class, 'generateCoursePopularityReport'])
             ->name('reports.courses.popularity');
         
-        Route::get('/content-performance', [CourseReportController::class, 'contentPerformance'])
+        Route::get('/content-performance/{courseId}', [AdminDashboardController::class, 'getContentPerformance'])
             ->name('reports.courses.content-performance');
+        
+        Route::get('/learning-gaps', [AdminDashboardController::class, 'identifyLearningGaps'])
+            ->name('reports.courses.learning-gaps');
     });
 
-    // Donor Reports
-    Route::prefix('donors')->group(function () {
-        Route::get('/comprehensive', [DonorReportController::class, 'comprehensiveReport'])
-            ->name('reports.donors.comprehensive');
+    // Partner Organization Course Reports
+    Route::prefix('partner-organization')->group(function () {
+        Route::prefix('courses')->group(function () {
+            Route::get('/popularity', [ManagerPartnerOrganizationDashboardController::class, 'generateCoursePopularityReport'])
+                ->name('reports.partner-organization.courses.popularity');
+            
+            Route::get('/content-performance/{courseId}', [ManagerPartnerOrganizationDashboardController::class, 'getContentPerformance'])
+                ->name('reports.partner-organization.courses.content-performance');
+            
+            Route::get('/learning-gaps', [ManagerPartnerOrganizationDashboardController::class, 'identifyLearningGaps'])
+                ->name('reports.partner-organization.courses.learning-gaps');
+        });
     });
 });
 
