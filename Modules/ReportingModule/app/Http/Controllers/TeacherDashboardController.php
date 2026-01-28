@@ -2,12 +2,11 @@
 
 namespace Modules\ReportingModule\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Modules\ReportingModule\Http\Requests\Dashboard\GetDashboardRequest;
-use Modules\ReportingModule\Http\Resources\DashboardResource;
-use Modules\ReportingModule\Services\DashboardService;
+use App\Http\Controllers\Controller;
+use Modules\ReportingModule\Services\TeacherDashboardService;
+use Modules\ReportingModule\Http\Resources\TeacherDashboardResource;
 
 /**
  * Controller for Teacher Dashboard
@@ -18,35 +17,34 @@ class TeacherDashboardController extends Controller
     /**
      * Dashboard service instance
      *
-     * @var DashboardService
+     * @var TeacherDashboardService
      */
-    protected DashboardService $dashboardService;
+    protected TeacherDashboardService $dashboardService;
 
     /**
      * Create a new controller instance
      *
-     * @param DashboardService $dashboardService
+     * @param TeacherDashboardService $dashboardService
      */
-    public function __construct(DashboardService $dashboardService)
+    public function __construct(TeacherDashboardService $dashboardService)
     {
         $this->dashboardService = $dashboardService;
     }
 
     /**
      * Get teacher dashboard data
-     * GET /api/v1/dashboards/teacher
+     * GET /api/v1/dashboards/teacher-dashboard/{instructorId}
      *
-     * @param GetDashboardRequest $request
+     * @param int $instructorId
      * @return JsonResponse
      */
-    public function index(GetDashboardRequest $request): JsonResponse
+    public function dashboard(int $instructorId): JsonResponse
     {
         try {
-            $instructorId = $request->user()->user_id;
-            $dashboard = $this->dashboardService->getInstructorDashboard($instructorId);
+            $dashboard = $this->dashboardService->getTeacherDashboard($instructorId);
 
             return $this->success(
-                new DashboardResource($dashboard),
+                new TeacherDashboardResource($dashboard),
                 'Teacher dashboard retrieved successfully.'
             );
         } catch (Exception $e) {

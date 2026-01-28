@@ -3,10 +3,11 @@
 namespace Modules\ReportingModule\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\Enrollment;
+use Modules\OrganizationsModule\Models\Program;
 use Modules\LearningModule\Enums\EnrollmentStatus;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Service for Partner Organization Dashboard
@@ -14,6 +15,20 @@ use Illuminate\Support\Facades\Cache;
  */
 class PartnerOrganizationDashboardService
 {
+    protected CourseAnalyticsService $courseAnalyticsService;
+    protected LearnerAnalyticsService $learnerAnalyticsService;
+    /**
+     * Create a new service instance
+     *
+     * @param LearnerAnalyticsService $learnerAnalyticsService
+     * @param CourseAnalyticsService $courseAnalyticsService
+     */
+    public function __construct(LearnerAnalyticsService $learnerAnalyticsService, CourseAnalyticsService $courseAnalyticsService)
+    {
+        $this->learnerAnalyticsService = $learnerAnalyticsService;
+        $this->courseAnalyticsService = $courseAnalyticsService;
+    }
+
     /**
      * Get partner organization dashboard data
      *
@@ -51,8 +66,6 @@ class PartnerOrganizationDashboardService
                 'program_statistics' => $this->getProgramStatistics($programs, $enrollments),
                 'learner_statistics' => $this->getLearnerStatistics($enrollments),
                 'course_statistics' => $this->getCourseStatistics($enrollments),
-                'program_performance' => $this->getProgramPerformance($programs, $enrollments),
-                'impact_metrics' => $this->getImpactMetrics($enrollments, $completedEnrollments),
             ];
         });
     }
@@ -72,31 +85,6 @@ class PartnerOrganizationDashboardService
     }
 
     /**
-     * Get organization enrollments
-     *
-     * @param int $organizationId
-     * @param array $filters
-     * @return \Illuminate\Support\Collection
-     */
-    private function getOrganizationEnrollments(int $organizationId, array $filters)
-    {
-        $query = Enrollment::query()->whereHas('course', function ($q) use ($organizationId) {
-            // TODO: Update when organization relationship is available
-            // $q->where('organization_id', $organizationId);
-        });
-
-        if (isset($filters['date_from'])) {
-            $query->where('enrolled_at', '>=', $filters['date_from']);
-        }
-
-        if (isset($filters['date_to'])) {
-            $query->where('enrolled_at', '<=', $filters['date_to']);
-        }
-
-        return $query->with(['course', 'learner'])->get();
-    }
-
-    /**
      * Get program statistics
      *
      * @param \Illuminate\Support\Collection $programs
@@ -105,8 +93,14 @@ class PartnerOrganizationDashboardService
      */
     private function getProgramStatistics($programs, $enrollments): array
     {
-        // TODO: Implement when Program model is available
-        return [];
+        return $programs->map(function ($program) use ($enrollments) {
+            return [
+                'program_id' => $program->id,
+                'program_title' => $program->title,
+                'total_enrollments' => $enrollments->where('program_id', $program->id)->count(),
+                'completed_enrollments' => $enrollments->where('program_id', $program->id)->where('enrollment_status', EnrollmentStatus::COMPLETED)->count(),
+            ];
+        })->toArray();
     }
 
     /**
@@ -156,37 +150,60 @@ class PartnerOrganizationDashboardService
     }
 
     /**
-     * Get program performance metrics
+     * Generate comprehensive donor report for a program
      *
-     * @param \Illuminate\Support\Collection $programs
-     * @param \Illuminate\Support\Collection $enrollments
+     * @param array $filters
      * @return array
      */
-    private function getProgramPerformance($programs, $enrollments): array
+    public function generateComprehensiveReport(array $filters): array
     {
-        // TODO: Implement when Program model is available
-        return [];
-    }
+        // query to get the enrollments with the learner, course, and course type
+        $query = Enrollment::query()->whereHas('course', function ($q) use ($filters) {
+            $q->where('program_id', $filters["program_id"]);
+        });
 
-    /**
-     * Get impact metrics
-     *
-     * @param \Illuminate\Support\Collection $enrollments
-     * @param \Illuminate\Support\Collection $completedEnrollments
-     * @return array
-     */
-    private function getImpactMetrics($enrollments, $completedEnrollments): array
-    {
-        $total = $enrollments->count();
-        $completed = $completedEnrollments->count();
-        $completionRate = $total > 0 ? round(($completed / $total) * 100, 2) : 0;
+        if (isset($filters['date_from'])) {
+            $query->where('enrolled_at', '>=', $filters['date_from']);
+        }
+
+        if (isset($filters['date_to'])) {
+            $query->where('enrolled_at', '<=', $filters['date_to']);
+        }
+
+        if (isset($filters['course_type_id'])) {
+            $query->whereHas('course', function ($q) use ($filters) {
+                $q->where('course_type_id', $filters['course_type_id']);
+            });
+        }
+
+        $enrollments = $query->with(['learner', 'course', 'course.courseType'])->get();
+
+        $totalBeneficiaries = $enrollments->pluck('learner_id')->unique()->count();
+        $completedEnrollments = $enrollments->where('enrollment_status', EnrollmentStatus::COMPLETED);
 
         return [
-            'total_enrollments' => $total,
-            'completed_enrollments' => $completed,
-            'completion_rate' => $completionRate,
-            'total_learners_reached' => $enrollments->pluck('learner_id')->unique()->count(),
-            'learners_completed' => $completedEnrollments->pluck('learner_id')->unique()->count(),
+            'report_period' => [
+                'from' => $filters['date_from'] ?? null,
+                'to' => $filters['date_to'] ?? null,
+            ],
+            'beneficiaries' => [
+                'total_beneficiaries' => $totalBeneficiaries,
+                'active_beneficiaries' => $enrollments->where('enrollment_status', EnrollmentStatus::ACTIVE)
+                    ->pluck('learner_id')
+                    ->unique()
+                    ->count(),
+                'completed_beneficiaries' => $completedEnrollments->pluck('learner_id')->unique()->count(),
+            ],
+            'courses' => [
+                'total_courses' => $enrollments->pluck('course_id')->unique()->count(),
+                'total_enrollments' => $enrollments->count(),
+                'completed_enrollments' => $completedEnrollments->count(),
+                'completion_rate' => $enrollments->count() > 0
+                    ? round(($completedEnrollments->count() / $enrollments->count()) * 100, 2)
+                    : 0,
+                'courses_by_type' => $this->courseAnalyticsService->getPopularityByCourseType($enrollments),
+            ],
+            'skills_acquired' => $this->learnerAnalyticsService->getSkillsAcquired($completedEnrollments),
         ];
     }
 }

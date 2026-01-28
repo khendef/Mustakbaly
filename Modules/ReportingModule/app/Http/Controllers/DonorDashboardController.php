@@ -5,10 +5,8 @@ namespace Modules\ReportingModule\Http\Controllers;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use Modules\ReportingModule\Services\DashboardService;
-use Modules\ReportingModule\Services\DonorReportService;
-use Modules\ReportingModule\Http\Resources\DashboardResource;
-use Modules\ReportingModule\Http\Requests\Dashboard\GetDashboardRequest;
+use Modules\ReportingModule\Services\DonorDashboardService;
+use Modules\ReportingModule\Http\Resources\DonorDashboardResource;
 
 /**
  * Controller for Donor Dashboard
@@ -19,35 +17,34 @@ class DonorDashboardController extends Controller
     /**
      * Dashboard service instance
      *
-     * @var DonorReportService
+     * @var DonorDashboardService
      */
-    protected DonorReportService $reportService;
+    protected DonorDashboardService $dashboardService;
 
     /**
      * Create a new controller instance
      *
-     * @param DonorReportService $dashboardService
+     * @param DonorDashboardService $dashboardService
      */
-    public function __construct(DonorReportService $reportService)
+    public function __construct(DonorDashboardService $dashboardService)
     {
-        $this->reportService = $reportService;
+        $this->dashboardService = $dashboardService;
     }
 
     /**
      * Get donor dashboard data
-     * GET /api/v1/dashboards/donor
+     * GET /api/v1/dashboards/donor-dashboard/{donorId}
      *
-     * @param GetDashboardRequest $request
+     * @param int $donorId
      * @return JsonResponse
      */
-    public function index(GetDashboardRequest $request): JsonResponse
+    public function dashboard(int $donorId): JsonResponse
     {
         try {
-            $filters = $request->validated();
-            $report = $this->reportService->generateComprehensiveReport($filters);
+            $dashboard = $this->dashboardService->getDonorDashboard($donorId);
 
             return $this->success(
-                new DonorDashboardResource($report),
+                new DonorDashboardResource($dashboard),
                 'Donor dashboard retrieved successfully.'
             );
         } catch (Exception $e) {

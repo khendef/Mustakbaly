@@ -1,13 +1,13 @@
 <?php
 
-namespace Modules\ReportingModule\Http\Requests\Dashboard;
+namespace Modules\ReportingModule\Http\Requests\Report;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request for getting dashboard data
+ * Form request for getting completion rates
  */
-class GetDashboardRequest extends FormRequest
+class GetCompletionRatesRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -46,4 +46,3 @@ class GetDashboardRequest extends FormRequest
         ];
     }
 }
-

@@ -2,12 +2,13 @@
 
 namespace Modules\ReportingModule\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Modules\ReportingModule\Http\Requests\Dashboard\GetDashboardRequest;
+use App\Http\Controllers\Controller;
 use Modules\ReportingModule\Http\Resources\DashboardResource;
-use Modules\ReportingModule\Services\DashboardService;
+use Modules\ReportingModule\Services\StudentDashboardService;
+use Modules\ReportingModule\Http\Resources\StudentDashboardResource;
+use Modules\ReportingModule\Http\Requests\Dashboard\GetDashboardRequest;
 
 /**
  * Controller for Student Dashboard
@@ -18,35 +19,34 @@ class StudentDashboardController extends Controller
     /**
      * Dashboard service instance
      *
-     * @var DashboardService
+     * @var StudentDashboardService
      */
-    protected DashboardService $dashboardService;
+    protected StudentDashboardService $dashboardService;
 
     /**
      * Create a new controller instance
      *
-     * @param DashboardService $dashboardService
+     * @param StudentDashboardService $dashboardService
      */
-    public function __construct(DashboardService $dashboardService)
+    public function __construct(StudentDashboardService $dashboardService)
     {
         $this->dashboardService = $dashboardService;
     }
 
     /**
      * Get student dashboard data
-     * GET /api/v1/dashboards/student
+     * GET /api/v1/dashboards/student-dashboard/{learnerId}
      *
-     * @param GetDashboardRequest $request
+     * @param int $learnerId
      * @return JsonResponse
      */
-    public function index(GetDashboardRequest $request): JsonResponse
+    public function dashboard(int $learnerId): JsonResponse
     {
         try {
-            $userId = $request->user()->user_id;
-            $dashboard = $this->dashboardService->getLearnerDashboard($userId);
+            $dashboard = $this->dashboardService->getStudentDashboard($learnerId);
 
             return $this->success(
-                new DashboardResource($dashboard),
+                new StudentDashboardResource($dashboard),
                 'Student dashboard retrieved successfully.'
             );
         } catch (Exception $e) {
