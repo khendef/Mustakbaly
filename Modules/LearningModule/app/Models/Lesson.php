@@ -3,20 +3,22 @@
 namespace Modules\LearningModule\Models;
 
 use App\Traits\LogsActivity;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Builders\LessonBuilder;
-use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Lesson extends Model
+class Lesson extends Model implements HasMedia
 {
     /**
      * Represents a lesson within a unit in the e-learning platform.
      * Contains lesson content, metadata, and relationships, supporting various lesson types and soft deletion.
      */
-    use SoftDeletes, LogsActivity;
+    use SoftDeletes, LogsActivity , InteractsWithMedia;
 
     /**
      * The primary key for the model.
@@ -106,5 +108,14 @@ class Lesson extends Model
             ->setDescriptionForEvent(function (string $eventName) {
                 return "Lesson '{$this->title}' was {$eventName}";
             });
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('attachments');
+
+        $this->addMediaCollection('video')
+        ->singleFile()
+        ->acceptsMimeTypes(['video/mp4', 'video/x-m4v', 'video/quicktime']);
     }
 }

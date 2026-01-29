@@ -15,6 +15,7 @@ class AuditorFilterRequest extends FormRequest
             'term'=>'soetimes|string|max:100',
             'years'=>'sometimes|int',
             'organiztionId'=>'sometimes|int|exists:organizations,id'
+
         ];
     }
 

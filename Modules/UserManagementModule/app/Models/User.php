@@ -2,20 +2,24 @@
 
 namespace Modules\UserManagementModule\Models;
 
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\OrganizationsModule\Models\Organization;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Modules\UserManagementModule\App\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
-use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
-use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
-class User extends Model implements JWTSubject
+class User extends Model implements JWTSubject , HasMedia
 {
 /** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes;
+  use HasFactory, Notifiable,  HasRoles, SoftDeletes , InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -57,7 +61,7 @@ class User extends Model implements JWTSubject
     {
         return $this->getKey();
     }
- 
+
 
     public function getJWTCustomClaims()
     {
@@ -87,5 +91,25 @@ class User extends Model implements JWTSubject
                 ->withPivot('role')
                 ->withTimestamps();
     }
- 
+
+public function registerMediaCollections(): void
+{
+    $this->addMediaCollection('avatar')
+         ->singleFile() // المستخدم يملك صورة شخصية واحدة فقط
+         ->useFallbackUrl(asset('images/default-avatar.png'));
+}
+
+public function registerMediaConversions(?Media $media = null): void
+{
+    $this->addMediaConversion('thumb')
+         ->width(100)
+         ->height(100)
+         ->nonQueued();
+
+    $this->addMediaConversion('preview')
+         ->width(300)
+         ->height(300)
+         ->queued();
+}
+
 }

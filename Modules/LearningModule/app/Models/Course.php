@@ -4,23 +4,26 @@ namespace Modules\LearningModule\Models;
 
 use App\Models\User;
 use App\Traits\LogsActivity;
-use Modules\LearningModule\Builders\CourseBuilder;
-use Modules\LearningModule\Models\CourseInstructor;
-use Modules\LearningModule\Models\Enrollment;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\LearningModule\Models\Enrollment;
+use Modules\LearningModule\Builders\CourseBuilder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\LearningModule\Models\CourseInstructor;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Course extends Model
+class Course extends Model implements HasMedia
 {
     /**
      * Represents a course in the e-learning platform.
      * Contains course information, metadata, relationships with instructors, units, and manages course lifecycle including publishing and soft deletion.
      */
-    use SoftDeletes, LogsActivity;
+    use SoftDeletes, LogsActivity , InteractsWithMedia;
 
     /**
      * The primary key for the model.
@@ -208,5 +211,16 @@ class Course extends Model
             ->setDescriptionForEvent(function (string $eventName) {
                 return "Course '{$this->title}' was {$eventName}";
             });
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover')
+             ->singleFile()
+             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('intro_video')
+             ->singleFile()
+             ->acceptsMimeTypes(['video/mp4', 'video/quicktime']);
     }
 }

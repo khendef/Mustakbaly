@@ -13,7 +13,7 @@ class OrganizationService
     public function getAll()
     {
         try {
-        return Organization::latest()->paginate(15);
+       return Organization::with('media')->latest()->paginate(15);
         } catch (\Exception $e) {
             Log::error('Failed to retrieve organizations', [
                 'error' => $e->getMessage(),
@@ -28,7 +28,7 @@ class OrganizationService
     public function find(Organization $organization) : Organization
     {
         try {
-            return $organization->load('programs:id,organization_id,name');
+            return $organization->load('media','programs:id,organization_id,name');
         } catch (\Exception $e) {
             Log::error('Failed to find organization', [
                 'organization_id' => $organization->id,
@@ -45,6 +45,11 @@ class OrganizationService
     {
         try {
             $organization = Organization::create($data);
+            if (isset($data['logo'])) {
+                    $organization->addMedia($data['logo'])
+                        ->toMediaCollection('logo');
+                }
+
             return $organization;
         } catch (\Exception $e) {
             Log::error('Failed to create organization', [
@@ -60,6 +65,10 @@ class OrganizationService
     {
         try {
             $organization->update($data);
+            if (isset($data['logo'])) {
+                    $organization->addMedia($data['logo'])
+                        ->toMediaCollection('logo');
+                }
             return $organization;
         } catch (\Exception $e) {
             Log::error('Failed to update organization', [

@@ -12,7 +12,7 @@ class AuditorService
     public function list($filters, int $perPage=15)
     {
         $auditors = User::whereHas('auditorProfile')
-                    ->with('auditorProfile', 'organizations:id,name')
+                    ->with('media','auditorProfile', 'organizations:id,name')
                     ->filters($filters)
                     ->paginate($perPage);
         return $auditors;
@@ -20,7 +20,7 @@ class AuditorService
 
     public function findById(int $id)
     {
-        return User::with('auditorProfile','organizations:id,name')
+        return User::with('media','auditorProfile','organizations:id,name')
         ->findOrFail($id);
     }
 
@@ -34,33 +34,45 @@ class AuditorService
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
-            
+
 
             //3. create auditor profile
+            if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+        }
 
             // user_id = $user->id
             $auditor = $user->auditorProfile()->updateOrCreate(['user_id' => $user->id],$auditorData);
+            if (isset($data['cv'])) {
+            $auditor->addMedia($data['cv'])->toMediaCollection('cv');
+        }
             //4. attach to organization
             $user->organizations()->attach($data['organization_id'],['role'=>UserRole::AUDITOR->value]);
             //5. assign role
             $user->assignRole(UserRole::AUDITOR->value);
             return $auditor;
-       }); 
+       });
     }
 
     public function update(User $user,array $data)
     {
         return DB::transaction(function () use ($data, $user) {
-        
-            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));           
+
+            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));
+            if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+        }
             $user->auditorProfile()->updateOrCreate(
                 ['user_id' => $user->id],
-                Arr::except($data,['name','email','password','gender','date_of_birth','phone','address'])
-            );
+                Arr::except($data,['name','email','password','gender','date_of_birth','phone','address']));
+
+                if (isset($data['cv'])) {
+                $user->addMedia($data['cv'])->toMediaCollection('cv');
+        }
             return $user->refresh();
         });
 
-       
+
     }
 
     public function delete(User $user)
@@ -69,7 +81,7 @@ class AuditorService
             $user->auditorProfile()->delete();
             $user->delete();
         });
-        
+
     }
 }
 

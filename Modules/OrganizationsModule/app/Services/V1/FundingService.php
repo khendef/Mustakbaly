@@ -65,3 +65,4 @@ class FundingService
             throw $e;
         }
     }
+}

@@ -43,6 +43,17 @@ class CourseResource extends JsonResource
             'published_at' => $this->published_at?->toDateTimeString(),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
+            'video_url' => $this->getFirstMediaUrl('lesson_video'),
+
+        'attachments' => $this->getMedia('attachments')->map(function ($file) {
+            return [
+                'id' => $file->id,
+                'file_name' => $file->file_name,
+                'human_readable_size' => $file->getHumanReadableSize(),
+                'mime_type' => $file->mime_type,
+                'url' => $file->getUrl(),
+            ];
+        }),
 
             // Relationships (only included if loaded)
             'course_type' => $this->whenLoaded('courseType', function () {

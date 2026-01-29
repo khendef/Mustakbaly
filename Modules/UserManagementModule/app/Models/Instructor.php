@@ -2,15 +2,17 @@
 
 namespace Modules\UserManagementModule\Models;
 
+use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\UserManagementModule\App\Models\Builders\InstructorBuilder;
 // use Modules\UserManagementModule\Database\Factories\InstructorFactory;
 
-class Instructor extends Model
+class Instructor extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes , InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -28,5 +30,12 @@ class Instructor extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cv')
+             ->acceptsMimeTypes(['application/pdf'])
+             ->singleFile();
     }
 }

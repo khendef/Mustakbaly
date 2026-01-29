@@ -29,7 +29,9 @@ class AuditorUpdateRequest extends FormRequest
             'address'=>'sometimes|nullable|max:500',
             'specialization'=>'sometimes|string|max:255',
             'bio'=>'sometimes|nullable|string|max:1500',
-            'years_of_experience'=>'sometimes|integer'
+            'years_of_experience'=>'sometimes|integer',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'cv'=> 'nullable|mimes:pdf|max:5120',
         ];
     }
 

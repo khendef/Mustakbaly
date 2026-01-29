@@ -57,6 +57,18 @@ class LessonService
 
             $lesson = Lesson::create($data);
 
+            if (isset($data['video']) && $data['video']->isValid()) {
+                $lesson->addMedia($data['video'])->toMediaCollection('lesson_video');
+            }
+
+            if (isset($data['attachments']) && is_array($data['attachments'])) {
+                foreach ($data['attachments'] as $file) {
+                    if ($file->isValid()) {
+                        $lesson->addMedia($file)->toMediaCollection('attachments');
+                    }
+                }
+            }
+
             // Clear lesson and unit cache after creation
             $this->clearLessonCache($lesson, $unit);
 
@@ -96,6 +108,17 @@ class LessonService
             }
 
             $lesson->update($data);
+            if (isset($data['video']) && $data['video']->isValid()) {
+                $lesson->addMedia($data['video'])->toMediaCollection('lesson_video');
+            }
+
+            if (isset($data['attachments']) && is_array($data['attachments'])) {
+                foreach ($data['attachments'] as $file) {
+                    if ($file->isValid()) {
+                        $lesson->addMedia($file)->toMediaCollection('attachments');
+                    }
+                }
+            }
 
             // Clear lesson and unit cache after update
             $this->clearLessonCache($lesson);

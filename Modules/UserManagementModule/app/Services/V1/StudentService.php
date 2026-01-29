@@ -12,7 +12,7 @@ class StudentService
     public function list($filters, int $perPage=15)
     {
         $students = User::whereHas('studentProfile')
-                    ->with('studentProfile', 'courses:id,name')
+                    ->with('media','studentProfile', 'courses:id,name')
                     ->filters($filters)
                     ->paginate($perPage);
         return $students;
@@ -20,7 +20,7 @@ class StudentService
 
     public function findById(int $id)
     {
-        return User::with('studentProfile','courses:id,name')
+        return User::with('media','studentProfile','courses:id,name')
         ->findOrFail($id);
     }
 
@@ -34,9 +34,12 @@ class StudentService
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
-            
+
 
             //3. create student profile
+            if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            }
 
             // user_id = $user->id
             $student = $user->studentProfile()->updateOrCreate(['user_id' => $user->id],$studentData);
@@ -51,12 +54,16 @@ class StudentService
     public function update(User $user,array $data)
     {
         return DB::transaction(function () use ($data, $user) {
-        
-            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));           
+
+            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));
             $user->studentProfile()->updateOrCreate(
                 ['user_id' => $user->id],
                 Arr::except($data,['name','email','password','gender','date_of_birth','phone','address'])
             );
+            if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            }
+
             return $user->refresh();
 
         });
@@ -68,6 +75,6 @@ class StudentService
             $user->studentProfile()->delete();
             $user->delete();
         });
-        
+
     }
 }
