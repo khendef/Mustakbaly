@@ -28,7 +28,9 @@ class UserService
     public function create(array $data)
     {
         $user = User::create($data);
-        $user->assignRole($data['role']);
+        if(isset($data['role'])){
+            $user->assignRole($data['role']);
+        }
         return $user;
     }
 
