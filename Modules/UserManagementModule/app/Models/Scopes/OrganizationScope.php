@@ -23,11 +23,12 @@ class OrganizationScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void 
     {
-        if(auth()->check())
+        if(!auth()->check())
         {
-            $user = auth()->user();
+            return;
         }
 
+        $user = auth()->user();
         if($user->hasRole('manager'))
         {
             $organization = Route::input('organization');

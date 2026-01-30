@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('phone');
             $table->date('date_of_birth');
             $table->enum('gender',['male','female']);
-            $table->text('address');
+            $table->text('address')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
