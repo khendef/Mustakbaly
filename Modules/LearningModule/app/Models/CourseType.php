@@ -9,10 +9,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Builders\CourseTypeBuilder;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Translatable\HasTranslations;
 
 class CourseType extends Model
 {
-    use LogsActivity, SoftDeletes, CascadeSoftDeletes;
+    use HasTranslations, LogsActivity, SoftDeletes, CascadeSoftDeletes;
+
+    /** Translatable attributes (en, ar). */
+    public array $translatable = ['name', 'description'];
 
     /**
      * Represents a course type or category in the e-learning platform.
@@ -48,6 +52,8 @@ class CourseType extends Model
     protected function casts(): array
     {
         return [
+            'name' => 'array',
+            'description' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -97,7 +103,7 @@ class CourseType extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {
-                return "Course type '{$this->name}' was {$eventName}";
+                return "Course type '" . ($this->getTranslation('name', 'en') ?: $this->name) . "' was {$eventName}";
             });
     }
 }

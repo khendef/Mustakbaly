@@ -2,6 +2,7 @@
 
 namespace Modules\LearningModule\Http\Resources;
 
+use App\Traits\HelperTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -10,9 +11,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Transforms Course model into a consistent JSON structure for API responses.
  * Provides a standardized format for course data across all endpoints.
+ * Translatable fields (title, description, objectives, prerequisites) follow Accept-Language.
  */
 class CourseResource extends JsonResource
 {
+    use HelperTrait;
+
     /**
      * Transform the resource into an array.
      *
@@ -21,13 +25,15 @@ class CourseResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $locale = $this->getRequestLocale($request);
+
         return [
             'id' => $this->course_id,
-            'title' => $this->title,
+            'title' => $this->getTranslatedAttribute($this->resource, 'title', $locale),
             'slug' => $this->slug,
-            'description' => $this->description,
-            'objectives' => $this->objectives,
-            'prerequisites' => $this->prerequisites,
+            'description' => $this->getTranslatedAttribute($this->resource, 'description', $locale),
+            'objectives' => $this->getTranslatedAttribute($this->resource, 'objectives', $locale),
+            'prerequisites' => $this->getTranslatedAttribute($this->resource, 'prerequisites', $locale),
             'actual_duration_hours' => $this->actual_duration_hours,
             'program_id' => $this->program_id,
             'allocated_budget' => $this->allocated_budget,
@@ -45,12 +51,12 @@ class CourseResource extends JsonResource
             'updated_at' => $this->updated_at?->toDateTimeString(),
 
             // Relationships (only included if loaded)
-            'course_type' => $this->whenLoaded('courseType', function () {
+            'course_type' => $this->whenLoaded('courseType', function () use ($request) {
                 return [
                     'id' => $this->courseType->course_type_id,
-                    'name' => $this->courseType->name,
+                    'name' => $this->getTranslatedAttribute($this->courseType, 'name', $this->getRequestLocale($request)),
                     'slug' => $this->courseType->slug,
-                    'description' => $this->courseType->description,
+                    'description' => $this->getTranslatedAttribute($this->courseType, 'description', $this->getRequestLocale($request)),
                     'is_active' => $this->courseType->is_active,
                 ];
             }),
@@ -74,11 +80,12 @@ class CourseResource extends JsonResource
                 });
             }),
 
-            'units' => $this->whenLoaded('units', function () {
-                return $this->units->map(function ($unit) {
+            'units' => $this->whenLoaded('units', function () use ($request) {
+                $locale = $this->getRequestLocale($request);
+                return $this->units->map(function ($unit) use ($locale) {
                     return [
                         'id' => $unit->unit_id,
-                        'title' => $unit->title,
+                        'title' => $this->getTranslatedAttribute($unit, 'title', $locale),
                         'slug' => $unit->slug,
                         'unit_order' => $unit->unit_order,
                     ];

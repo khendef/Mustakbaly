@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Translatable\HasTranslations;
 
 class Course extends Model
 {
@@ -21,7 +22,10 @@ class Course extends Model
      * Represents a course in the e-learning platform.
      * Contains course information, metadata, relationships with instructors, units, and manages course lifecycle including publishing and soft deletion.
      */
-    use SoftDeletes, CascadeSoftDeletes, LogsActivity;
+    use HasTranslations, SoftDeletes, CascadeSoftDeletes, LogsActivity;
+
+    /** Translatable attributes (en, ar). */
+    public array $translatable = ['title', 'description', 'objectives', 'prerequisites'];
 
     /**
      * The relationships that should cascade on delete.
@@ -73,6 +77,10 @@ class Course extends Model
     protected function casts(): array
     {
         return [
+            'title' => 'array',
+            'description' => 'array',
+            'objectives' => 'array',
+            'prerequisites' => 'array',
             'is_offline_available' => 'boolean',
             'min_score_to_pass' => 'decimal:2',
             'average_rating' => 'decimal:2',
@@ -214,7 +222,7 @@ class Course extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {
-                return "Course '{$this->title}' was {$eventName}";
+                return "Course '" . ($this->getTranslation('title', 'en') ?: $this->title) . "' was {$eventName}";
             });
     }
 }
