@@ -1,5 +1,7 @@
 <?php
+
 namespace Modules\OrganizationsModule\Models;
+
 use Illuminate\Support\Facades\Cache;
 use Modules\OrganizationsModule\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -15,7 +17,8 @@ class DonorProgram extends Pivot
     ];
 
     // Relationship with Donor
-    public function donor() {
+    public function donor()
+    {
         return $this->belongsTo(Donor::class);
     }
 
@@ -29,5 +32,4 @@ class DonorProgram extends Pivot
     protected $casts = [
         'contribution_amount' => MoneyCast::class,
     ];
-
 }

@@ -1,5 +1,5 @@
 <?php
-namespace Modules\OrganizationsModule\Http\Requests;
+namespace Modules\OrganizationsModule\Http\Requests\V1\Donor;
 
 use Illuminate\Foundation\Http\FormRequest;
 
