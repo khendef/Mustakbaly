@@ -100,7 +100,7 @@ class QuizController extends Controller
 
         }
         if ($resource && $data) {
-            if ($data instanceof \Illuminate\Support\Collection) {
+            if ($data instanceof Collection) {
                 $data = $resource::collection($data);
             } else {
                 $data = new $resource($data);
