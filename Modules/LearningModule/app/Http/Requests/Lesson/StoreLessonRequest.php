@@ -7,31 +7,34 @@ use Illuminate\Validation\Rule;
 
 /**
  * Form request for storing a new lesson.
- * Handles validation for lesson creation.
+ * Translatable fields (title, description) accept string or array with en/ar keys.
  */
 class StoreLessonRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['title', 'description'] as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
             'unit_id' => ['required', 'integer', 'exists:units,unit_id'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'title' => ['required', 'array'],
+            'title.en' => ['required_without:title.ar', 'nullable', 'string', 'max:255'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
             'lesson_order' => ['nullable', 'integer', 'min:1'],
             'lesson_type' => ['required', 'string', Rule::in(['lecture', 'video', 'interactive', 'reading'])],
             'is_required' => ['nullable', 'boolean'],

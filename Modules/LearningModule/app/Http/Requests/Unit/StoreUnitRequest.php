@@ -7,31 +7,34 @@ use Illuminate\Validation\Rule;
 
 /**
  * Form request for storing a new unit.
- * Handles validation for unit creation.
+ * Translatable fields (title, description) accept string or array with en/ar keys.
  */
 class StoreUnitRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['title', 'description'] as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
             'course_id' => ['required', 'integer', 'exists:courses,course_id'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'title' => ['required', 'array'],
+            'title.en' => ['required_without:title.ar', 'nullable', 'string', 'max:255'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
             'unit_order' => ['nullable', 'integer', 'min:1'],
             'actual_duration_minutes' => ['required', 'integer', 'min:1'],
         ];

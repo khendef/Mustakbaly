@@ -2,6 +2,7 @@
 
 namespace Modules\LearningModule\Http\Resources;
 
+use App\Traits\HelperTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,6 +20,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class EnrollmentResource extends JsonResource
 {
+    use HelperTrait;
+
     /**
      * Transform the resource into an array.
      *
@@ -59,12 +62,12 @@ class EnrollmentResource extends JsonResource
                 ];
             }),
 
-            'course' => $this->whenLoaded('course', function () {
+            'course' => $this->whenLoaded('course', function () use ($request) {
                 return [
                     'id' => $this->course->course_id,
-                    'title' => $this->course->title,
+                    'title' => $this->getTranslatedAttribute($this->course, 'title', $this->getRequestLocale($request)),
                     'slug' => $this->course->slug,
-                    'description' => $this->course->description,
+                    'description' => $this->getTranslatedAttribute($this->course, 'description', $this->getRequestLocale($request)),
                     'status' => $this->course->status?->value,
                     'actual_duration_hours' => $this->course->actual_duration_hours,
                     'min_score_to_pass' => $this->course->min_score_to_pass,

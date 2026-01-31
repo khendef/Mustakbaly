@@ -7,36 +7,37 @@ use Modules\LearningModule\Models\Unit;
 
 /**
  * Form request for updating an existing unit.
- * Handles validation for unit updates.
+ * Translatable fields accept string or array with en/ar keys.
  */
 class UpdateUnitRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['title', 'description'] as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         $unitId = $this->route('unit');
-
-        // Get unit ID from route parameter (could be ID or model instance)
         $unitId = $unitId instanceof Unit ? $unitId->unit_id : $unitId;
 
         return [
             'course_id' => ['sometimes', 'required', 'integer', 'exists:courses,course_id'],
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'description' => ['sometimes', 'nullable', 'string'],
+            'title' => ['sometimes', 'required', 'array'],
+            'title.en' => ['nullable', 'string', 'max:255'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
             'unit_order' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'actual_duration_minutes' => ['sometimes', 'required', 'integer', 'min:1'],
         ];
