@@ -5,15 +5,19 @@ namespace Modules\AssesmentModule\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\AssesmentModule\Models\Builders\QuizBuilder;
+use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
+use Modules\UserManagementModule\Models\User;
 use Spatie\Translatable\HasTranslations;
 class Quiz extends Model
 {
      use HasFactory;
+     use SoftDeletes;
      use HasTranslations;
-    protected $table='quizzes';
-    protected $fillable = [
+     protected $table='quizzes';
+     protected $fillable = [
         'course_id',
         'instructor_id',
         'quizable_id',
@@ -46,7 +50,7 @@ class Quiz extends Model
     }
 
     public function instructor(){
-        return $this->belongsTo(User::class,'instructor_id');
+        return $this->belongsTo(User::class,'instructor_id')->withoutGlobalScope(OrganizationScope::class);
     }
     public function quizable()
     {
@@ -75,6 +79,20 @@ class Quiz extends Model
     {
         return new QuizBuilder($query);
     }
+    protected static function booted()
+    {
+        static::deleting(function (Quiz$quiz) {
+          if($quiz->isForceDeleting()){
+            return;
+          }
+          $quiz->questions()->delete();
+        });
+        static::restoring(function ($quiz) {
+            $quiz->questions()->withTrashed()->restore();
+        });
+    }
+
+
 
 }
 

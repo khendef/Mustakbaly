@@ -113,7 +113,7 @@ class AttemptController extends Controller
     }
     }
 
-    public function submit(SubmitAttemptRequest $request,int $attempt){
+    public function submit(SubmitAttemptRequest $request,Attempt $attempt){
      try{
             $res = $this->attemptService->submit($attempt, $request->validated());
 
@@ -128,7 +128,7 @@ class AttemptController extends Controller
     }
     }
 
-    public function grade(GradeAttemptRequest $request, int $attempt){
+    public function grade(GradeAttemptRequest $request, Attempt $attempt){
      try{   $graderId = Auth::id();
             $res = $this->attemptService->grade($attempt, $request->validated(),$graderId);
 

@@ -84,24 +84,28 @@ class AttemptService extends BaseService
         }
     }
 
-    public function submit(int $attemptId): array
+    public function submit(Attempt $attempt): array
     {
         try {
-            $attempt = Attempt::findOrFail($attemptId);
-            if($attempt->status !== 'in_progress'){
-           return $this->ok('Attempt is not in progress',$attempt,200);
-            }
-            $attempt->submitted_at = now();
-            $attempt->status = 'submitted';
-            if($attempt->start_at){
-                $attempt->time_spent_seconds = max(0,$attempt->start_at->diffInSeconds($attempt->submitted_at));
-            }
-            $attempt->save();
-            return $this->ok('Attempt submitted successfully',$attempt->fresh(),200);
-        }catch(Throwable $e){
-            return $this->fail('Failed to submitted attempts',null,$e->getMessage(),500);
+            DB::transaction(function () use ($attempt) {
+                $attempt->update([
+                    'status'       => 'submitted',
+                    'submitted_at' => now(),
+                ]);
+            });
+
+            return $this->ok(
+                'Attempt submitted successfully.',
+                $attempt->fresh()
+            );
+        } catch (Throwable $e) {
+            return $this->fail(
+                'Failed to submit attempt.',
+                $e
+            );
         }
     }
+
       public function start(array $data):array
     {
        try {
@@ -150,29 +154,26 @@ class AttemptService extends BaseService
             return $this->fail('Failed to start attempt.', $e, 500);
         }
     }
-    public function grade(int $attemptId,array $data,?int $graderId = null){
-        try{
-            $attempt = Attempt::findOrFail($attemptId);
-            if($attempt->status !== 'submitted'){
-                return $this->ok('Attempt is not submitted yet.', $attempt,200);
-            }
-            $attempt->score = (int)($data['score'] ?? $attempt->score);
-            $attempt->is_passed = (bool)($data['is_passed'] ?? $attempt->is_passed);
-            $attempt->graded_at =now();
-            $attempt->graded_by = $graderId;
-            $attempt->status = 'graded';
+    public function grade(Attempt $attempt,int $score){
+         try {
+            DB::transaction(function () use ($attempt, $score) {
+                $attempt->update([
+                    'score'     => $score,
+                    'is_passed' => $score >= $attempt->quiz->passing_score,
+                    'status'    => 'graded',
+                ]);
+            });
 
-            if(! $attempt->time_spent_seconds && $attempt->start_at){
-                $end = $attempt->submitted_at ?? now();
-                $attempt->time_spent_seconds = max(0,$attempt->start_at->diffInSeconds($end));
-            }
-            $attempt->save();
-            return $this->ok('Attempt graded successfully,',$attempt->fresh(),200);
-        }catch(Throwable $e){
-            return $this->fail('Failed to grade attempt',null,$e->getMessage(),500);
+            return $this->ok(
+                'Attempt graded successfully.',
+                $attempt->fresh()
+            );
+        } catch (Throwable $e) {
+            return $this->fail(
+                'Failed to grade attempt.',
+                $e
+            );
         }
-
     }
-
-
 }
+

@@ -72,10 +72,10 @@ class User extends Authenticatable implements JWTSubject
         return new UserBuilder($query);
     }
 
-    public function studentProfile()
-    {
-        return $this->hasOne(Student::class);
-    }
+   // public function studentProfile()
+    ////{
+       // return $this->hasOne(Student::class);
+   // }
     public function instructorProfile()
     {
         return $this->hasOne(instructor::class);

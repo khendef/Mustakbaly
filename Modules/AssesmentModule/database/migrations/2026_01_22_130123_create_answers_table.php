@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('answers', function (Blueprint $table) {
             $table->id();
-             $table->foreignId('attempt_id')->constrained('attempts')->cascadeOnDelete();
-             $table->foreignId('selected_option_id')
-            ->nullable()
-            ->constrained('question_options')
-            ->cascadeOnDelete();
-            $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
+            $table->foreignId('attempt_id')->constrained('attempts')->cascadeOnDelete();
+            $table->foreignId('selected_option_id')->nullable()
+            ->constrained('question_options')->nullOnDelete();
+            $table->foreignId('question_id')->constrained('questions')->restrictOnDelete();
             $table->boolean('boolean_answer')->nullable();
             $table->json('answer_text')->nullable();
             $table->boolean('is_correct')->nullable();

@@ -5,6 +5,7 @@ namespace Modules\AssesmentModule\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Translatable\HasTranslations;
 use Modules\AssesmentModule\Models\Builders\QuestionBuilder;
@@ -12,7 +13,9 @@ class Question extends Model
 {
      use HasFactory;
      use HasTranslations;
-
+     use softDeletes;
+     
+    protected $table='questions';
     protected $fillable=[
         'quiz_id',
         'type',
@@ -58,6 +61,21 @@ class Question extends Model
     {
      return new QuestionBuilder($query);
     }
+    /**softdelete
+     */
+    protected static function booted()
+    {
+        static::deleting(function (Question $q) {
+          if($q->isForceDeleting()){
+            return;
+          }
+          $q->options()->delete();
+        });
+        static::restoring(function (Question $q) {
+          $q->options()->withTrashed()->restore();
+        });
+    }
+
 
 
 }

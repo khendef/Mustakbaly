@@ -5,9 +5,11 @@ use Illuminate\Support\Facades\DB;
 use Modules\AssesmentModule\Models\Question;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
+
 class QuestionService extends BaseService
 {
     public function handle() {}
+
     public function index(array $filters = [],int $perPage =15): array
     {
         try {
@@ -20,7 +22,7 @@ class QuestionService extends BaseService
         }
     }
 
-    public function store(array $data): array
+    public function create(array $data): array
     {
         try {
             $question = Question::create($data);

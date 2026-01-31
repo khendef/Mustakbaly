@@ -8,17 +8,12 @@ use Modules\AssesmentModule\Transformers\QuizResource;
 use Modules\AssesmentModule\Models\Quiz;
 use Modules\AssesmentModule\Services\v2\QuizService;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\AssesmentModule\Http\Requests\QuizRequest\StoreQuizRequest;
 use Modules\AssesmentModule\Http\Requests\QuizRequest\UpdateQuizRequest;
-use Throwable;
 
 class QuizController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-
-
     public function __construct(private QuizService $quizService)
     {
     }
@@ -35,7 +30,7 @@ class QuizController extends Controller
 
     public function store(StoreQuizRequest $request)
     {
-        $res = $this->quizService->store($request->validated());
+        $res = $this->quizService->create($request->validated());
 
         return $this->respond($res, resource: QuizResource::class);
     }
@@ -100,7 +95,7 @@ class QuizController extends Controller
 
         }
         if ($resource && $data) {
-            if ($data instanceof \Illuminate\Support\Collection) {
+            if ($data instanceof Collection) {
                 $data = $resource::collection($data);
             } else {
                 $data = new $resource($data);

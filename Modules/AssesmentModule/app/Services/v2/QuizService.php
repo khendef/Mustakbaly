@@ -3,8 +3,11 @@
 namespace Modules\AssesmentModule\Services\v2;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Modules\AssesmentModule\Events\QuestionCreated;
 use Modules\AssesmentModule\Models\Quiz;
 use Modules\AssesmentModule\Models\Builders\QuizBuilder;
+use Modules\AssesmentModule\Models\Question;
+
 use Throwable;
 
 class QuizService extends BaseService
@@ -34,17 +37,26 @@ class QuizService extends BaseService
         }
     }
 
-    public function store(array $data): array
+    public function create(array $data): array
     {
         try {
-            $quiz = DB::transaction(function () use ($data) {
-                return Quiz::query()->create($data);
-            });
+        $question = Question::create($data);
 
-            return $this->ok('Quiz created successfully.', $quiz);
-        } catch (Throwable $e) {
-            return $this->fail('Failed to create quiz.', $e);
-        }
+        event(new QuestionCreated($question));
+
+        return $this->ok(
+            'Question created successfully.',
+            $question,
+            201
+        );
+    } catch (Throwable $e) {
+        return $this->fail(
+            'Failed to create question.',
+            $e,
+            500
+        );
+    }
+
     }
 
     public function update(Quiz $quiz, array $data): array
