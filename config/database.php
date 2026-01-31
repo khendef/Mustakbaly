@@ -142,9 +142,13 @@ return [
     |
     */
 
-    'redis' => [
+        'redis' => [
 
+<<<<<<< HEAD
         'client' => env('REDIS_CLIENT', 'predis'),
+=======
+            'client' => env('REDIS_CLIENT', 'predis'),
+>>>>>>> 8f2c3d4073053769e88d78d9a94551c3946badeb
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),

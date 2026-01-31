@@ -6,12 +6,55 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 use Modules\AssesmentModule\Models\Builders\AttemptBuilder;
 use Modules\UserManagementModule\Models\User;
 
+/**
+ * Class Attempt
+ *
+ * Represents a student's attempt at a quiz.
+ *
+ * @package Modules\AssesmentModule\Models
+ *
+ * @property int $id
+ * @property int $quiz_id
+ * @property int $student_id
+ * @property int|null $attempt_number
+ * @property string|null $status
+ * @property int|null $score
+ * @property bool|null $is_passed
+ * @property Carbon|null $start_at
+ * @property Carbon|null $ends_at
+ * @property Carbon|null $submitted_at
+ * @property Carbon|null $graded_at
+ * @property int|null $graded_by
+ * @property int|null $time_spent_seconds
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
+ * @property-read \Modules\AssesmentModule\Models\Quiz|null $quiz
+ * @property-read \Illuminate\Database\Eloquent\Collection|\Modules\AssesmentModule\Models\Answer[] $answer
+ * @property-read \Modules\UserManagementModule\Models\User|null $student
+ * @property-read \Modules\UserManagementModule\Models\User|null $grader
+ * @property-read \Illuminate\Database\Eloquent\Collection|\Spatie\MediaLibrary\MediaCollections\Models\Media[] $media
+ *
+ * @property-read int|null $remaining_seconds      Remaining seconds until ends_at (appended)
+ * @property-read bool $is_time_up                 Whether the attempt time is up (appended)
+ * @property-read int|null $time_spent_seconds     Computed time spent in seconds (appended)
+ */
 class Attempt extends Model
 {
-     use HasFactory;
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var string[]
+     */
     protected $fillable = [
         'quiz_id',
         'student_id',
@@ -27,6 +70,11 @@ class Attempt extends Model
         'time_spent_seconds'
     ];
 
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array<string,string>
+     */
     protected $casts = [
         'score' => 'integer',
         'attempt_number' => 'integer',
@@ -37,65 +85,152 @@ class Attempt extends Model
         'is_passed' => 'boolean',
         'time_spent_seconds' => 'integer'
     ];
+
+    /**
+     * Attributes appended to the model's array / JSON form.
+     *
+     * @var string[]
+     */
     protected $appends = [
         'remaining_seconds',
         'is_time_up',
         'time_spent_seconds'
     ];
 
-    public function quiz(){
+    /**
+     * Get the quiz that owns the attempt.
+     *
+     * @return BelongsTo<int, \Modules\AssesmentModule\Models\Quiz>
+     */
+    public function quiz(): BelongsTo
+    {
         return $this->belongsTo(Quiz::class);
     }
-    public function student(){
-        return $this->belongsTo(User::class,'student_id');
+
+    /**
+     * Get the student (user) for this attempt.
+     *
+     * @return BelongsTo<int, User>
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_id');
     }
-    public function answer(){
+
+    /**
+     * Get answers for this attempt.
+     *
+     * Note: method name is `answer` in the original model (hasMany).
+     *
+     * @return HasMany<\Modules\AssesmentModule\Models\Answer>
+     */
+    public function answer(): HasMany
+    {
         return $this->hasMany(Answer::class);
     }
-    public function grader(){
+
+    /**
+     * Get the user who graded this attempt.
+     *
+     * @return BelongsTo<int, User>
+     */
+    public function grader(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'graded_by');
     }
-    public function media() {
-        return $this->morphMany(Media::class,'mediable');
+
+    /**
+     * Get media associated with this attempt (morphMany).
+     *
+     * @return MorphMany<\Spatie\MediaLibrary\MediaCollections\Models\Media>
+     */
+    public function media(): MorphMany
+    {
+        return $this->morphMany(Media::class, 'mediable');
     }
 
-    protected function remainingSeconds():Attribute{
+    /**
+     * Remaining seconds until the attempt ends.
+     *
+     * Appended attribute: remaining_seconds
+     *
+     * @return Attribute<int|null, null>
+     */
+    protected function remainingSeconds(): Attribute
+    {
         return Attribute::make(
-       get: function () {
-        if( !$this->ends_at) return null;
-        return max(0,now()->diffInSeconds($this->ends_at,false));
-       });
+            get: function () {
+                if (!$this->ends_at) {
+                    return null;
+                }
+                return max(0, now()->diffInSeconds($this->ends_at, false));
+            }
+        );
     }
-    public function isTimeUp():Attribute{
-        return Attribute::make(get: fn() => $this->ends_at ? now()->gte($this->ends_at): false);
+
+    /**
+     * Whether the attempt time is up.
+     *
+     * Appended attribute: is_time_up
+     *
+     * @return Attribute<bool, null>
+     */
+    public function isTimeUp(): Attribute
+    {
+        return Attribute::make(get: fn() => $this->ends_at ? now()->gte($this->ends_at) : false);
     }
-    protected function timeSpentSeconds():Attribute{
-        return Attribute::make(get: function($value){
-          if(!is_null($value)) return (int)$value;
-        if(!$this->start_at) return null;
-          {
+
+    /**
+     * Computed time spent in seconds.
+     *
+     * Appended attribute: time_spent_seconds
+     *
+     * @return Attribute<int|null, int|null>
+     */
+    protected function timeSpentSeconds(): Attribute
+    {
+        return Attribute::make(get: function ($value) {
+            if (!is_null($value)) {
+                return (int) $value;
+            }
+
+            if (!$this->start_at) {
+                return null;
+            }
+
             $end = $this->submitted_at ?? now();
-            return max(0,$this->start_at->diffInSeconds($end));
-          }
+            return max(0, $this->start_at->diffInSeconds($end));
         });
     }
-   protected static function booted()
-{
-    static::saving(function ($attempt) {
 
-        if ($attempt->status === 'submitted' && empty($attempt->submitted_at)) {
-            $attempt->submitted_at = now();
-        }
+    /**
+     * Model booted callback to handle automatic submitted_at assignment.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::saving(function ($attempt) {
 
-        if ($attempt->isDirty('submitted_at') && $attempt->getOriginal('submitted_at')) {
-            $attempt->submitted_at = $attempt->getOriginal('submitted_at');
-        }
-    });
-}
+            if ($attempt->status === 'submitted' && empty($attempt->submitted_at)) {
+                $attempt->submitted_at = now();
+            }
 
-    public function newEloquentBuilder($query):AttemptBuilder
+            // Prevent submitted_at from being overwritten if originally set
+            if ($attempt->isDirty('submitted_at') && $attempt->getOriginal('submitted_at')) {
+                $attempt->submitted_at = $attempt->getOriginal('submitted_at');
+            }
+        });
+    }
+
+    /**
+     * Create a new Eloquent query builder for the model.
+     *
+     * @param  Builder  
+     * @return AttemptBuilder
+     */
+    public function newEloquentBuilder($query): AttemptBuilder
     {
         return new AttemptBuilder($query);
     }
-
 }

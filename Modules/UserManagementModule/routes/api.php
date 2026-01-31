@@ -7,7 +7,7 @@ use Modules\UserManagementModule\Http\Controllers\Api\V1\StudentController;
 use Modules\UserManagementModule\Http\Controllers\Api\V1\UserController;
 use Modules\UserManagementModule\Http\Controllers\UserManagementModuleController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
+Route::middleware(['auth:api'])->prefix('v1')->group(function () {
     Route::apiResource('usermanagementmodules', UserManagementModuleController::class)->names('usermanagementmodule');
 });
 
