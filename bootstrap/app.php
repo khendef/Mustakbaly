@@ -2,13 +2,6 @@
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
-<<<<<<< HEAD
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\Access\AuthorizationException;
-=======
->>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
@@ -30,5 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('activitylog:clean')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-
-    })->create();
+        // يمكنك لاحقًا إضافة:
+        // $exceptions->render(...)
+    })
+    ->create();

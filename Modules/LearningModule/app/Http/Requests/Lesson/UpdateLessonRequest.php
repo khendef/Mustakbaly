@@ -8,36 +8,37 @@ use Modules\LearningModule\Models\Lesson;
 
 /**
  * Form request for updating an existing lesson.
- * Handles validation for lesson updates.
+ * Translatable fields accept string or array with en/ar keys.
  */
 class UpdateLessonRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['title', 'description'] as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         $lessonId = $this->route('lesson');
-
-        // Get lesson ID from route parameter (could be ID or model instance)
         $lessonId = $lessonId instanceof Lesson ? $lessonId->lesson_id : $lessonId;
 
         return [
             'unit_id' => ['sometimes', 'required', 'integer', 'exists:units,unit_id'],
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'description' => ['sometimes', 'nullable', 'string'],
+            'title' => ['sometimes', 'required', 'array'],
+            'title.en' => ['nullable', 'string', 'max:255'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
             'lesson_order' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'lesson_type' => ['sometimes', 'required', 'string', Rule::in(['lecture', 'video', 'interactive', 'reading'])],
             'is_required' => ['sometimes', 'nullable', 'boolean'],

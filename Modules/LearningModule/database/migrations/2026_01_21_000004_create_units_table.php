@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id('unit_id');
             $table->foreignId('course_id')->constrained('courses', 'course_id')->restrictOnDelete();
             $table->integer('unit_order')->nullable();
-            $table->string('title', 255);
-            $table->text('description')->nullable();
+            $table->json('title')->nullable(); // translatable: en, ar
+            $table->json('description')->nullable(); // translatable: en, ar
             $table->integer('actual_duration_minutes');
             $table->timestamps();
             $table->softDeletes('deleted_at');

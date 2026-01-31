@@ -8,35 +8,37 @@ use Modules\LearningModule\Models\CourseType;
 
 /**
  * Form request for updating an existing course type.
- * Handles validation for course type updates.
+ * Translatable fields accept string or array with en/ar keys.
  */
 class UpdateCourseTypeRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['name', 'description'] as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
-        // Get course type ID from route parameter (could be ID or model instance)
         $courseTypeId = $this->route('courseType');
         $courseTypeId = $courseTypeId instanceof CourseType ? $courseTypeId->course_type_id : $courseTypeId;
 
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:100', Rule::unique('course_types', 'name')->ignore($courseTypeId, 'course_type_id')],
+            'name' => ['sometimes', 'required', 'array'],
+            'name.en' => ['nullable', 'string', 'max:100'],
+            'name.ar' => ['nullable', 'string', 'max:100'],
             'slug' => ['sometimes', 'nullable', 'string', 'max:100', Rule::unique('course_types', 'slug')->ignore($courseTypeId, 'course_type_id')],
-            'description' => ['sometimes', 'nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'nullable', 'boolean'],
             'target_audience' => ['sometimes', 'nullable', 'string'],
         ];

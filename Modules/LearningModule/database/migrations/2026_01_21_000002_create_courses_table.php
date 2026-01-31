@@ -16,11 +16,11 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users', 'id')->cascadeOnDelete();
             $table->foreignId('course_type_id')->constrained('course_types', 'course_type_id')->restrictOnDelete();
             $table->unsignedBigInteger('program_id')->index(); // Using unsignedBigInteger , no constraint yet
-            $table->string('title', 255);
+            $table->json('title')->nullable(); // translatable: en, ar
             $table->string('slug', 255)->unique();
-            $table->text('description')->nullable();
-            $table->text('objectives')->nullable();
-            $table->text('prerequisites')->nullable();
+            $table->json('description')->nullable(); // translatable: en, ar
+            $table->json('objectives')->nullable(); // translatable: en, ar
+            $table->json('prerequisites')->nullable(); // translatable: en, ar
             $table->integer('actual_duration_hours');
             $table->decimal('allocated_budget', 15, 2)->default(0.00);
             $table->decimal('required_budget', 15, 2)->default(0.00);

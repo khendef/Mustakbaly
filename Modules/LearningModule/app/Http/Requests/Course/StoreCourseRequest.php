@@ -8,32 +8,41 @@ use Illuminate\Validation\Rule;
 /**
  * Form request for storing a new course.
  * Handles validation for course creation.
+ * Translatable fields (title, description, objectives, prerequisites) accept string or array with en/ar keys.
  */
 class StoreCourseRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        $translatable = ['title', 'description', 'objectives', 'prerequisites'];
+        foreach ($translatable as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'array'],
+            'title.en' => ['required_without:title.ar', 'nullable', 'string', 'max:255'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:courses,slug'],
-            'description' => ['nullable', 'string'],
-            'objectives' => ['nullable', 'string'],
-            'prerequisites' => ['nullable', 'string'],
+            'description' => ['nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
+            'objectives' => ['nullable', 'array'],
+            'objectives.en' => ['nullable', 'string'],
+            'objectives.ar' => ['nullable', 'string'],
+            'prerequisites' => ['nullable', 'array'],
+            'prerequisites.en' => ['nullable', 'string'],
+            'prerequisites.ar' => ['nullable', 'string'],
             'course_type_id' => ['required', 'integer', 'exists:course_types,course_type_id'],
             'program_id' => ['required', 'integer'], // No exists rule yet as Program table doesn't exist
             'actual_duration_hours' => ['required', 'integer', 'min:1'],

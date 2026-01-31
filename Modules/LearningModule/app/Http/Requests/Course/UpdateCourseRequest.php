@@ -8,7 +8,7 @@ use Modules\LearningModule\Models\Course;
 
 /**
  * Form request for updating an existing course.
- * Handles validation for course updates.
+ * Translatable fields accept string or array with en/ar keys.
  */
 class UpdateCourseRequest extends FormRequest
 {
@@ -25,10 +25,20 @@ class UpdateCourseRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Prepare the data for validation.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return void
      */
+    protected function prepareForValidation(): void
+    {
+        $translatable = ['title', 'description', 'objectives', 'prerequisites'];
+        foreach ($translatable as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         $courseId = $this->route('course');
@@ -37,7 +47,9 @@ class UpdateCourseRequest extends FormRequest
         $courseId = $courseId instanceof Course ? $courseId->course_id : $courseId;
 
         return [
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'title' => ['sometimes', 'required', 'array'],
+            'title.en' => ['nullable', 'string', 'max:255'],
+            'title.ar' => ['nullable', 'string', 'max:255'],
             'slug' => [
                 'sometimes',
                 'nullable',
@@ -45,9 +57,15 @@ class UpdateCourseRequest extends FormRequest
                 'max:255',
                 Rule::unique('courses', 'slug')->ignore($courseId, 'course_id')
             ],
-            'description' => ['sometimes', 'nullable', 'string'],
-            'objectives' => ['sometimes', 'nullable', 'string'],
-            'prerequisites' => ['sometimes', 'nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
+            'objectives' => ['sometimes', 'nullable', 'array'],
+            'objectives.en' => ['nullable', 'string'],
+            'objectives.ar' => ['nullable', 'string'],
+            'prerequisites' => ['sometimes', 'nullable', 'array'],
+            'prerequisites.en' => ['nullable', 'string'],
+            'prerequisites.ar' => ['nullable', 'string'],
             'course_type_id' => ['sometimes', 'required', 'integer', 'exists:course_types,course_type_id'],
             'program_id' => ['sometimes', 'required', 'integer'],
             'actual_duration_hours' => ['sometimes', 'required', 'integer', 'min:1'],
