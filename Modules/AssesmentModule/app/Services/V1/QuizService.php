@@ -1,39 +1,82 @@
 <?php
 
 namespace Modules\AssesmentModule\Services\V1;
+
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Modules\AssesmentModule\Models\Quiz;
 use Modules\AssesmentModule\Models\Builders\QuizBuilder;
 use Throwable;
 
+/**
+ * Class QuizService
+ *
+ * This service handles the business logic for quizzes, including:
+ * - Fetching a list of quizzes with filters and pagination
+ * - Viewing, creating, updating, publishing, and unpublishing quizzes
+ * - Deleting quizzes
+ *
+ * It encapsulates all quiz-related operations, ensuring that the business rules are respected.
+ * The service uses database transactions to maintain data integrity and handles exceptions for robustness.
+ *
+ * @package Modules\AssesmentModule\Services\V1
+ */
 class QuizService extends BaseService
 {
+    /**
+     * Handle the service logic. Currently a placeholder for any additional functionality.
+     *
+     * @return void
+     */
     public function handle() {}
-    public function index(array $filters = [],int $perPage =15): array
+
+    /**
+     * Fetch a paginated list of quizzes based on the given filters.
+     *
+     * @param array $filters The filters to apply to the quiz query (e.g., status, type).
+     * @param int $perPage The number of quizzes per page (default is 15).
+     *
+     * @return array<string, mixed> The result of the operation with status and data.
+     */
+    public function index(array $filters = [], int $perPage = 15): array
     {
         try {
             $data = Quiz::query()
-            ->filter($filters)
-            ->paginate($perPage);
-                return $this->ok('Quiz fetched successfully.', $data, 200);
+                ->filter($filters)
+                ->paginate($perPage);
+
+            return $this->ok('Quiz fetched successfully.', $data, 200);
         } catch (Throwable $e) {
             return $this->fail('Failed to fetch quizzes.', $e, 500);
         }
     }
 
+    /**
+     * Fetch a single quiz by its ID, including its associated questions and options.
+     *
+     * @param int $id The ID of the quiz.
+     *
+     * @return array<string, mixed> The result of the operation with status and data.
+     */
     public function show(int $id): array
     {
         try {
             $quiz = Quiz::query()->with(['questions.options'])->findOrFail($id);
             return $this->ok('Quiz fetched successfully.', $quiz);
-        }catch (ModelNotFoundException $e) {
-            return $this->fail('Quiz not found.', $e,404);
+        } catch (ModelNotFoundException $e) {
+            return $this->fail('Quiz not found.', $e, 404);
         } catch (Throwable $e) {
             return $this->fail('Failed to fetch quiz.', $e);
         }
     }
 
+    /**
+     * Create a new quiz with the provided data.
+     *
+     * @param array $data The data to create a new quiz.
+     *
+     * @return array<string, mixed> The result of the operation with status and the created quiz.
+     */
     public function store(array $data): array
     {
         try {
@@ -47,6 +90,14 @@ class QuizService extends BaseService
         }
     }
 
+    /**
+     * Update an existing quiz with the provided data.
+     *
+     * @param Quiz $quiz The quiz to update.
+     * @param array $data The data to update the quiz.
+     *
+     * @return array<string, mixed> The result of the operation with status and the updated quiz.
+     */
     public function update(Quiz $quiz, array $data): array
     {
         try {
@@ -60,53 +111,60 @@ class QuizService extends BaseService
             return $this->fail('Failed to update quiz.', $e);
         }
     }
-    public function publish(Quiz $quiz):array{
-        try{
-            $quiz->update(['status'=>'published']);
-            return $this->ok('Quiz published successfully.',$quiz);
-        }catch(Throwable $e){
-            return $this->fail('Failed to publish quiz',null,500, $e->getMessage());
-        }
-    }
-    public function unpublish(Quiz $quiz):array{
+
+    /**
+     * Publish a quiz, changing its status to 'published'.
+     *
+     * @param Quiz $quiz The quiz to publish.
+     *
+     * @return array<string, mixed> The result of the operation with status and the published quiz.
+     */
+    public function publish(Quiz $quiz): array
+    {
         try {
-        if ($quiz->status !== 'published') {
-            return $this->ok(
-                'Quiz is already unpublished (draft).',
-                $quiz
-            );
+            $quiz->update(['status' => 'published']);
+            return $this->ok('Quiz published successfully.', $quiz);
+        } catch (Throwable $e) {
+            return $this->fail('Failed to publish quiz', null, 500, $e->getMessage());
         }
-
-        if ($quiz->attempts()
-            ->where('status', 'in_progress')
-            ->exists()
-        ) {
-            return $this->fail(
-                'Cannot unpublish quiz because an attempt is currently in progress.',
-                null,
-                422
-            );
-        }
-
-        $quiz->update([
-            'status' => 'draft',
-        ]);
-
-        return $this->ok(
-            'Quiz unpublished successfully.',
-            $quiz
-        );
-
-    } catch (Throwable $e) {
-        return $this->fail(
-            'Failed to unpublish quiz',
-            null,
-            500,
-            $e->getMessage()
-        );
-    }
     }
 
+    /**
+     * Unpublish a quiz, changing its status to 'draft'.
+     *
+     * @param Quiz $quiz The quiz to unpublish.
+     *
+     * @return array<string, mixed> The result of the operation with status and the unpublished quiz.
+     */
+    public function unpublish(Quiz $quiz): array
+    {
+        try {
+            if ($quiz->status !== 'published') {
+                return $this->ok('Quiz is already unpublished (draft).', $quiz);
+            }
+
+            if ($quiz->attempts()->where('status', 'in_progress')->exists()) {
+                return $this->fail(
+                    'Cannot unpublish quiz because an attempt is currently in progress.',
+                    null,
+                    422
+                );
+            }
+
+            $quiz->update(['status' => 'draft']);
+            return $this->ok('Quiz unpublished successfully.', $quiz);
+        } catch (Throwable $e) {
+            return $this->fail('Failed to unpublish quiz', null, 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a quiz.
+     *
+     * @param Quiz $quiz The quiz to delete.
+     *
+     * @return array<string, mixed> The result of the operation with status.
+     */
     public function destroy(Quiz $quiz): array
     {
         try {
@@ -119,5 +177,4 @@ class QuizService extends BaseService
             return $this->fail('Failed to delete quiz.', $e);
         }
     }
-
 }

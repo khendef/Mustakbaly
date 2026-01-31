@@ -1,16 +1,44 @@
 <?php
 
 namespace Modules\AssesmentModule\Services\V1;
+
 use Modules\AssesmentModule\Models\Answer;
 use Throwable;
+
+/**
+ * Class AnswerService
+ *
+ * This service handles the business logic for managing answers, including:
+ * - Fetching a list of answers with filters and pagination
+ * - Creating, updating, and deleting answers
+ * - Retrieving a single answer by ID
+ *
+ * It encapsulates all operations related to answers, ensuring that business rules are respected.
+ * The service uses exception handling to manage errors and provides consistent responses.
+ *
+ * @package Modules\AssesmentModule\Services\V1
+ */
 class AnswerService extends BaseService
 {
+    /**
+     * Handle the service logic. Currently a placeholder for additional functionality.
+     *
+     * @return void
+     */
     public function handle() {}
-     public function index(array $filters, int $perPage = 15): array
+
+    /**
+     * Fetch a paginated list of answers based on the given filters.
+     *
+     * @param array $filters The filters to apply to the answer query (e.g., attempt_id, question_id).
+     * @param int $perPage The number of answers per page (default is 15).
+     *
+     * @return array<string, mixed> The result of the operation with status and data.
+     */
+    public function index(array $filters, int $perPage = 15): array
     {
         try {
             $q = Answer::query()->filter($filters)->latest('id');
-
             $data = $q->paginate($perPage);
 
             return $this->ok('Operation successful', $data, 200);
@@ -19,6 +47,13 @@ class AnswerService extends BaseService
         }
     }
 
+    /**
+     * Store a new answer or update an existing one with the provided data.
+     *
+     * @param array $payload The data to create or update the answer.
+     *
+     * @return array<string, mixed> The result of the operation with status and the answer.
+     */
     public function store(array $payload): array
     {
         try {
@@ -41,6 +76,13 @@ class AnswerService extends BaseService
         }
     }
 
+    /**
+     * Fetch a single answer by its ID.
+     *
+     * @param int $id The ID of the answer to retrieve.
+     *
+     * @return array<string, mixed> The result of the operation with status and the fetched answer.
+     */
     public function show(int $id): array
     {
         try {
@@ -56,6 +98,14 @@ class AnswerService extends BaseService
         }
     }
 
+    /**
+     * Update an existing answer with the provided data.
+     *
+     * @param int $id The ID of the answer to update.
+     * @param array $payload The data to update the answer.
+     *
+     * @return array<string, mixed> The result of the operation with status and the updated answer.
+     */
     public function update(int $id, array $payload): array
     {
         try {
@@ -71,6 +121,13 @@ class AnswerService extends BaseService
         }
     }
 
+    /**
+     * Delete an answer by its ID.
+     *
+     * @param int $id The ID of the answer to delete.
+     *
+     * @return array<string, mixed> The result of the operation with status.
+     */
     public function destroy(int $id): array
     {
         try {
