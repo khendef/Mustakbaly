@@ -7,14 +7,9 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-<<<<<<< HEAD
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
-=======
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
->>>>>>> 8f2c3d4073053769e88d78d9a94551c3946badeb
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
