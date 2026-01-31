@@ -5,6 +5,7 @@ namespace Modules\AssesmentModule\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\AssesmentModule\Models\Builders\AnswerBuilder;
+use Modules\UserManagementModule\Models\User;
 use Spatie\Translatable\HasTranslations;
 // use Modules\AssesmentModule\Database\Factories\AnswerFactory;
 

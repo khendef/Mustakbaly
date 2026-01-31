@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\AssesmentModule\Models\Builders\AttemptBuilder;
+use Modules\UserManagementModule\Models\User;
 
 class Attempt extends Model
 {
@@ -69,21 +70,13 @@ class Attempt extends Model
         return Attribute::make(get: fn() => $this->ends_at ? now()->gte($this->ends_at): false);
     }
     protected function timeSpentSeconds():Attribute{
-       /* return Attribute::make(get: function(){
-            if($this->status !== 'submitted')
-                {
-                    return null;
-                }
-            return $this->start_at && $this->submitted_at ? $this->start_at->diffInSeconds($this->submitted_at):null;
-        }
-        );*/
         return Attribute::make(get: function($value){
           if(!is_null($value)) return (int)$value;
-if(!$this->start_at) return null;
-{
-    $end = $this->submitted_at ?? now();
-    return max(0,$this->start_at->diffInSeconds($end));
-}
+        if(!$this->start_at) return null;
+          {
+            $end = $this->submitted_at ?? now();
+            return max(0,$this->start_at->diffInSeconds($end));
+          }
         });
     }
    protected static function booted()

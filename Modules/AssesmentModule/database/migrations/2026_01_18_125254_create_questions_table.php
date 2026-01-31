@@ -20,6 +20,7 @@ return new class extends Migration
             $table->boolean('is_required')->default(true);
             $table->unsignedInteger('order_index')->default(1);
             $table->timestamps();
+            $table->softDeletes();
             $table->unique(['quiz_id','order_index']);
         });
     }

@@ -12,34 +12,33 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('quizzes', function (Blueprint $table) {
-             $table->id();
-         $table->foreignId('course_id')
+        $table->id();
+        $table->foreignId('course_id')
         ->constrained('courses')
         ->cascadeOnDelete();
 
-         $table->foreignId('instructor_id')
-         ->constrained('users')
-         ->cascadeOnDelete();
+        $table->foreignId('instructor_id')
+        ->constrained('users')->cascadeOnDelete();
 
-    $table->unsignedBigInteger('quizable_id')->nullable();
-    $table->string('quizable_type')->nullable();
+        $table->unsignedBigInteger('quizable_id')->nullable();
+        $table->string('quizable_type')->nullable();
 
-    $table->json('title');
-    $table->json('description')->nullable();
+        $table->json('title');
+        $table->json('description')->nullable();
 
-    $table->enum('type', ['quiz','assignment','practice'])->default('quiz');
-    $table->unsignedInteger('max_score')->default(100);
-    $table->unsignedInteger('passing_score')->nullable();
-    $table->enum('status', ['published','draft'])->default('draft');
-    $table->boolean('auto_grade_enabled')->default(true);
+        $table->enum('type', ['quiz','assignment','practice'])->default('quiz');
+        $table->unsignedInteger('max_score')->default(100);
+        $table->unsignedInteger('passing_score')->nullable();
+        $table->enum('status', ['published','draft'])->default('draft');
+        $table->boolean('auto_grade_enabled')->default(true);
 
-    $table->timestamp('available_from')->nullable();
-    $table->timestamp('due_date')->nullable();
-    $table->unsignedBigInteger('duration_minutes')->nullable();
+        $table->timestamp('available_from')->nullable();
+        $table->timestamp('due_date')->nullable();
+        $table->unsignedBigInteger('duration_minutes')->nullable();
+        $table->softDeletes();
+        $table->timestamps();
 
-    $table->timestamps();
-
-    $table->index(['course_id','status']);
+        $table->index(['course_id','status']);
          });
     }
 

@@ -54,7 +54,7 @@ class QuestionController extends Controller
     public function store(StoreQuestionRequest $request)
     {
         try {
-            $res = $this->questionService->store($request->validated());
+            $res = $this->questionService->create($request->validated());
 
             if (!($res['success'] ?? false)) {
                 return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);

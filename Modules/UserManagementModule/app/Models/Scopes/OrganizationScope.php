@@ -5,6 +5,7 @@ namespace Modules\UserManagementModule\Models\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 class OrganizationScope implements Scope
@@ -14,7 +15,7 @@ class OrganizationScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void 
     {
-        if(auth()->check())
+    /*  if(auth()->check())
         {
             $user = auth()->user();
         }
@@ -23,6 +24,11 @@ class OrganizationScope implements Scope
         {
             $organization = Route::input('organization');
             $builder->where('organization_id',$organization->id);
-        }
+        }*/
+           $user = Auth::user();
+            if(!$user){
+                return;
+            }
+            $builder->where('organization_id',$user->organization_id);
     }
 }

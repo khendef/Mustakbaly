@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('attempts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('quiz_id')->constrained('quizzes')->cascadeOnDelete();
-            $table->foreignId('student_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('quiz_id')->constrained('quizzes')->restrictOnDelete();
+            $table->foreignId('student_id')->constrained('users')->restrictOnDelete();
             $table->unsignedInteger('attempt_number')->default(1);
             $table->unsignedInteger('score')->nullable();
             $table->enum('status',['in_progress','submitted','graded'])->default('in_progress');

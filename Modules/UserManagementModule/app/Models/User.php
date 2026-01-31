@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
-use Modules\UserManagementModule\App\Models\Builders\UserBuilder;
+use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
@@ -69,10 +70,10 @@ class User extends Model implements JWTSubject
         return new UserBuilder($query);
     }
 
-    public function studentProfile()
-    {
-        return $this->hasOne(Student::class);
-    }
+   // public function studentProfile()
+    ////{
+       // return $this->hasOne(Student::class);
+   // }
     public function instructorProfile()
     {
         return $this->hasOne(instructor::class);
