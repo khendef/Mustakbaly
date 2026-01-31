@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Spatie\Activitylog\LogOptions;
 
 class Course extends Model
@@ -20,7 +21,14 @@ class Course extends Model
      * Represents a course in the e-learning platform.
      * Contains course information, metadata, relationships with instructors, units, and manages course lifecycle including publishing and soft deletion.
      */
-    use SoftDeletes, LogsActivity;
+    use SoftDeletes, CascadeSoftDeletes, LogsActivity;
+
+    /**
+     * The relationships that should cascade on delete.
+     *
+     * @var array
+     */
+    protected $cascadeDeletes = ['units'];
 
     /**
      * The primary key for the model.

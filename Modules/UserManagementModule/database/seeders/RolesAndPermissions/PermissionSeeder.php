@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\Seeders\RolesAndPermissions;
+namespace Modules\UserManagementModule\Database\Seeders\RolesAndPermissions;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 
 class PermissionSeeder extends Seeder
 {
@@ -12,7 +12,7 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        $permissions = [
+                $permissions = [
             //users permissions (all users accounts, managers accounts)
             'create-user',
             'update-user',
@@ -70,5 +70,9 @@ class PermissionSeeder extends Seeder
             'show-lesson',
 
         ];
+
+         foreach($permissions as $permission){
+            Permission::create(['name'=>$permission , 'guard_name'=>'api']);
+        }
     }
 }

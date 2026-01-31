@@ -1,0 +1,15 @@
+{
+  "workspace": {
+    "id": "c711f446-678c-47db-92fd-818303cdcada"
+  },
+  "entities": {
+    "environments": [],
+    "flows": [],
+    "globals": [],
+    "mocks": [],
+    "specs": [],
+    "collections": [
+      "..\\Mustakbaly_API_Collection.postman_collection.json"
+    ]
+  }
+}

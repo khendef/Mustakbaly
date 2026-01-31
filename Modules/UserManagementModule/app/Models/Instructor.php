@@ -5,13 +5,12 @@ namespace Modules\UserManagementModule\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Notifications\Notifiable;
-use Modules\UserManagementModule\App\Models\Builders\InstructorBuilder;
+use Modules\UserManagementModule\Models\Builders\InstructorBuilder;
 // use Modules\UserManagementModule\Database\Factories\InstructorFactory;
 
 class Instructor extends Model
 {
-    use HasFactory, SoftDeletes,Notifiable;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

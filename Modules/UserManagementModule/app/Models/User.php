@@ -2,7 +2,7 @@
 
 namespace Modules\UserManagementModule\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
@@ -13,7 +13,7 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
-class User extends Model implements JWTSubject
+class User extends Authenticatable implements JWTSubject
 {
 /** @use HasFactory<\Database\Factories\UserFactory> */
   use HasFactory, Notifiable,  HasRoles, SoftDeletes;
@@ -36,6 +36,8 @@ class User extends Model implements JWTSubject
         'remember_token',
     ];
 
+    protected $guard_name = 'api';
+
     /**
      * Get the attributes that should be cast.
      *
@@ -49,10 +51,10 @@ class User extends Model implements JWTSubject
         ];
     }
 
-     protected static function booted()
-    {
-        static::addGlobalScope(new OrganizationScope);
-    }
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new OrganizationScope);
+    // }
 
     public function getJWTIdentifier()
     {

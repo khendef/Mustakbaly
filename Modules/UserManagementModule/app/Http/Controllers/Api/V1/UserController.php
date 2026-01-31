@@ -34,7 +34,7 @@ class UserController extends Controller
     {
         $filters = $request->validated();
         $users = $this->userService->list($filters);
-        return self::paginate($users,'users retrieved successfully');
+        return self::paginated($users,'users retrieved successfully');
         
     }
 
@@ -71,7 +71,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        $user->delete();
+        $user->delete(); 
         return self::success(null,'user deleted successfully');
     }
 }

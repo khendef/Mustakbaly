@@ -5,14 +5,13 @@ namespace Modules\UserManagementModule\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Notifications\Notifiable;
-use Modules\UserManagementModule\App\Models\Builders\StudentBuilder;
+use Modules\UserManagementModule\Models\Builders\StudentBuilder;
 use Modules\UserManagementModule\Enums\EducationalLevel;
 // use Modules\UserManagementModule\Database\Factories\StudentFactory;
 
 class Student extends Model
 {
-    use HasFactory, SoftDeletes,Notifiable;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
