@@ -2,6 +2,7 @@
 
 namespace Modules\UserManagementModule\Models;
 
+<<<<<<< HEAD
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Model;
@@ -13,10 +14,22 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Modules\UserManagementModule\App\Models\Builders\UserBuilder;
+=======
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
+use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\Builders\UserBuilder;
+>>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
+<<<<<<< HEAD
 class User extends Model implements JWTSubject , HasMedia
+=======
+class User extends Authenticatable implements JWTSubject
+>>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
 {
 /** @use HasFactory<\Database\Factories\UserFactory> */
   use HasFactory, Notifiable,  HasRoles, SoftDeletes , InteractsWithMedia;
@@ -39,6 +52,8 @@ class User extends Model implements JWTSubject , HasMedia
         'remember_token',
     ];
 
+    protected $guard_name = 'api';
+
     /**
      * Get the attributes that should be cast.
      *
@@ -52,10 +67,10 @@ class User extends Model implements JWTSubject , HasMedia
         ];
     }
 
-     protected static function booted()
-    {
-        static::addGlobalScope(new OrganizationScope);
-    }
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new OrganizationScope);
+    // }
 
     public function getJWTIdentifier()
     {

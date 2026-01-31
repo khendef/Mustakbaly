@@ -16,6 +16,14 @@ use Modules\LearningModule\Models\CourseInstructor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+<<<<<<< HEAD
+=======
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Model;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
+use Spatie\Activitylog\LogOptions;
+>>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
 
 class Course extends Model implements HasMedia
 {
@@ -23,7 +31,18 @@ class Course extends Model implements HasMedia
      * Represents a course in the e-learning platform.
      * Contains course information, metadata, relationships with instructors, units, and manages course lifecycle including publishing and soft deletion.
      */
+<<<<<<< HEAD
     use SoftDeletes, LogsActivity , InteractsWithMedia;
+=======
+    use SoftDeletes, CascadeSoftDeletes, LogsActivity;
+
+    /**
+     * The relationships that should cascade on delete.
+     *
+     * @var array
+     */
+    protected $cascadeDeletes = ['units'];
+>>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
 
     /**
      * The primary key for the model.

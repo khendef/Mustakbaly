@@ -1,16 +1,15 @@
 <?php
 namespace App\Http\Controllers;
 use Illuminate\Pagination\LengthAwarePaginator;
-
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
+use \Illuminate\Routing\Controller as BaseController;
+
 
 /**
  * Base controller class for all application controllers.
  * Provides a common foundation for controller functionality in the Laravel application.
  */
-abstract class Controller
+abstract class Controller extends BaseController
 {
     use AuthorizesRequests;
 

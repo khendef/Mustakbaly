@@ -28,9 +28,14 @@ class UserService
     public function create(array $data)
     {
         $user = User::create($data);
+<<<<<<< HEAD
         $user->assignRole($data['role']);
         if (isset($data['avatar'])) {
             $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+=======
+        if(isset($data['role'])){
+            $user->assignRole($data['role']);
+>>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
         }
         return $user;
     }

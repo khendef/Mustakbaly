@@ -3,6 +3,8 @@
 namespace Modules\UserManagementModule\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\UserManagementModule\Database\Seeders\RolesAndPermissions\PermissionSeeder;
+use Modules\UserManagementModule\Database\Seeders\RolesAndPermissions\SuperAdminRoleSeeder;
 
 class UserManagementModuleDatabaseSeeder extends Seeder
 {
@@ -11,6 +13,9 @@ class UserManagementModuleDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+         $this->call([
+        PermissionSeeder::class,
+        SuperAdminRoleSeeder::class
+       ]);
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Modules\LearningModule\Builders\UnitBuilder;
 use Spatie\Activitylog\LogOptions;
 
@@ -16,7 +17,14 @@ class Unit extends Model
      * Represents a unit within a course in the e-learning platform.
      * Organizes course content into logical sections, containing multiple lessons and supporting soft deletion for content management.
      */
-    use SoftDeletes, LogsActivity;
+    use SoftDeletes, CascadeSoftDeletes, LogsActivity;
+
+    /**
+     * The relationships that should cascade on delete.
+     *
+     * @var array
+     */
+    protected $cascadeDeletes = ['lessons'];
 
     /**
      * The primary key for the model.
