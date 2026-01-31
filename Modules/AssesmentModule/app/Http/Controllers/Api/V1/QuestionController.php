@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\AssesmentModule\Http\Controllers\Api\v2;
+namespace Modules\AssesmentModule\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Pagination\LengthAwarePaginator;

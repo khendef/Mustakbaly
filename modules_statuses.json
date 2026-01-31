@@ -6,5 +6,6 @@
     "CertificationModule": true,
     "OrganizationsModule": true,
     "UserManagementModule": true,
-    "ReportingModule": true
+    "ReportingModule": true,
+    "NotificationModule": true
 }

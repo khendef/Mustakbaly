@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\AssesmentModule\Services\v2;
+namespace Modules\AssesmentModule\Services\V1;
 use Illuminate\Support\Facades\DB;
 use Modules\AssesmentModule\Models\Question;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
