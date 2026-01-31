@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Builders\LessonBuilder;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Translatable\HasTranslations;
 
 class Lesson extends Model
 {
@@ -16,7 +17,10 @@ class Lesson extends Model
      * Represents a lesson within a unit in the e-learning platform.
      * Contains lesson content, metadata, and relationships, supporting various lesson types and soft deletion.
      */
-    use SoftDeletes, LogsActivity;
+    use HasTranslations, SoftDeletes, LogsActivity;
+
+    /** Translatable attributes (en, ar). */
+    public array $translatable = ['title', 'description'];
 
     /**
      * The primary key for the model.
@@ -49,6 +53,8 @@ class Lesson extends Model
     protected function casts(): array
     {
         return [
+            'title' => 'array',
+            'description' => 'array',
             'is_required' => 'boolean',
             'is_completed' => 'boolean',
             'deleted_at' => 'datetime',
@@ -104,7 +110,7 @@ class Lesson extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(function (string $eventName) {
-                return "Lesson '{$this->title}' was {$eventName}";
+                return "Lesson '" . ($this->getTranslation('title', 'en') ?: $this->title) . "' was {$eventName}";
             });
     }
 }

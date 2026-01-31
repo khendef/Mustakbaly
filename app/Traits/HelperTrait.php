@@ -3,14 +3,88 @@
 namespace App\Traits;
 
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
  * Helper trait for common service operations.
+ * Includes slug generation, validation, ordering management, and translation helpers.
+ * Supported languages: en (main), ar.
  * Includes slug generation, validation, and ordering management.
  */
 trait HelperTrait
 {
+    /** Supported locales for translation. English is the main language. */
+    private const SUPPORTED_LOCALES = ['en', 'ar'];
+
+    /** Default/main locale. */
+    private const MAIN_LOCALE = 'en';
+
+    /**
+     * Get request locale from Accept-Language header .
+     * If no locale is provided, return the main locale.
+     *
+     * @param Request|null $request
+     * @return string The locale from the Accept-Language header or the main locale if no locale is provided
+     */
+    protected function getRequestLocale(?Request $request = null): string
+    {
+        $request = $request ?? request();
+        $locale = $request->header('Accept-Language', self::MAIN_LOCALE);
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        $locale = explode(';', trim($locale))[0];
+        $locale = trim($locale);
+
+        return in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : self::MAIN_LOCALE;
+    }
+
+    /**
+     * Get translated value for a model attribute (for use in API Resources).
+     *
+     * @param object $model
+     * @param string $attribute
+     * @param string|null $locale
+     * @return mixed
+     */
+    protected function getTranslatedAttribute(object $model, string $attribute, ?string $locale = null): mixed
+    {
+        if (!method_exists($model, 'getTranslation')) {
+            return $model->{$attribute} ?? null;
+        }
+        $translatable = $model->translatable ?? [];
+        if (!in_array($attribute, $translatable, true)) {
+            return $model->{$attribute} ?? null;
+        }
+        $locale = $locale ?? $this->getRequestLocale();
+        $value = $model->getTranslation($attribute, $locale);
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        return $model->getTranslation($attribute, self::MAIN_LOCALE);
+    }
+
+    /**
+     * Extract a single string from a translatable value for slug generation.
+     *
+     * @param mixed $value
+     * @param string $mainLocale
+     * @return string
+     */
+    protected function translatableToSlugSource(mixed $value, string $mainLocale = 'en'): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_array($value)) {
+            return $value[$mainLocale] ?? $value['ar'] ?? (string) reset($value);
+        }
+
+        return (string) $value;
+    }
+
     /**
      * Generate a unique slug from a string.
      *

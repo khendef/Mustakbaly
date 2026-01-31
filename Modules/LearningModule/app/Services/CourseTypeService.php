@@ -26,14 +26,12 @@ class CourseTypeService
     public function create(array $data): ?CourseType
     {
         try {
-            // Ensure name is unique
-            if (isset($data['name'])) {
-                $this->validateUniqueName($data['name'], CourseType::class);
-            }
-
-            // Generate slug if not provided
+            // Generate slug if not provided (use English name)
             if (empty($data['slug']) && !empty($data['name'])) {
-                $data['slug'] = $this->generateUniqueSlug($data['name'], CourseType::class);
+                $nameForSlug = $this->translatableToSlugSource($data['name'], 'en');
+                if ($nameForSlug !== '') {
+                    $data['slug'] = $this->generateUniqueSlug($nameForSlug, CourseType::class);
+                }
             }
 
             // Ensure slug is unique
@@ -48,7 +46,7 @@ class CourseTypeService
 
             Log::info("Course type created", [
                 'course_type_id' => $courseType->course_type_id,
-                'name' => $courseType->name,
+                'name' => $this->translatableToSlugSource($courseType->name ?? [], 'en'),
                 'slug' => $courseType->slug,
             ]);
 
@@ -74,17 +72,13 @@ class CourseTypeService
     public function update(CourseType $courseType, array $data): ?CourseType
     {
         try {
-            // Validate name uniqueness if being changed
-            if (isset($data['name']) && $data['name'] !== $courseType->name) {
-                $this->validateUniqueName($data['name'], CourseType::class, 'course_type_id', $courseType->course_type_id);
-            }
-
-            // Handle slug update
+            // Handle slug update (use English name)
             if (isset($data['name']) && empty($data['slug'])) {
-                // If name changed and slug not provided, generate new slug
-                $data['slug'] = $this->generateUniqueSlug($data['name'], CourseType::class);
+                $nameForSlug = $this->translatableToSlugSource($data['name'], 'en');
+                if ($nameForSlug !== '') {
+                    $data['slug'] = $this->generateUniqueSlug($nameForSlug, CourseType::class, 'slug', 'course_type_id', $courseType->course_type_id);
+                }
             } elseif (isset($data['slug'])) {
-                // Ensure slug is unique (excluding current course type)
                 $data['slug'] = $this->ensureUniqueSlug($data['slug'], CourseType::class, 'slug', 'course_type_id', $courseType->course_type_id);
             }
 

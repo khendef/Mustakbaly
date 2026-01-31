@@ -2,6 +2,7 @@
 
 namespace Modules\LearningModule\Http\Resources;
 
+use App\Traits\HelperTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,10 +10,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * CourseType API Resource
  *
  * Transforms CourseType model into a consistent JSON structure for API responses.
- * Provides a standardized format for course type data across all endpoints.
+ * Translatable fields (name, description) follow Accept-Language.
  */
 class CourseTypeResource extends JsonResource
 {
+    use HelperTrait;
+
     /**
      * Transform the resource into an array.
      *
@@ -21,22 +24,25 @@ class CourseTypeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $locale = $this->getRequestLocale($request);
+
         return [
             'id' => $this->course_type_id,
-            'name' => $this->name,
+            'name' => $this->getTranslatedAttribute($this->resource, 'name', $locale),
             'slug' => $this->slug,
-            'description' => $this->description,
+            'description' => $this->getTranslatedAttribute($this->resource, 'description', $locale),
             'is_active' => $this->is_active,
             'target_audience' => $this->target_audience,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
 
             // Relationships (only included if loaded)
-            'courses' => $this->whenLoaded('courses', function () {
-                return $this->courses->map(function ($course) {
+            'courses' => $this->whenLoaded('courses', function () use ($request) {
+                $locale = $this->getRequestLocale($request);
+                return $this->courses->map(function ($course) use ($locale) {
                     return [
                         'id' => $course->course_id,
-                        'title' => $course->title,
+                        'title' => $this->getTranslatedAttribute($course, 'title', $locale),
                         'slug' => $course->slug,
                         'status' => $course->status,
                     ];
