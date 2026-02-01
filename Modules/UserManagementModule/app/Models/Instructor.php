@@ -27,6 +27,13 @@ class Instructor extends Model implements HasMedia
         'years_of_experience'
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'years_of_experience' => 'integer'
+        ];
+    }
+
     public function newEloquentBuilder($query): InstructorBuilder
     {
         return new InstructorBuilder($query);

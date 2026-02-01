@@ -4,16 +4,18 @@ namespace Modules\LearningModule\Models;
 
 use App\Models\User;
 use App\Traits\LogsActivity;
-use Dyrynda\Database\Support\CascadeSoftDeletes;
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\LearningModule\Models\Enrollment;
+use Modules\OrganizationsModule\Models\Program;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
+use Modules\LearningModule\Builders\CourseBuilder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\LearningModule\Models\CourseInstructor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Modules\LearningModule\Builders\CourseBuilder;
-use Modules\LearningModule\Models\Enrollment;
-use Modules\LearningModule\Models\CourseInstructor;
-use Spatie\Activitylog\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -112,6 +114,21 @@ class Course extends Model implements HasMedia
         return $this->belongsTo(CourseType::class, 'course_type_id', 'course_type_id');
     }
 
+    /**
+     * Get the program that owns the course.
+     *
+     * @return BelongsTo
+     */
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
+
+    /**
+     * Get the user who created the course.
+     *
+     * @return BelongsTo
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'id');

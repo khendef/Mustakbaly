@@ -37,4 +37,9 @@ class UserBuilder extends Builder
             $q->where('organizations.id', $organiztionId);
         });
     }
+
+    public function filter()
+    {
+        return $this;
+    }
 }
