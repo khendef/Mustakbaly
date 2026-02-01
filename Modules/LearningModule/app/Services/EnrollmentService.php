@@ -13,6 +13,7 @@ use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\LearningModule\Models\Lesson;
 use Modules\LearningModule\Models\Unit;
+use Modules\UserManagementModule\Models\User;
 
 /**
  * Service class for managing enrollment business logic.
@@ -36,6 +37,39 @@ class EnrollmentService
     public function __construct(CourseService $courseService)
     {
         $this->courseService = $courseService;
+    }
+
+
+    /**
+     * enrollment process
+     * transaction begins:
+     * 1. check profile
+     * 2. if profile is not completed redirect to complete profile and  assign role student
+     * 4. attach to organization
+     * 5. enroll the course
+     */
+
+    /**
+     * Summary of registerStudent
+     * @param mixed $orgId
+     * @param mixed $learnerId
+     */
+    private function registerStudent($orgId , $learnerId)
+    {
+        $learner = User::findOrFail($learnerId);
+        
+        if(!$learner->studentProfile()->exists()){
+                return [
+                    'status'  => 'incomplete_profile',
+                    'message' => 'Student information incomplete. Please complete your profile first.',
+                    'data'    => [
+                        'redirect_to' => '/profile/complete',
+                        'required_fields' => ['phone', 'address', 'education_level']
+                    ]
+            ];
+        }
+        $learner->organizations()->syncWithoutDetaching([$orgId => ['role' => 'student']]);   
+
     }
 
     /**
@@ -85,6 +119,8 @@ class EnrollmentService
                 $enrolledByValue = $enrollmentType === 'self'
                     ? $learnerId
                     : ($enrolledBy ?? Auth::id());
+
+                $this->registerStudent($course->program->organization_id, $learnerId);
 
                 $enrollment = Enrollment::create([
                     'learner_id' => $learnerId,

@@ -28,7 +28,10 @@ class StudentUpdateRequest extends FormRequest
             'gender'=>['sometimes',Rule::in(['male','female'])],
             'address'=>'sometimes|nullable|max:500',
             'education_level'=>'sometimes|string',
-            'country'=>'sometimes|string'
+            'country'=>'sometimes|string',
+            'bio' => 'sometimes|nullable|text|max:1000',
+            'specialization' => 'sometimes|nullable|string|max:255',
+            'joined_at' => 'sometimes|nullable|date'
         ];
     }
 

@@ -18,14 +18,19 @@ class Student extends Model
      */
     protected $fillable = [
         'educational_level',
-        'country'
+        'country',
+        'bio',
+        'specialization',
+        'joined_at'
 
     ];
 
     protected function casts(): array
     {
         return [
-            'status'=>EducationalLevel::class
+            'educational_level' =>EducationalLevel::class,
+            'joined_at' => 'datetime'
+
         ];
     }
 

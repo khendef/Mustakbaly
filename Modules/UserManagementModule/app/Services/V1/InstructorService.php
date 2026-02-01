@@ -4,6 +4,7 @@ namespace Modules\UserManagementModule\Services\V1;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Modules\UserManagementModule\DTOs\InstructorDTO;
 use Modules\UserManagementModule\Enums\UserRole;
 use Modules\UserManagementModule\Models\User;
 
@@ -24,17 +25,17 @@ class InstructorService
         ->findOrFail($id);
     }
 
-    public function create(array $data)
+    public function create( InstructorDTO $instructorDTO)
     {
         // when an organization wants to add new instructor
        // the instructor might have an account on the platform (users table) created by another organization or by platform admin
        // we use firstorCreate to avoid duplication errors
 
-       return DB::transaction(function() use($data) {
+       return DB::transaction(function() use($instructorDTO) {
 
             //1. seperate basic information of instructor specific informtion
-            $userData = Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']);
-            $instructorData = Arr::except($data,['name','email','password','gender','date_of_birth','phone','address']);
+            $userData = $instructorDTO->userData();
+            $instructorData =$instructorDTO->instructorData();
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
@@ -45,22 +46,18 @@ class InstructorService
             // user_id = $user->id
             $instructor = $user->instructorProfile()->updateOrCreate(['user_id' => $user->id],$instructorData);
             //4. attach to organization
-            $user->organizations()->attach($data['organization_id'],['role'=>UserRole::INSTRUCTOR->value]);
+            $user->organizations()->syncWithoutDetaching($instructorDTO->organizationId,['role'=>UserRole::INSTRUCTOR->value]);
             //5. assign role
             $user->assignRole(UserRole::INSTRUCTOR->value);
             return $instructor;
        });  
     }
 
-    public function update(User $user,array $data)
+    public function update(User $user,InstructorDTO $instructorDTO)
     {
-        return DB::transaction(function () use ($data, $user) {
-        
-            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));           
-            $user->instructorProfile()->updateOrCreate(
-                ['user_id' => $user->id],
-                Arr::except($data,['name','email','password','gender','date_of_birth','phone','address'])
-            );
+        return DB::transaction(function () use ($instructorDTO, $user) {
+            $user->update($instructorDTO->userData());           
+            $user->instructorProfile()->update($instructorDTO->instructorData());
             return $user->refresh();
         });
     }
@@ -71,6 +68,5 @@ class InstructorService
             $user->instructorProfile()->delete();
             $user->delete();
         });
-        
     }
 }

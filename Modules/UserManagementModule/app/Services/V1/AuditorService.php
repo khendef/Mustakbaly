@@ -4,6 +4,7 @@ namespace Modules\UserManagementModule\Services\V1;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Modules\UserManagementModule\DTOs\AuditorDTO;
 use Modules\UserManagementModule\Enums\UserRole;
 use Modules\UserManagementModule\Models\User;
 
@@ -24,13 +25,13 @@ class AuditorService
         ->findOrFail($id);
     }
 
-    public function create(array $data)
+    public function create(AuditorDTO $auditorDTO)
     {
-        return DB::transaction(function() use($data) {
+        return DB::transaction(function() use($auditorDTO) {
 
             //1. seperate basic information of auditor specific informtion
-            $userData = Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']);
-            $auditorData = Arr::except($data,['name','email','password','gender','date_of_birth','phone','address']);
+            $userData = $auditorDTO->userData();
+            $auditorData = $auditorDTO->auditorData();
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
@@ -41,22 +42,19 @@ class AuditorService
             // user_id = $user->id
             $auditor = $user->auditorProfile()->updateOrCreate(['user_id' => $user->id],$auditorData);
             //4. attach to organization
-            $user->organizations()->attach($data['organization_id'],['role'=>UserRole::AUDITOR->value]);
+            $user->organizations()->attach($auditorDTO->organizationId,['role'=>UserRole::AUDITOR->value]);
             //5. assign role
             $user->assignRole(UserRole::AUDITOR->value);
             return $auditor;
        }); 
     }
 
-    public function update(User $user,array $data)
+    public function update(User $user,AuditorDTO $auditorDTO)
     {
-        return DB::transaction(function () use ($data, $user) {
+        return DB::transaction(function () use ($auditorDTO, $user) {
         
-            $user->update(Arr::only($data,['name','email','password','gender','date_of_birth','phone','address']));           
-            $user->auditorProfile()->updateOrCreate(
-                ['user_id' => $user->id],
-                Arr::except($data,['name','email','password','gender','date_of_birth','phone','address'])
-            );
+            $user->update($auditorDTO->userData());           
+            $user->auditorProfile()->update($auditorDTO->auditorData());
             return $user->refresh();
         });
 
