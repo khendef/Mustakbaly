@@ -26,7 +26,8 @@ class UserStoreRequest extends FormRequest
             'phone'=>'required|string|phone',
             'date_of_birth'=>'required|date',
             'gender'=>['required',Rule::in(['male','female'])],
-            'address'=>'nullable|max:500'
+            'address'=>'nullable|max:500',
+            'role'=>['sometimes',Rule::exists('roles','name')]
         ];
     }
 

@@ -2,9 +2,10 @@
 
 namespace Modules\OrganizationsModule\Services\V1;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Container\Attributes\DB;
 use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\User;
 /**
  * Service class for managing organizations.
  */
@@ -83,6 +84,29 @@ class OrganizationService
                 'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
+        }
     }
-}
+
+
+    /**
+     * logic:
+     * 1. create or find user
+     * 2. assign role manager
+     * 3. attach to organization
+     * 
+     * Summary of assignManager
+     * @param Organization $organization
+     * @param array $data
+     * @return User
+     */
+        
+    public function assignManager(Organization $organization , array $data)
+    {
+        return DB::transaction(function() use($data, $organization ) {
+            $user = User::firstOrCreate(['email'=>$data['email']],$data); 
+            $user->assignRole('manager');      
+            $organization->users()->syncWithoutDetaching([$user->id => ['role' => 'manager']]);
+            return $user;
+        });
+    }
 }
