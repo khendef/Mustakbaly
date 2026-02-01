@@ -22,13 +22,6 @@ class User extends Authenticatable implements JWTSubject
   use HasFactory, Notifiable,  HasRoles, SoftDeletes;
 
     /**
-     * The primary key for the model.
-     *
-     * @var string
-     */
-    protected $primaryKey = 'user_id';
-
-    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
@@ -108,7 +101,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function createdCourses()
     {
-        return $this->hasMany(Course::class, 'created_by', 'user_id');
+        return $this->hasMany(Course::class, 'created_by', 'id');
     }
 
     /**
@@ -116,7 +109,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function instructedCourses()
     {
-        return $this->belongsToMany(Course::class, 'course_instructor', 'instructor_id', 'course_id', 'user_id')
+        return $this->belongsToMany(Course::class, 'course_instructor', 'instructor_id', 'course_id')
             ->using(CourseInstructor::class)
             ->withPivot(['course_instructor_id', 'is_primary', 'assigned_at', 'assigned_by']);
     }
@@ -126,7 +119,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function enrolledCourses()
     {
-        return $this->belongsToMany(Course::class, 'enrollments', 'learner_id', 'course_id', 'user_id')
+        return $this->belongsToMany(Course::class, 'enrollments', 'learner_id', 'course_id')
             ->using(Enrollment::class)
             ->withPivot([
                 'enrollment_id',
@@ -145,7 +138,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function courseInstructorAssignments()
     {
-        return $this->hasMany(CourseInstructor::class, 'instructor_id', 'user_id');
+        return $this->hasMany(CourseInstructor::class, 'instructor_id', 'id');
     }
 
     /**
@@ -153,7 +146,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function assignedCourseInstructors()
     {
-        return $this->hasMany(CourseInstructor::class, 'assigned_by', 'user_id');
+        return $this->hasMany(CourseInstructor::class, 'assigned_by', 'id');
     }
 
     /**
@@ -161,7 +154,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class, 'learner_id', 'user_id');
+        return $this->hasMany(Enrollment::class, 'learner_id', 'id');
     }
 
     /**
@@ -169,6 +162,6 @@ class User extends Authenticatable implements JWTSubject
      */
     public function enrollmentsEnrolledBy()
     {
-        return $this->hasMany(Enrollment::class, 'enrolled_by', 'user_id');
+        return $this->hasMany(Enrollment::class, 'enrolled_by', 'id');
     }
 }
