@@ -29,16 +29,12 @@ class UpdateOrganizationRequest extends FormRequest
             'email' => 'sometimes|required|email|unique:organizations,email,' . $this->route('organization')->id,
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
-<<<<<<< HEAD
             'logo' => [
                 'nullable',
                 'image',
                 'mimes:jpeg,png,jpg,webp',
                 'max:2048',
             ],
-=======
-
->>>>>>> 8f82310be1ed3956233161a9a739ff5b62ca6e3c
         ];
     }
 
