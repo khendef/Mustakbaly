@@ -4,17 +4,18 @@ namespace Modules\LearningModule\Models;
 
 use App\Models\User;
 use App\Traits\LogsActivity;
-use Modules\LearningModule\Builders\CourseBuilder;
-use Modules\LearningModule\Models\CourseInstructor;
+use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Models\Enrollment;
+use Modules\OrganizationsModule\Models\Program;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
+use Modules\LearningModule\Builders\CourseBuilder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\LearningModule\Models\CourseInstructor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Model;
-use Dyrynda\Database\Support\CascadeSoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Translatable\HasTranslations;
 
 class Course extends Model
 {
@@ -130,12 +131,10 @@ class Course extends Model
      *
      * @return BelongsTo
      */
-    // public function program(): BelongsTo
-    // {
-    //     // Note: Program model is not yet implemented in LearningModule, but relation is added as requested.
-    //     // Assuming Program model will be in Modules\LearningModule\Models\Program
-    //     return $this->belongsTo(Program::class, 'program_id', 'program_id');
-    // }
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
 
     /**
      * Get the user who created the course.

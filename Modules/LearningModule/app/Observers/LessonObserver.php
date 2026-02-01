@@ -48,7 +48,7 @@ class LessonObserver
         try {
             // Get the authenticated user (learner)
             $learnerId = Auth::id();
-            
+
             if (!$learnerId) {
                 Log::warning("No authenticated user when completing lesson", [
                     'lesson_id' => $lesson->lesson_id,
@@ -76,7 +76,7 @@ class LessonObserver
 
             // Get enrollment for this learner and course
             $enrollment = $this->enrollmentService->getEnrollment($course, $learnerId);
-            
+
             if (!$enrollment) {
                 Log::warning("Enrollment not found when completing lesson", [
                     'lesson_id' => $lesson->lesson_id,
@@ -119,7 +119,8 @@ class LessonObserver
             ]);
 
             // 3. Update lesson's is_completed attribute to true (already set, but ensure it's saved)
-            // Note: The attribute is already set to true, this is just for clarity
+            $lesson->is_completed = true;
+            $lesson->save();
 
             Log::info("Lesson marked as completed for enrollment via observer", [
                 'enrollment_id' => $enrollment->enrollment_id,
