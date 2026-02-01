@@ -41,14 +41,14 @@ class InstructorService
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
 
             //3. create instructor profile
-            if (isset($data['avatar'])) {
-            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            if (isset($instructorDTO->avatar)) {
+            $user->addMedia($instructorDTO->avatar)->toMediaCollection('avatar');
         }
 
             // user_id = $user->id
             $instructor = $user->instructorProfile()->updateOrCreate(['user_id' => $user->id],$instructorData);
-            if (isset($data['cv'])) {
-              $instructor->addMedia($data['cv'])->toMediaCollection('cv');
+            if (isset($instructorDTO->cv)) {
+              $instructor->addMedia($instructorDTO->cv)->toMediaCollection('cv');
         }
             //4. attach to organization
             $user->organizations()->syncWithoutDetaching($instructorDTO->organizationId,['role'=>UserRole::INSTRUCTOR->value]);
@@ -62,12 +62,12 @@ class InstructorService
     {
         return DB::transaction(function () use ($instructorDTO, $user) {
             $user->update($instructorDTO->userData());     
-                 if (isset($data['avatar'])) {
-            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+                 if (isset($instructorDTO->avatar)) {
+            $user->addMedia($instructorDTO->avatar)->toMediaCollection('avatar');
         }
             $user->instructorProfile()->update($instructorDTO->instructorData());
-               if (isset($data['cv'])) {
-            $user->addMedia($data['cv'])->toMediaCollection('cv');
+               if (isset($instructorDTO->cv)) {
+            $user->addMedia($instructorDTO->cv)->toMediaCollection('cv');
         }
             return $user->refresh();
         });

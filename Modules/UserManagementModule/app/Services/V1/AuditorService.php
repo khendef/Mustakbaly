@@ -38,14 +38,14 @@ class AuditorService
 
 
             //3. create auditor profile
-            if (isset($data['avatar'])) {
-            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            if (isset($auditorDTO->avatar)) {
+            $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
         }
 
             // user_id = $user->id
             $auditor = $user->auditorProfile()->updateOrCreate(['user_id' => $user->id],$auditorData);
-            if (isset($data['cv'])) {
-            $auditor->addMedia($data['cv'])->toMediaCollection('cv');
+            if (isset($auditorDTO->cv)) {
+            $auditor->addMedia($auditorDTO->cv)->toMediaCollection('cv');
         }
             //4. attach to organization
             $user->organizations()->attach($auditorDTO->organizationId,['role'=>UserRole::AUDITOR->value]);
@@ -60,12 +60,12 @@ class AuditorService
         return DB::transaction(function () use ($auditorDTO, $user) {
         
             $user->update($auditorDTO->userData());  
-                  if (isset($data['avatar'])) {
-            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+                  if (isset($auditorDTO->avatar)) {
+            $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
         }
             $user->auditorProfile()->update($auditorDTO->auditorData());
-                    if (isset($data['cv'])) {
-                $user->addMedia($data['cv'])->toMediaCollection('cv');
+                    if (isset($auditorDTO->cv)) {
+                $user->addMedia($auditorDTO->cv)->toMediaCollection('cv');
         }
             return $user->refresh();
         });

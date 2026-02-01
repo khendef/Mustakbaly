@@ -22,6 +22,7 @@ namespace Modules\UserManagementModule\Models;
 
 use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,6 +34,7 @@ use Modules\LearningModule\Models\Enrollment;
 use Modules\OrganizationsModule\Models\Organization;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
+use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
 class User extends Authenticatable implements JWTSubject, HasMedia
@@ -214,7 +216,7 @@ class User extends Authenticatable implements JWTSubject, HasMedia
 public function registerMediaCollections(): void
 {
     $this->addMediaCollection('avatar')
-         ->singleFile() // المستخدم يملك صورة شخصية واحدة فقط
+         ->singleFile()  
          ->useFallbackUrl(asset('images/default-avatar.png'));
 }
 

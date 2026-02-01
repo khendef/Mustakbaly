@@ -40,8 +40,8 @@ class StudentService
 
 
             //3. create student profile
-            if (isset($data['avatar'])) {
-            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            if (isset($studentDTO->avatar)) {
+            $user->addMedia($studentDTO->avatar)->toMediaCollection('avatar');
             }
 
             // user_id = $user->id
@@ -59,8 +59,8 @@ class StudentService
         return DB::transaction(function () use ($studentDTO, $user) {
         
             $user->update($studentDTO->userData());   
-             if (isset($data['avatar'])) {
-            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+             if (isset($studentDTO->avatar)) {
+            $user->addMedia($studentDTO->avatar)->toMediaCollection('avatar');
             }
             $user->studentProfile()->update($studentDTO->studentData());
             return $user->refresh();
