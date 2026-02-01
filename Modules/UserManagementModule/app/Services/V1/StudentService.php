@@ -15,7 +15,7 @@ class StudentService
     public function list($filters, int $perPage=15)
     {
         $students = User::whereHas('studentProfile')
-                    ->with('studentProfile', 'courses:id,name')
+                    ->with('media','studentProfile', 'courses:id,name')
                     ->filters($filters)
                     ->paginate($perPage);
         return $students;
@@ -23,7 +23,7 @@ class StudentService
 
     public function findById(int $id)
     {
-        return User::with('studentProfile','courses:id,name')
+        return User::with('media','studentProfile','courses:id,name')
         ->findOrFail($id);
     }
 
@@ -37,9 +37,12 @@ class StudentService
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
-            
+
 
             //3. create student profile
+            if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            }
 
             // user_id = $user->id
             $student = $user->studentProfile()->updateOrCreate(['user_id' => $user->id],$studentData);
@@ -55,7 +58,10 @@ class StudentService
     {
         return DB::transaction(function () use ($studentDTO, $user) {
         
-            $user->update($studentDTO->userData());           
+            $user->update($studentDTO->userData());   
+             if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+            }
             $user->studentProfile()->update($studentDTO->studentData());
             return $user->refresh();
 
@@ -68,7 +74,7 @@ class StudentService
             $user->studentProfile()->delete();
             $user->delete();
         });
-        
+
     }
 
     //'/complete-profile' studentController@fillProfileInfo'

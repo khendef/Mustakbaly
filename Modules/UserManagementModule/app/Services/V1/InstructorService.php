@@ -13,7 +13,7 @@ class InstructorService
     public function list($filters, int $perPage=15)
     {
         $instructors = User::whereHas('instructorProfile')
-                    ->with('instructorProfile', 'organizations:id,name')
+                    ->with('media','instructorProfile', 'organizations:id,name')
                     ->filters($filters)
                     ->paginate($perPage);
         return $instructors;
@@ -21,7 +21,7 @@ class InstructorService
 
     public function findById(int $id)
     {
-        return User::with('instructorProfile','organizations:id,name')
+        return User::with('media','instructorProfile','organizations:id,name')
         ->findOrFail($id);
     }
 
@@ -39,25 +39,36 @@ class InstructorService
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
-            
 
             //3. create instructor profile
+            if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+        }
 
             // user_id = $user->id
             $instructor = $user->instructorProfile()->updateOrCreate(['user_id' => $user->id],$instructorData);
+            if (isset($data['cv'])) {
+              $instructor->addMedia($data['cv'])->toMediaCollection('cv');
+        }
             //4. attach to organization
             $user->organizations()->syncWithoutDetaching($instructorDTO->organizationId,['role'=>UserRole::INSTRUCTOR->value]);
             //5. assign role
             $user->assignRole(UserRole::INSTRUCTOR->value);
             return $instructor;
-       });  
+       });
     }
 
     public function update(User $user,InstructorDTO $instructorDTO)
     {
         return DB::transaction(function () use ($instructorDTO, $user) {
-            $user->update($instructorDTO->userData());           
+            $user->update($instructorDTO->userData());     
+                 if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+        }
             $user->instructorProfile()->update($instructorDTO->instructorData());
+               if (isset($data['cv'])) {
+            $user->addMedia($data['cv'])->toMediaCollection('cv');
+        }
             return $user->refresh();
         });
     }
