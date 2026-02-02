@@ -5,13 +5,15 @@ namespace Modules\UserManagementModule\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
+use Modules\AssesmentModule\Models\Quiz;
 use Modules\UserManagementModule\Models\Builders\StudentBuilder;
 use Modules\UserManagementModule\Enums\EducationalLevel;
 // use Modules\UserManagementModule\Database\Factories\StudentFactory;
 
 class Student extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes ,Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -41,5 +43,8 @@ class Student extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    public function quizzes(){
+        return $this->belongsToMany(Quiz::class,'quiz_student');
     }
 }
