@@ -14,10 +14,9 @@ class AssignManagerRequest extends FormRequest
     public function rules(): array
     {
         return [
-
-            'user_id'  => 'nullable|exists:users,id',
+            'user_id'  => 'sometimes|exists:users,id',
+            'email'=>'required_without:user_id|email|unique:users,email',
             'name'=> 'required_without:user_id|string|max:255',
-            'email'=>'required_without:user_id|string',
             'password'=>['required_without:user_id','string','confirmed',
                 Password::min(8)
                     ->mixedCase()

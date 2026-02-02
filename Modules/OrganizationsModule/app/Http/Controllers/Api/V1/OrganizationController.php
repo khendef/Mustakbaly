@@ -64,7 +64,7 @@ class OrganizationController extends Controller
     //POST /organizations/{organization}/assign-manager organizationController@assignManager
     public function assignManager(Organization $organization ,AssignManagerRequest $request)
     {
-        $manager = $this->organizationService->assignManager($organization,$request->validated);
+        $manager = $this->organizationService->assignManager($organization,$request->validated());
         return self::success($manager , 'Manager has been assigned successfully', 201);
 
     }

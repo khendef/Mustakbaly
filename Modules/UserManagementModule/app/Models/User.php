@@ -207,5 +207,6 @@ class User extends Authenticatable implements JWTSubject
                 ->withPivot('role')
                 ->withTimestamps();
     }
+    
  
 }
