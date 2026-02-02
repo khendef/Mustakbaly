@@ -9,6 +9,7 @@ use Modules\OrganizationsModule\Models\Organization;
 use Modules\OrganizationsModule\Http\Requests\StoreOrganizationRequest;
 use Modules\OrganizationsModule\Http\Requests\UpdateOrganizationRequest;
 use Modules\OrganizationsModule\Services\V1\OrganizationService;
+use Modules\OrganizationsModule\Http\Resources\OrganizationResource;
 
 class OrganizationController extends Controller
 {
@@ -25,8 +26,13 @@ class OrganizationController extends Controller
     public function index()
     {
         $organizations = $this->organizationService->getAll();
-       return self::success($organizations ,'Organizations retrieved successfully.',200);
-    }
+           $organizations->getCollection()->transform(function ($organization) {
+        return new OrganizationResource($organization);
+           });
+
+    return self::paginated($organizations, 'Organizations retrieved successfully.');
+}
+
     /**
      * Show the form for creating a new resource.
      */

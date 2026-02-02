@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id('lesson_id');
             $table->foreignId('unit_id')->constrained('units', 'unit_id')->restrictOnDelete();
             $table->integer('lesson_order')->nullable();
-            $table->string('title', 255);
-            $table->text('description')->nullable();
+            $table->json('title')->nullable(); // translatable: en, ar
+            $table->json('description')->nullable(); // translatable: en, ar
             $table->string('lesson_type', 50); // lecture, video, interactive, reading
             $table->boolean('is_required')->default(true);
             $table->boolean('is_completed')->default(false);

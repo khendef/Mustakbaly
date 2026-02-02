@@ -24,7 +24,7 @@ class UserService
 {
     public function list($filters, int $perPage=15)
     {
-        $users = User::with('organizations:id,name')
+        $users = User::with('media','organizations:id,name')
                     ->filter($filters)
                     ->paginate($perPage);
         return $users;
@@ -69,6 +69,9 @@ class UserService
             if(isset($data['role'])){
                 $user->assignRole($data['role']);
             }
+             if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+        }
             return $user;
         });
     }
@@ -87,6 +90,9 @@ class UserService
     public function update(User $user,array $data)
     {
         $user->update($data);
+        if (isset($data['avatar'])) {
+            $user->addMedia($data['avatar'])->toMediaCollection('avatar');
+        }
         return $user->refresh();
     }
 

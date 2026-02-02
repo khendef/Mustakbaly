@@ -22,20 +22,25 @@ namespace Modules\UserManagementModule\Models;
 
 use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
+use Modules\LearningModule\Models\Course;
+use Modules\LearningModule\Models\CourseInstructor;
+use Modules\LearningModule\Models\Enrollment;
 use Modules\OrganizationsModule\Models\Organization;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
-use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, HasMedia
 {
 /** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes;
+  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
 
      /**
      * The attributes that are mass assignable.
@@ -111,7 +116,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->getKey();
     }
- 
+
 
     public function getJWTCustomClaims()
     {
@@ -207,6 +212,95 @@ class User extends Authenticatable implements JWTSubject
                 ->withPivot('role')
                 ->withTimestamps();
     }
-    
- 
+
+public function registerMediaCollections(): void
+{
+    $this->addMediaCollection('avatar')
+         ->singleFile()  
+         ->useFallbackUrl(asset('images/default-avatar.png'));
+}
+
+public function registerMediaConversions(?Media $media = null): void
+{
+    $this->addMediaConversion('thumb')
+         ->width(100)
+         ->height(100)
+         ->nonQueued();
+
+    $this->addMediaConversion('preview')
+         ->width(300)
+         ->height(300)
+         ->queued();
+}
+
+    // LearningModule relations (inverse of Course, CourseInstructor, Enrollment)
+
+    /**
+     * Courses created by this user.
+     */
+    public function createdCourses()
+    {
+        return $this->hasMany(Course::class, 'created_by', 'id');
+    }
+
+    /**
+     * Courses where this user is assigned as instructor.
+     */
+    public function instructedCourses()
+    {
+        return $this->belongsToMany(Course::class, 'course_instructor', 'instructor_id', 'course_id')
+            ->using(CourseInstructor::class)
+            ->withPivot(['course_instructor_id', 'is_primary', 'assigned_at', 'assigned_by']);
+    }
+
+    /**
+     * Courses where this user is enrolled as learner.
+     */
+    public function enrolledCourses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments', 'learner_id', 'course_id')
+            ->using(Enrollment::class)
+            ->withPivot([
+                'enrollment_id',
+                'enrollment_type',
+                'enrollment_status',
+                'enrolled_at',
+                'enrolled_by',
+                'completed_at',
+                'progress_percentage',
+                'final_grade',
+            ]);
+    }
+
+    /**
+     * Course-instructor pivot records where this user is the instructor.
+     */
+    public function courseInstructorAssignments()
+    {
+        return $this->hasMany(CourseInstructor::class, 'instructor_id', 'id');
+    }
+
+    /**
+     * Course-instructor pivot records assigned by this user.
+     */
+    public function assignedCourseInstructors()
+    {
+        return $this->hasMany(CourseInstructor::class, 'assigned_by', 'id');
+    }
+
+    /**
+     * Enrollments where this user is the learner.
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class, 'learner_id', 'id');
+    }
+
+    /**
+     * Enrollments created by this user (e.g. admin enrolling a learner).
+     */
+    public function enrollmentsEnrolledBy()
+    {
+        return $this->hasMany(Enrollment::class, 'enrolled_by', 'id');
+    }
 }

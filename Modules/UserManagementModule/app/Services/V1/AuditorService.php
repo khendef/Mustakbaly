@@ -13,7 +13,7 @@ class AuditorService
     public function list($filters, int $perPage=15)
     {
         $auditors = User::whereHas('auditorProfile')
-                    ->with('auditorProfile', 'organizations:id,name')
+                    ->with('media','auditorProfile', 'organizations:id,name')
                     ->filters($filters)
                     ->paginate($perPage);
         return $auditors;
@@ -21,7 +21,7 @@ class AuditorService
 
     public function findById(int $id)
     {
-        return User::with('auditorProfile','organizations:id,name')
+        return User::with('media','auditorProfile','organizations:id,name')
         ->findOrFail($id);
     }
 
@@ -35,30 +35,42 @@ class AuditorService
 
             //2. create user
             $user = User::firstOrCreate(['email' => $userData['email']],$userData);
-            
+
 
             //3. create auditor profile
+            if (isset($auditorDTO->avatar)) {
+            $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
+        }
 
             // user_id = $user->id
             $auditor = $user->auditorProfile()->updateOrCreate(['user_id' => $user->id],$auditorData);
+            if (isset($auditorDTO->cv)) {
+            $auditor->addMedia($auditorDTO->cv)->toMediaCollection('cv');
+        }
             //4. attach to organization
             $user->organizations()->attach($auditorDTO->organizationId,['role'=>UserRole::AUDITOR->value]);
             //5. assign role
             $user->assignRole(UserRole::AUDITOR->value);
             return $auditor;
-       }); 
+       });
     }
 
     public function update(User $user,AuditorDTO $auditorDTO)
     {
         return DB::transaction(function () use ($auditorDTO, $user) {
         
-            $user->update($auditorDTO->userData());           
+            $user->update($auditorDTO->userData());  
+                  if (isset($auditorDTO->avatar)) {
+            $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
+        }
             $user->auditorProfile()->update($auditorDTO->auditorData());
+                    if (isset($auditorDTO->cv)) {
+                $user->addMedia($auditorDTO->cv)->toMediaCollection('cv');
+        }
             return $user->refresh();
         });
 
-       
+
     }
 
     public function delete(User $user)
@@ -67,7 +79,7 @@ class AuditorService
             $user->auditorProfile()->delete();
             $user->delete();
         });
-        
+
     }
 }
 

@@ -21,19 +21,24 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'address' => $this->address,
-            'gender' => $this->gender, 
-            
+            'gender' => $this->gender,
+            'avatar' => [
+                'original' => $this->getFirstMediaUrl('avatar'),
+                'thumb'    => $this->getFirstMediaUrl('avatar', 'thumb'),
+                'preview'  => $this->getFirstMediaUrl('avatar', 'preview'),
+            ],
+
             'roles' => $this->when(!$hasOrgs, fn()=>$this->whenLoaded
                 ('roles', function() {
                     return $this->roles->map(function($role) {
                         return [
                             'id' => $role->id,
                             'name' => $role->name,
-                            'permissions' => $role->permissions->pluck('name'), 
+                            'permissions' => $role->permissions->pluck('name'),
                         ];
                     });
                 })),
-            
+
             'organizations' => $this->whenLoaded('organizations',function(){
                 return $this->organizations->map(function ($org) {
                     $roleName = $org->pivot->role;
@@ -53,6 +58,6 @@ class UserResource extends JsonResource
                 });
             }),
         ];
-    
+
     }
 }

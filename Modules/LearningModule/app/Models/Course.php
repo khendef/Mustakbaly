@@ -4,27 +4,30 @@ namespace Modules\LearningModule\Models;
 
 use App\Models\User;
 use App\Traits\LogsActivity;
-use Modules\LearningModule\Builders\CourseBuilder;
-use Modules\LearningModule\Models\CourseInstructor;
+use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\LearningModule\Models\Enrollment;
+use Modules\OrganizationsModule\Models\Program;
+use Dyrynda\Database\Support\CascadeSoftDeletes;
+use Modules\LearningModule\Builders\CourseBuilder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\LearningModule\Models\CourseInstructor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Model;
-use Dyrynda\Database\Support\CascadeSoftDeletes;
-use Spatie\Activitylog\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Course extends Model
+class Course extends Model implements HasMedia
 {
     /**
      * Represents a course in the e-learning platform.
-     * Contains course information, metadata, relationships with instructors, units, and manages course lifecycle including publishing and soft deletion.
      */
-    use SoftDeletes, CascadeSoftDeletes, LogsActivity;
+    use SoftDeletes, CascadeSoftDeletes, LogsActivity, InteractsWithMedia;
 
     /**
-     * The relationships that should cascade on delete.
+     * Relationships that should cascade on delete.
      *
      * @var array
      */
@@ -66,13 +69,15 @@ class Course extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Cast attributes.
      */
     protected function casts(): array
     {
         return [
+            'title' => 'array',
+            'description' => 'array',
+            'objectives' => 'array',
+            'prerequisites' => 'array',
             'is_offline_available' => 'boolean',
             'min_score_to_pass' => 'decimal:2',
             'average_rating' => 'decimal:2',
@@ -85,9 +90,7 @@ class Course extends Model
     }
 
     /**
-     * Get the route key for the model.
-     *
-     * @return string
+     * Use slug for route model binding.
      */
     public function getRouteKeyName(): string
     {
@@ -95,23 +98,17 @@ class Course extends Model
     }
 
     /**
-     * Create a new Eloquent query builder for the model.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @return CourseBuilder
+     * Custom Eloquent builder.
      */
     public function newEloquentBuilder($query): CourseBuilder
     {
         return new CourseBuilder($query);
     }
 
-    // Relationships
+    /* =====================
+     | Relationships
+     ===================== */
 
-    /**
-     * Get the course type that owns the course.
-     *
-     * @return BelongsTo
-     */
     public function courseType(): BelongsTo
     {
         return $this->belongsTo(CourseType::class, 'course_type_id', 'course_type_id');
@@ -122,12 +119,10 @@ class Course extends Model
      *
      * @return BelongsTo
      */
-    // public function program(): BelongsTo
-    // {
-    //     // Note: Program model is not yet implemented in LearningModule, but relation is added as requested.
-    //     // Assuming Program model will be in Modules\LearningModule\Models\Program
-    //     return $this->belongsTo(Program::class, 'program_id', 'program_id');
-    // }
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+    }
 
     /**
      * Get the user who created the course.
@@ -139,43 +134,29 @@ class Course extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
-    /**
-     * Get the instructors for the course.
-     *
-     * @return BelongsToMany
-     */
     public function instructors(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'course_instructor', 'course_id', 'instructor_id')
             ->using(CourseInstructor::class)
-            ->withPivot(['course_instructor_id', 'is_primary', 'assigned_at', 'assigned_by']);
+            ->withPivot([
+                'course_instructor_id',
+                'is_primary',
+                'assigned_at',
+                'assigned_by',
+            ]);
     }
 
-    /**
-     * Get the units for the course.
-     *
-     * @return HasMany
-     */
     public function units(): HasMany
     {
-        return $this->hasMany(Unit::class, 'course_id', 'course_id')->orderBy('unit_order');
+        return $this->hasMany(Unit::class, 'course_id', 'course_id')
+            ->orderBy('unit_order');
     }
 
-    /**
-     * Get the enrollments for the course.
-     *
-     * @return HasMany
-     */
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class, 'course_id', 'course_id');
     }
 
-    /**
-     * Get the enrolled learners (users) for the course.
-     *
-     * @return BelongsToMany
-     */
     public function learners(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'enrollments', 'course_id', 'learner_id')
@@ -188,33 +169,42 @@ class Course extends Model
                 'enrolled_by',
                 'completed_at',
                 'progress_percentage',
-                'final_grade'
+                'final_grade',
             ]);
     }
 
-    /**
-     * Alias for learners() - Get the enrolled students (users) for the course.
-     *
-     * @return BelongsToMany
-     */
     public function students(): BelongsToMany
     {
         return $this->learners();
     }
 
-    /**
-     * Configure activity logging for Course model.
-     *
-     * @return LogOptions
-     */
+    /* =====================
+     | Activity Log
+     ===================== */
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(function (string $eventName) {
-                return "Course '{$this->title}' was {$eventName}";
-            });
+            ->setDescriptionForEvent(fn (string $event) =>
+                "Course '{$this->getTranslation('title', 'en')}' was {$event}"
+            );
+    }
+
+    /* =====================
+     | Media Library
+     ===================== */
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('intro_video')
+            ->singleFile()
+            ->acceptsMimeTypes(['video/mp4', 'video/quicktime']);
     }
 }

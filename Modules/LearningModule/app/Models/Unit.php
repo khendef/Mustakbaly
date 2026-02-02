@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Modules\LearningModule\Builders\UnitBuilder;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Translatable\HasTranslations;
 
 class Unit extends Model
 {
@@ -17,7 +18,10 @@ class Unit extends Model
      * Represents a unit within a course in the e-learning platform.
      * Organizes course content into logical sections, containing multiple lessons and supporting soft deletion for content management.
      */
-    use SoftDeletes, CascadeSoftDeletes, LogsActivity;
+    use HasTranslations, SoftDeletes, CascadeSoftDeletes, LogsActivity;
+
+    /** Translatable attributes (en, ar). */
+    public array $translatable = ['title', 'description'];
 
     /**
      * The relationships that should cascade on delete.
@@ -104,8 +108,9 @@ class Unit extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
+            // translate the title to the current language
             ->setDescriptionForEvent(function (string $eventName) {
-                return "Unit '{$this->title}' was {$eventName}";
+                return "Unit '" . ($this->getTranslation('title', 'en') ?: $this->title) . "' was {$eventName}";
             });
     }
 }

@@ -7,31 +7,39 @@ use Illuminate\Validation\Rule;
 
 /**
  * Form request for storing a new course type.
- * Handles validation for course type creation.
+ * Translatable fields (name, description) accept string or array with en/ar keys.
  */
 class StoreCourseTypeRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Prepare the data for validation.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return void
      */
+    protected function prepareForValidation(): void
+    {
+        foreach (['name', 'description'] as $key) {
+            if ($this->has($key) && is_string($this->input($key))) {
+                $this->merge([$key => ['en' => $this->input($key)]]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:100', 'unique:course_types,name'],
+            'name' => ['required', 'array'],
+            'name.en' => ['required_without:name.ar', 'nullable', 'string', 'max:100'],
+            'name.ar' => ['nullable', 'string', 'max:100'],
             'slug' => ['nullable', 'string', 'max:100', 'unique:course_types,slug'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'target_audience' => ['nullable', 'string'],
         ];

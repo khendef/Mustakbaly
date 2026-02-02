@@ -44,9 +44,12 @@ class CourseService
         }
 
         try {
-            // Generate slug if not provided
+            // Generate slug if not provided (use English title for consistent slugs)
             if (empty($data['slug']) && !empty($data['title'])) {
-                $data['slug'] = $this->generateUniqueSlug($data['title'], Course::class);
+                $titleForSlug = $this->translatableToSlugSource($data['title'], 'en');
+                if ($titleForSlug !== '') {
+                    $data['slug'] = $this->generateUniqueSlug($titleForSlug, Course::class);
+                }
             }
 
             // Ensure slug is unique
@@ -63,13 +66,20 @@ class CourseService
             }
 
             $course = Course::create($data);
+            if (isset($data['cover']) && $data['cover']->isValid()) {
+                $course->addMedia($data['cover'])->toMediaCollection('course_image');
+            }
+
+            if (isset($data['intro_video']) && $data['promo_video']->isValid()) {
+                $course->addMedia($data['intro_video'])->toMediaCollection('intro_video');
+            }
 
             // Clear course cache after creation
             $this->clearCourseCache();
 
             Log::info("Course created", [
                 'course_id' => $course->course_id,
-                'title' => $course->title,
+                'title' => $this->translatableToSlugSource($course->title ?? [], 'en'),
                 'created_by' => $data['created_by'],
             ]);
 
@@ -124,16 +134,25 @@ class CourseService
         }
 
         try {
-            // Handle slug update
+            // Handle slug update (use English title for consistent slugs)
             if (isset($data['title']) && empty($data['slug'])) {
-                // If title changed and slug not provided, generate new slug
-                $data['slug'] = $this->generateUniqueSlug($data['title'], Course::class);
+                $titleForSlug = $this->translatableToSlugSource($data['title'], 'en');
+                if ($titleForSlug !== '') {
+                    $data['slug'] = $this->generateUniqueSlug($titleForSlug, Course::class, 'slug', 'course_id', $course->course_id);
+                }
             } elseif (isset($data['slug'])) {
-                // Ensure slug is unique (excluding current course)
                 $data['slug'] = $this->ensureUniqueSlug($data['slug'], Course::class, 'slug', 'course_id', $course->course_id);
             }
 
             $course->update($data);
+                        if (isset($data['cover']) && $data['cover']->isValid()) {
+                $course->addMedia($data['cover'])->toMediaCollection('course_image');
+            }
+
+            if (isset($data['intro_video']) && $data['promo_video']->isValid()) {
+                $course->addMedia($data['intro_video'])->toMediaCollection('intro_video');
+            }
+
 
             // Clear course cache after update
             $this->clearCourseCache($course);
