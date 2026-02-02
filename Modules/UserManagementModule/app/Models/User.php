@@ -1,4 +1,5 @@
 <?php
+
 /**
  * User model for the UserManagementModule.
  *
@@ -38,16 +39,15 @@ use Modules\UserManagementModule\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Instructor;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 use Modules\UserManagementModule\Models\Student;
-use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 
 
-class User extends Authenticatable implements JWTSubject,HasMedia
+class User extends Authenticatable implements JWTSubject, HasMedia
 {
-/** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
 
-     /**
+    /**
      * The attributes that are mass assignable.
      *
      * We define this list to protect against Mass Assignment Vulnerabilities.
@@ -70,7 +70,7 @@ class User extends Authenticatable implements JWTSubject,HasMedia
         'remember_token',
     ];
 
-    protected $cascadeDeletes = ['studentProfile','instructorProfile','auditorProfile'];
+    protected $cascadeDeletes = ['studentProfile', 'instructorProfile', 'auditorProfile'];
 
     protected $guard_name = 'api';
 
@@ -199,7 +199,7 @@ class User extends Authenticatable implements JWTSubject,HasMedia
 
 
 
-    
+
     /**
      * Define a many-to-many relationship between users and organizations.
      *
@@ -222,7 +222,7 @@ class User extends Authenticatable implements JWTSubject,HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('avatar')
-            ->singleFile()  
+            ->singleFile()
             ->useFallbackUrl(asset('images/default-avatar.png'));
     }
 
