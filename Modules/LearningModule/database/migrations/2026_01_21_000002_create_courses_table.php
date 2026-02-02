@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('courses', function (Blueprint $table) {
             $table->id('course_id');
-            $table->foreignId('created_by')->constrained('users', 'id')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->foreignId('course_type_id')->constrained('course_types', 'course_type_id')->restrictOnDelete();
             $table->unsignedBigInteger('program_id')->index(); // Using unsignedBigInteger , no constraint yet
             $table->json('title')->nullable(); // translatable: en, ar

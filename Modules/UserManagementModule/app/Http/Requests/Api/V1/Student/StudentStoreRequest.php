@@ -15,7 +15,7 @@ class StudentStoreRequest extends FormRequest
     {
         return [
             'name'=>'required|string|max:255',
-            'email'=>'required|string',  //unique:users,email
+            'email'=>'required|string',
             'password'=>['required','string','confirmed',
             Password::min(8)
                 ->mixedCase()
@@ -28,7 +28,10 @@ class StudentStoreRequest extends FormRequest
             'gender'=>['required',Rule::in(['male','female'])],
             'address'=>'nullable|max:500',
             'education_level'=>'required|string',
-            'country'=>'required|string'
+            'country'=>'required|string',
+            'bio' => 'nullable|text|max:1000',
+            'specialization' => 'nullable|string|max:255',
+            'joined_at' => 'nullable|date'
         ];
     }
 

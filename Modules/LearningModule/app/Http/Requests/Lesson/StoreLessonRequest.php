@@ -39,6 +39,9 @@ class StoreLessonRequest extends FormRequest
             'lesson_type' => ['required', 'string', Rule::in(['lecture', 'video', 'interactive', 'reading'])],
             'is_required' => ['nullable', 'boolean'],
             'actual_duration_minutes' => ['required', 'integer', 'min:1'],
+            'video'=> 'nullable|file|mimes:mp4,mov,ogg,qt|max:51200',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|mimes:pdf,zip,rar,doc,docx,ppt,pptx|max:10240',
         ];
     }
 

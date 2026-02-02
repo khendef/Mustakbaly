@@ -66,6 +66,13 @@ class CourseService
             }
 
             $course = Course::create($data);
+            if (isset($data['cover']) && $data['cover']->isValid()) {
+                $course->addMedia($data['cover'])->toMediaCollection('course_image');
+            }
+
+            if (isset($data['intro_video']) && $data['promo_video']->isValid()) {
+                $course->addMedia($data['intro_video'])->toMediaCollection('intro_video');
+            }
 
             // Clear course cache after creation
             $this->clearCourseCache();
@@ -138,6 +145,14 @@ class CourseService
             }
 
             $course->update($data);
+                        if (isset($data['cover']) && $data['cover']->isValid()) {
+                $course->addMedia($data['cover'])->toMediaCollection('course_image');
+            }
+
+            if (isset($data['intro_video']) && $data['promo_video']->isValid()) {
+                $course->addMedia($data['intro_video'])->toMediaCollection('intro_video');
+            }
+
 
             // Clear course cache after update
             $this->clearCourseCache($course);

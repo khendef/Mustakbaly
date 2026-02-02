@@ -29,7 +29,12 @@ class UpdateOrganizationRequest extends FormRequest
             'email' => 'sometimes|required|email|unique:organizations,email,' . $this->route('organization')->id,
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
-
+            'logo' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,webp',
+                'max:2048',
+            ],
         ];
     }
 
@@ -42,6 +47,9 @@ class UpdateOrganizationRequest extends FormRequest
             'email.required' => 'The organization email is required.',
             'email.email' => 'The organization email must be a valid email address.',
             'email.unique' => 'The organization email must be unique.',
+            'logo.image' => 'The file must be an image.',
+            'logo.mimes' => 'Supported formats are: jpeg, png, jpg, webp.',
+            'logo.max' => 'The logo size must not exceed 2MB.',
         ];
     }
 }

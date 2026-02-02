@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('education_level');
-            $table->string('country');
+            $table->string('country')->nullable();
+            $table->string('bio')->nullable();
+            $table->string('specialization')->nullable();
+            $table->dateTime('joined_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
