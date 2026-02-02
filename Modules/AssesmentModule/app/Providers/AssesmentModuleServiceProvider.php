@@ -4,6 +4,10 @@ namespace Modules\AssesmentModule\Providers;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Modules\AssesmentModule\Models\Attempt;
+use Modules\AssesmentModule\Models\Question;
+use Modules\AssesmentModule\Observers\AttemptObserver;
+use Modules\AssesmentModule\Observers\QuestionObserver;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -26,6 +30,8 @@ class AssesmentModuleServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
+        Attempt::observe(AttemptObserver::class);
+        Question::observe(QuestionObserver::class);
         $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
     }
 

@@ -3,7 +3,7 @@ namespace Modules\OrganizationsModule\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Modules\OrganizationsModule\Models\Program;
 
-use Modules\OrganizationsModule\Services\ProgramService;
+use Modules\OrganizationsModule\Services\V1\ProgramService;
 use Modules\OrganizationsModule\Repositories\ProgramRepository;
 use Modules\OrganizationsModule\Http\Requests\V1\Program\StoreProgramRequest;
 use Modules\OrganizationsModule\Http\RequestsV1\Program\ProgramFilterRequest;

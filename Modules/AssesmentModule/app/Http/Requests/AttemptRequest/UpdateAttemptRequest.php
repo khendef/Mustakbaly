@@ -4,10 +4,26 @@ namespace Modules\AssesmentModule\Http\Requests\AttemptRequest;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class UpdateAttemptRequest
+ *
+ * This class handles the validation for updating an existing attempt for a quiz. 
+ * It defines the validation rules for the `quiz_id`, `student_id`, `attempt_number`, 
+ * `status`, `score`, `is_passed`, and other fields related to the attempt. 
+ * Fields such as `start_at`, `ends_at`, `submitted_at`, `graded_at`, and `graded_by` 
+ * are optional but must meet the specified validation criteria if provided.
+ * 
+ * @package Modules\AssesmentModule\Http\Requests\AttemptRequest
+ */
 class UpdateAttemptRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * This method checks if the user is authorized to update the attempt. 
+     * By default, it returns `true`, meaning the request is always authorized.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {
@@ -16,6 +32,16 @@ class UpdateAttemptRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * This method defines the validation rules for the `quiz_id`, `student_id`, `attempt_number`, 
+     * `status`, `score`, `is_passed`, and other relevant fields. 
+     * - `quiz_id`, `student_id`: Optional, but must be valid integers and exist in their respective tables if provided.
+     * - `attempt_number`: Optional, but if provided, it must be an integer greater than or equal to 1.
+     * - `status`: Optional, but if provided, must be one of the valid values: `in_progress`, `submitted`, `graded`.
+     * - `score`: Optional, but if provided, it must be a non-negative integer.
+     * - `is_passed`: Optional, but if provided, it must be a boolean value.
+     * - `start_at`, `ends_at`, `submitted_at`, `graded_at`: Optional, but if provided, they must be valid dates.
+     * - `graded_by`: Optional, but if provided, it must be a valid user ID from the `users` table.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
@@ -33,10 +59,9 @@ class UpdateAttemptRequest extends FormRequest
             'start_at' => ['sometimes', 'nullable', 'date'],
             'ends_at' => ['sometimes', 'nullable', 'date'],
 
-            'submitted_at' =>['sometimes','nullable','date'],
+            'submitted_at' => ['sometimes', 'nullable', 'date'],
             'graded_at' => ['sometimes', 'nullable', 'date'],
             'graded_by' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
-
         ];
     }
 }

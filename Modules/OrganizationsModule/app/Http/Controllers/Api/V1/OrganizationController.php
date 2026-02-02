@@ -4,11 +4,12 @@ namespace Modules\OrganizationsModule\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Modules\OrganizationsModule\Http\Requests\AssignManagerRequest;
 use Modules\OrganizationsModule\Models\Organization;
-use Modules\OrganizationsModule\Services\OrganizationService;
-
 use Modules\OrganizationsModule\Http\Requests\StoreOrganizationRequest;
 use Modules\OrganizationsModule\Http\Requests\UpdateOrganizationRequest;
+use Modules\OrganizationsModule\Services\V1\OrganizationService;
+use Modules\OrganizationsModule\Http\Resources\OrganizationResource;
 
 class OrganizationController extends Controller
 {
@@ -25,8 +26,13 @@ class OrganizationController extends Controller
     public function index()
     {
         $organizations = $this->organizationService->getAll();
-       return self::success($organizations ,'Organizations retrieved successfully.',200);
-    }
+           $organizations->getCollection()->transform(function ($organization) {
+        return new OrganizationResource($organization);
+           });
+
+    return self::paginated($organizations, 'Organizations retrieved successfully.');
+}
+
     /**
      * Show the form for creating a new resource.
      */
@@ -59,5 +65,13 @@ class OrganizationController extends Controller
     public function destroy(Organization $organization)
     {
         return self::success($this->organizationService->delete($organization), 'Organization deleted successfully.', 200);
+    }
+
+    //POST /organizations/{organization}/assign-manager organizationController@assignManager
+    public function assignManager(Organization $organization ,AssignManagerRequest $request)
+    {
+        $manager = $this->organizationService->assignManager($organization,$request->validated());
+        return self::success($manager , 'Manager has been assigned successfully', 201);
+
     }
 }
