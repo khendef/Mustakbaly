@@ -3,11 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use Modules\AssesmentModule\Http\Requests;
 use Modules\AssesmentModule\Http\Controllers\AssesmentModuleController;
-use Modules\AssesmentModule\Http\Controllers\Api\v2\AnswerController;
-use Modules\AssesmentModule\Http\Controllers\Api\v2\AttemptController;
-use Modules\AssesmentModule\Http\Controllers\Api\v2\QuestionController;
-use Modules\AssesmentModule\Http\Controllers\Api\v2\QuestionOptionController;
-use Modules\AssesmentModule\Http\Controllers\Api\v2\QuizController;
+use Modules\AssesmentModule\Http\Controllers\Api\V1\AnswerController;
+use Modules\AssesmentModule\Http\Controllers\Api\V1\AttemptController;
+use Modules\AssesmentModule\Http\Controllers\Api\V1\QuestionController;
+use Modules\AssesmentModule\Http\Controllers\Api\V1\QuestionOptionController;
+use Modules\AssesmentModule\Http\Controllers\Api\V1\QuizController;
 
 Route::middleware(['auth:api'])->prefix('v1')->group(function () {
     Route::apiResource('assesmentmodules', AssesmentModuleController::class)->names('assesmentmodule');

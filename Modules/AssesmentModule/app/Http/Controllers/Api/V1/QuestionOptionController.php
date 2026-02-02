@@ -8,17 +8,33 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\AssesmentModule\Http\Requests\QuestionOptionRequest\StoreQuestionOptionRequest;
 use Modules\AssesmentModule\Http\Requests\QuestionOptionRequest\UpdateQuestionOptionRequest;
 use Modules\AssesmentModule\Models\QuestionOption;
-use Modules\AssesmentModule\Services\v2\QuestionOptionService;
+use Modules\AssesmentModule\Services\V1\QuestionOptionService;
 use Modules\AssesmentModule\Transformers\QuestionOptionResource;
 use Throwable;
 
+/**
+ * QuestionOptionController handles CRUD operations for managing question options.
+ * Provides endpoints for listing, creating, showing, updating, deleting question options.
+ *
+ * @package Modules\AssesmentModule\Http\Controllers\Api\V1
+ */
 class QuestionOptionController extends Controller
 {
+    /**
+     * QuestionOptionController constructor.
+     *
+     * @param QuestionOptionService $questionOptionService
+     */
     public function __construct(private QuestionOptionService $questionOptionService)
     {
-
     }
 
+    /**
+     * Display a listing of question options.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
     public function index(Request $request)
     {
         try {
@@ -60,6 +76,12 @@ class QuestionOptionController extends Controller
         }
     }
 
+    /**
+     * Store a newly created question option.
+     *
+     * @param StoreQuestionOptionRequest $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(StoreQuestionOptionRequest $request)
     {
         try {
@@ -81,6 +103,12 @@ class QuestionOptionController extends Controller
         }
     }
 
+    /**
+     * Display the specified question option.
+     *
+     * @param QuestionOption $questionOption
+     * @return \Illuminate\Http\Response
+     */
     public function show(QuestionOption $questionOption)
     {
         try {
@@ -102,6 +130,13 @@ class QuestionOptionController extends Controller
         }
     }
 
+    /**
+     * Update the specified question option in the database.
+     *
+     * @param UpdateQuestionOptionRequest $request
+     * @param QuestionOption $questionOption
+     * @return \Illuminate\Http\Response
+     */
     public function update(UpdateQuestionOptionRequest $request, QuestionOption $questionOption)
     {
         try {
@@ -121,6 +156,13 @@ class QuestionOptionController extends Controller
             return self::error($e->getMessage(), 500);
         }
     }
+
+    /**
+     * Remove the specified question option from the database.
+     *
+     * @param QuestionOption $questionOption
+     * @return \Illuminate\Http\Response
+     */
     public function destroy(QuestionOption $questionOption)
     {
         try {
