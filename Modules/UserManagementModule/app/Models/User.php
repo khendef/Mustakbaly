@@ -37,10 +37,10 @@ use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
-class User extends Authenticatable implements JWTSubject, HasMedia
+class User extends Authenticatable implements JWTSubject
 {
 /** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
+  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes;
 
      /**
      * The attributes that are mass assignable.
@@ -213,25 +213,27 @@ class User extends Authenticatable implements JWTSubject, HasMedia
                 ->withTimestamps();
     }
 
-public function registerMediaCollections(): void
-{
-    $this->addMediaCollection('avatar')
-         ->singleFile()  
-         ->useFallbackUrl(asset('images/default-avatar.png'));
-}
 
-public function registerMediaConversions(?Media $media = null): void
-{
-    $this->addMediaConversion('thumb')
-         ->width(100)
-         ->height(100)
-         ->nonQueued();
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile()  
+            ->useFallbackUrl(asset('images/default-avatar.png'));
+    }
 
-    $this->addMediaConversion('preview')
-         ->width(300)
-         ->height(300)
-         ->queued();
-}
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(100)
+            ->height(100)
+            ->nonQueued();
+
+        $this->addMediaConversion('preview')
+            ->width(300)
+            ->height(300)
+            ->queued();
+    }
+
 
     // LearningModule relations (inverse of Course, CourseInstructor, Enrollment)
 

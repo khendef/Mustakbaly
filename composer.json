@@ -16,6 +16,7 @@
         "predis/predis": "^3.3",
         "propaganistas/laravel-phone": "^6.0",
         "spatie/laravel-activitylog": "^4.10",
+        "spatie/laravel-medialibrary": "^11.17",
         "spatie/laravel-permission": "^6.24",
         "spatie/laravel-translatable": "^6.11"
     },
