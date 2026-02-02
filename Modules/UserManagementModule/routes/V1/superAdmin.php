@@ -73,6 +73,14 @@ Route::group(['prefix'=>'/super-admin','middleware'=>['auth:api','role:super-adm
      */
     Route::delete('/organizations/{organization}',[OrganizationController::class,'destroy']);
 
+    /** 
+     * @name   Assign Manager to Organization
+     * @path   POST /api/v1/super-admin/organizations/{organization}/assign-manager
+     * @desc   Assign a user as manager to an organization.
+     * @param  {organization}
+     * @controller OrganizationController@assignManager
+    */
+    Route::post('/organizations/{organization}/assign-manager',[OrganizationController::class,'assignManager']);
 
     /** 
     |--------------------------------------------------------------------------

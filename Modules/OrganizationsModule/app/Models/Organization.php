@@ -4,6 +4,7 @@ namespace Modules\OrganizationsModule\Models;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Model;
+use Modules\UserManagementModule\Models\User;
 use Spatie\Translatable\HasTranslations;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -45,6 +46,12 @@ class Organization extends Model implements HasMedia
         ->limit(100);
      }
 
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'organization_user')
+                ->withPivot('role')
+                ->withTimestamps();
+    }
 // Automatically generate slug from name if not provided
 protected static function booted()
 {

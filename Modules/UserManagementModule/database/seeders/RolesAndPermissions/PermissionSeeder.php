@@ -12,7 +12,7 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
-                $permissions = [
+        $permissions = [
             //users permissions (all users accounts, managers accounts)
             'create-user',
             'update-user',

@@ -4,6 +4,7 @@ namespace Modules\UserManagementModule\Transformers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Spatie\Permission\Models\Role;
 
 class UserResource extends JsonResource
 {
@@ -40,14 +41,13 @@ class UserResource extends JsonResource
 
             'organizations' => $this->whenLoaded('organizations',function(){
                 return $this->organizations->map(function ($org) {
-                    $role = $org->pivot->role;
+                    $roleName = $org->pivot->role;
+                    $role = Role::where('name', $roleName)->first();
                     return [
                         'id'   => $org->id,
                         'name' => $org->name,
                         'role' => $role,
-                        'permissions' => $this->permissionsForRole(
-                            $role
-                        ),
+                        'permissions' => $role->permissions()->pluck('name'),
                         'profile' => match($role) {
                             'instructor' => $this->whenLoaded('instructorProfile'),
                             'student' => $this->whenLoaded('studentProfile'),

@@ -107,12 +107,17 @@ class OrganizationService
      * @param Organization $organization
      * @param array $data
      * @return User
-     */
-        
+     */   
     public function assignManager(Organization $organization , array $data)
     {
         return DB::transaction(function() use($data, $organization ) {
-            $user = User::firstOrCreate(['email'=>$data['email']],$data); 
+            if(isset($data['user_id'])) {
+                $user = User::find($data['user_id']);
+            }
+            else{
+                
+                $user = User::Create($data); 
+            }
             $user->assignRole('manager');      
             $organization->users()->syncWithoutDetaching([$user->id => ['role' => 'manager']]);
             return $user;
