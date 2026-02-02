@@ -33,8 +33,12 @@ use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\CourseInstructor;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\Auditor;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
+use Modules\UserManagementModule\Models\Instructor;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
+use Modules\UserManagementModule\Models\Student;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 
 
@@ -171,7 +175,7 @@ class User extends Authenticatable implements JWTSubject,HasMedia
      */
     public function instructorProfile()
     {
-        return $this->hasOne(instructor::class);
+        return $this->hasOne(Instructor::class);
     }
 
 
@@ -189,7 +193,7 @@ class User extends Authenticatable implements JWTSubject,HasMedia
      */
     public function auditorProfile()
     {
-        return $this->hasOne(auditor::class);
+        return $this->hasOne(Auditor::class);
     }
 
 
@@ -210,8 +214,8 @@ class User extends Authenticatable implements JWTSubject,HasMedia
     public function organizations()
     {
         return $this->belongsToMany(Organization::class, 'organization_user')
-                ->withPivot('role')
-                ->withTimestamps();
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
 
