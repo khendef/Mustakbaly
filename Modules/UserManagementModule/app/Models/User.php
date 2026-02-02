@@ -10,16 +10,19 @@ use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\CourseInstructor;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\Auditor;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
+use Modules\UserManagementModule\Models\Instructor;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
+use Modules\UserManagementModule\Models\Student;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 
 class User extends Authenticatable implements JWTSubject
 {
-/** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes;
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable,  HasRoles, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -63,7 +66,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->getKey();
     }
- 
+
 
     public function getJWTCustomClaims()
     {
@@ -81,17 +84,17 @@ class User extends Authenticatable implements JWTSubject
     }
     public function instructorProfile()
     {
-        return $this->hasOne(instructor::class);
+        return $this->hasOne(Instructor::class);
     }
     public function auditorProfile()
     {
-        return $this->hasOne(auditor::class);
+        return $this->hasOne(Auditor::class);
     }
     public function organizations()
     {
         return $this->belongsToMany(Organization::class, 'organization_user')
-                ->withPivot('role')
-                ->withTimestamps();
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     // LearningModule relations (inverse of Course, CourseInstructor, Enrollment)
