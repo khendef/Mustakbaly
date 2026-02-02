@@ -23,8 +23,9 @@ namespace Modules\UserManagementModule\Models;
 use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
@@ -35,12 +36,12 @@ use Modules\OrganizationsModule\Models\Organization;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 use Spatie\Permission\Traits\HasRoles;
-// use Modules\UserManagementModule\Database\Factories\UserFactory;
 
-class User extends Authenticatable implements JWTSubject
+
+class User extends Authenticatable implements JWTSubject,HasMedia
 {
 /** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes;
+  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
 
      /**
      * The attributes that are mass assignable.
