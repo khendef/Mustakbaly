@@ -78,7 +78,7 @@ class UpdateCourseRequest extends FormRequest
             'course_delivery_type' => ['sometimes', 'nullable', 'string', Rule::in(['self_paced', 'interactive', 'hybrid'])],
             'difficulty_level' => ['sometimes', 'nullable', 'string', Rule::in(['beginner', 'intermediate', 'advanced'])],
             'cover' => 'nullable|image|max:2048',
-           'intro_video' => 'nullable|mimes:mp4,mov|max:20480',
+            'intro_video' => 'nullable|mimes:mp4,mov|max:20480',
         ];
     }
 

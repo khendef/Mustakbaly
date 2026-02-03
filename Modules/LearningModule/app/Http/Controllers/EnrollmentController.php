@@ -5,6 +5,7 @@ namespace Modules\LearningModule\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Modules\LearningModule\Enums\EnrollmentStatus;
@@ -84,7 +85,12 @@ class EnrollmentController extends Controller
             Log::error('Unexpected error retrieving enrollments', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+            // In debug, surface the real error so we can fix it
+            if (config('app.debug')) {
+                throw $e;
+            }
             throw new Exception('Unable to retrieve enrollments at this time.', 500);
         }
     }
@@ -105,7 +111,7 @@ class EnrollmentController extends Controller
             $course = Course::find($validated['course_id']);
 
             if (!$course) {
-                throw new Exception('Course not found.', 404);
+                throw new HttpException(404, 'Course not found.');
             }
 
             $enrollment = $this->enrollmentService->enroll(
@@ -116,7 +122,7 @@ class EnrollmentController extends Controller
             );
 
             if (!$enrollment) {
-                throw new Exception('Failed to create enrollment. The course may not be available for enrollment or the learner is already enrolled.', 422);
+                throw new HttpException(422, 'Failed to create enrollment. The course may not be available for enrollment or the learner is already enrolled.');
             }
 
             $enrollment->load(['learner', 'course', 'enrolledBy']);
@@ -128,11 +134,18 @@ class EnrollmentController extends Controller
             );
         } catch (Exception $e) {
             Log::error('Unexpected error creating enrollment', [
-                'course_id' => $validated['course_id'] ?? null,
-                'learner_id' => $validated['learner_id'] ?? null,
+                'course_id' => $request->input('course_id'),
+                'learner_id' => $request->input('learner_id'),
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+            if (config('app.debug')) {
+                throw $e;
+            }
+            if ($e instanceof HttpException) {
+                throw $e;
+            }
             throw new Exception('An error occurred while creating the enrollment.', 500);
         }
     }

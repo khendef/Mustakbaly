@@ -9,10 +9,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\LearningModule\Enums\EnrollmentStatus;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\LearningModule\Models\Lesson;
 use Modules\LearningModule\Models\Unit;
+use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 use Modules\UserManagementModule\Models\User;
 
 /**
@@ -54,22 +56,21 @@ class EnrollmentService
      * @param mixed $orgId
      * @param mixed $learnerId
      */
-    private function registerStudent($orgId , $learnerId)
+    private function registerStudent($orgId, $learnerId)
     {
         $learner = User::findOrFail($learnerId);
-        
-        if(!$learner->studentProfile()->exists()){
-                return [
-                    'status'  => 'incomplete_profile',
-                    'message' => 'Student information incomplete. Please complete your profile first.',
-                    'data'    => [
-                        'redirect_to' => '/profile/complete',
-                        'required_fields' => ['phone', 'address', 'education_level']
-                    ]
+
+        if (!$learner->studentProfile()->exists()) {
+            return [
+                'status'  => 'incomplete_profile',
+                'message' => 'Student information incomplete. Please complete your profile first.',
+                'data'    => [
+                    'redirect_to' => '/profile/complete',
+                    'required_fields' => ['phone', 'address', 'education_level']
+                ]
             ];
         }
-        $learner->organizations()->syncWithoutDetaching([$orgId => ['role' => 'student']]);   
-
+        $learner->organizations()->syncWithoutDetaching([$orgId => ['role' => 'student']]);
     }
 
     /**
@@ -90,7 +91,7 @@ class EnrollmentService
                 'course_id' => $course->course_id,
                 'learner_id' => $learnerId,
             ]);
-            return null;
+            throw new HttpException(422, 'Course is not available for enrollment. It must be published and have an active course type.');
         }
 
         // Check if already enrolled
@@ -100,7 +101,10 @@ class EnrollmentService
 
         if ($existingEnrollment) {
             // If enrollment exists but is dropped/suspended, reactivate it by updating status to active
-            if (in_array($existingEnrollment->enrollment_status, [EnrollmentStatus::DROPPED->value, EnrollmentStatus::SUSPENDED->value])) {
+            $statusValue = $existingEnrollment->enrollment_status instanceof EnrollmentStatus
+                ? $existingEnrollment->enrollment_status->value
+                : $existingEnrollment->enrollment_status;
+            if (in_array($statusValue, [EnrollmentStatus::DROPPED->value, EnrollmentStatus::SUSPENDED->value])) {
                 return $this->updateStatus($existingEnrollment, EnrollmentStatus::ACTIVE);
             }
 
@@ -108,7 +112,7 @@ class EnrollmentService
                 'course_id' => $course->course_id,
                 'learner_id' => $learnerId,
             ]);
-            return null;
+            throw new HttpException(422, 'This learner is already enrolled in this course.');
         }
 
         try {
@@ -120,7 +124,15 @@ class EnrollmentService
                     ? $learnerId
                     : ($enrolledBy ?? Auth::id());
 
-                $this->registerStudent($course->program->organization_id, $learnerId);
+                $program = $course->program;
+                if (!$program) {
+                    Log::warning('Course has no program; cannot register learner to organization', [
+                        'course_id' => $course->course_id,
+                        'learner_id' => $learnerId,
+                    ]);
+                    throw new HttpException(422, 'Course has no program; cannot enroll.');
+                }
+                $this->registerStudent($program->organization_id, $learnerId);
 
                 $enrollment = Enrollment::create([
                     'learner_id' => $learnerId,
@@ -145,6 +157,8 @@ class EnrollmentService
 
                 return $enrollment;
             });
+        } catch (HttpException $e) {
+            throw $e;
         } catch (ModelNotFoundException $e) {
             Log::error("Course not found for enrollment", [
                 'course_id' => $course->course_id,
@@ -152,7 +166,7 @@ class EnrollmentService
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return null;
+            throw new HttpException(422, 'Learner or related resource not found.');
         } catch (\Exception $e) {
             Log::error("Failed to enroll learner", [
                 'course_id' => $course->course_id,
@@ -160,6 +174,9 @@ class EnrollmentService
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            if (config('app.debug')) {
+                throw new HttpException(422, 'Enrollment failed: ' . $e->getMessage());
+            }
             return null;
         }
     }

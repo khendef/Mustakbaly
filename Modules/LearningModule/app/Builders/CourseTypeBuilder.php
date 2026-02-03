@@ -110,15 +110,15 @@ class CourseTypeBuilder extends Builder
     {
         $query = $this;
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $query = $query->search($request->input('search'));
         }
 
-        if ($request->has('slug')) {
+        if ($request->filled('slug')) {
             $query = $query->bySlug($request->input('slug'));
         }
 
-        if ($request->has('name')) {
+        if ($request->filled('name')) {
             $query = $query->byName($request->input('name'));
         }
 

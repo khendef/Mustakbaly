@@ -31,7 +31,7 @@ class InstructorController extends Controller
     public function index(InstructorFilterRequest $request)
     {
         $instructors = $this->instructorService->list($request->validated());
-        return self::paginated($instructors,'instructors retrieved successfully');
+        return self::paginated($instructors, 'instructors retrieved successfully');
     }
 
     /**
@@ -41,7 +41,7 @@ class InstructorController extends Controller
     {
         $instructorDTO = InstructorDTO::fromArray($request->validated());
         $instructor = $this->instructorService->create($instructorDTO);
-        return self::success($instructor,'instructor created successfuly',201);
+        return self::success($instructor, 'instructor created successfuly', 201);
     }
 
     /**
@@ -50,7 +50,7 @@ class InstructorController extends Controller
     public function show($id)
     {
         $instructor = $this->instructorService->findById($id);
-        return self::success($instructor);     
+        return self::success($instructor);
     }
 
     /**
@@ -60,7 +60,7 @@ class InstructorController extends Controller
     {
         $instructorDTO = InstructorDTO::fromArray($request->validated());
         $instructor = $this->instructorService->update($instructor, $instructorDTO);
-        return self::success($instructor,'instructor updated successfully');    
+        return self::success($instructor, 'instructor updated successfully');
     }
 
     /**
@@ -69,6 +69,6 @@ class InstructorController extends Controller
     public function destroy(User $instructor)
     {
         $this->instructorService->delete($instructor);
-        return self::success(null,'instructor deleted successfully');
+        return self::success(null, 'instructor deleted successfully');
     }
 }

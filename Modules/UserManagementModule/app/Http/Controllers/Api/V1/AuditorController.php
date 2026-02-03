@@ -15,7 +15,7 @@ class AuditorController extends Controller
 {
     protected AuditorService $auditorService;
 
-    public function __construct (AuditorService $auditorService)
+    public function __construct(AuditorService $auditorService)
     {
         $this->auditorService = $auditorService;
 
@@ -30,7 +30,7 @@ class AuditorController extends Controller
     public function index(AuditorFilterRequest $request)
     {
         $auditors = $this->auditorService->list($request->validated());
-        return self::paginated($auditors,'auditors retrieved successfully');
+        return self::paginated($auditors, 'auditors retrieved successfully');
     }
 
     /**
@@ -41,7 +41,7 @@ class AuditorController extends Controller
         $auditorDTO = AuditorDTO::fromArray($request->validated());
 
         $auditor = $this->auditorService->create($auditorDTO);
-        return self::success($auditor,'auditor created successfully',201);
+        return self::success($auditor, 'auditor created successfully', 201);
     }
 
     /**
@@ -49,29 +49,27 @@ class AuditorController extends Controller
      */
     public function show($id)
     {
-        
+
         $auditor = $this->auditorService->findById($id);
-        return self::success($auditor,'auditor retrieved successfully');
-       
+        return self::success($auditor, 'auditor retrieved successfully');
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update( AuditorUpdateRequest $request, User $auditor)
-    {   
+    public function update(AuditorUpdateRequest $request, User $auditor)
+    {
         $auditorDTO = AuditorDTO::fromArray($request->validated());
-        $auditor = $this->auditorService->update($auditor,$auditorDTO);
-        return self::success($auditor,'auditor update successfully',);
-      
+        $auditor = $this->auditorService->update($auditor, $auditorDTO);
+        return self::success($auditor, 'auditor update successfully',);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy( User $auditor)
+    public function destroy(User $auditor)
     {
         $this->auditorService->delete($auditor);
-        return self::success(null,'auditor deleted successfully');
+        return self::success(null, 'auditor deleted successfully');
     }
 }

@@ -16,6 +16,13 @@ class Enrollment extends Pivot
     use LogsActivity;
 
     /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'enrollments';
+
+    /**
      * Represents the enrollment relationship between users and courses.
      * Manages student enrollments, progress tracking, completion status, and enrollment lifecycle.
      *

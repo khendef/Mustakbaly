@@ -409,49 +409,44 @@ class CourseBuilder extends Builder
     {
         $query = $this;
 
-        // Default to published courses if status is not specified
-        if (!$request->has('status')) {
-            $query->published();
-        }
-
-        // Filter by status
-        if ($request->has('status')) {
+        // Filter by status only when explicitly provided (no default = return all statuses)
+        if ($request->filled('status')) {
             $query = $query->byStatus($request->input('status'));
         }
 
         // Filter by course type
-        if ($request->has('course_type_id')) {
-            $query = $query->byCourseType($request->input('course_type_id'));
+        if ($request->filled('course_type_id')) {
+            $query = $query->byCourseType((int) $request->input('course_type_id'));
         }
 
         // Filter by program
-        if ($request->has('program_id')) {
-            $query = $query->byProgram($request->input('program_id'));
+        if ($request->filled('program_id')) {
+            $query = $query->byProgram((int) $request->input('program_id'));
         }
 
         // Filter by language
-        if ($request->has('language')) {
+        if ($request->filled('language')) {
             $query = $query->byLanguage($request->input('language'));
         }
 
         // Filter by difficulty level
-        if ($request->has('difficulty_level')) {
+        if ($request->filled('difficulty_level')) {
             $query = $query->byDifficultyLevel($request->input('difficulty_level'));
         }
 
         // Filter by minimum rating
-        if ($request->has('min_rating')) {
-            $query = $query->byMinRating($request->input('min_rating'));
+        if ($request->filled('min_rating')) {
+            $query = $query->byMinRating((float) $request->input('min_rating'));
         }
 
         // Filter by creator
-        if ($request->has('created_by')) {
-            $query = $query->createdBy($request->input('created_by'));
+        if ($request->filled('created_by')) {
+            $query = $query->createdBy((int) $request->input('created_by'));
         }
 
         // Filter by instructor
-        if ($request->has('instructor_id')) {
-            $query = $query->byInstructor($request->input('instructor_id'));
+        if ($request->filled('instructor_id')) {
+            $query = $query->byInstructor((int) $request->input('instructor_id'));
         }
 
         // Filter by offline availability
@@ -460,7 +455,7 @@ class CourseBuilder extends Builder
         }
 
         // Filter by delivery type
-        if ($request->has('course_delivery_type')) {
+        if ($request->filled('course_delivery_type')) {
             $query = $query->byDeliveryType($request->input('course_delivery_type'));
         }
 

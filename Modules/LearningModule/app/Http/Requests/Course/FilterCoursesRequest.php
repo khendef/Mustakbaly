@@ -22,6 +22,22 @@ class FilterCoursesRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     * Converts query string "true"/"false" to booleans so Laravel's boolean rule accepts them.
+     *
+     * @return void
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('is_offline_available') && is_string($this->is_offline_available)) {
+            $value = filter_var($this->is_offline_available, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($value !== null) {
+                $this->merge(['is_offline_available' => $value]);
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
