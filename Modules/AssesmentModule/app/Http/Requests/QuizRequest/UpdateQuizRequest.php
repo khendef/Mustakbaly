@@ -32,7 +32,7 @@ class UpdateQuizRequest extends FormRequest
         return [
             'course_id' => [
                 'sometimes', // Allows partial updates
-                'exists:courses,id',
+                'exists:courses,course_id',
             ],
 
             'instructor_id' => [

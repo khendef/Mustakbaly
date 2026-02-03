@@ -4,12 +4,8 @@ namespace Modules\AssesmentModule\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\AssesmentModule\Http\Requests\AnswerRequest\StoreAnswerRequest;
-use Modules\AssesmentModule\Http\Requests\AnswerRequest\UpdateAnswerRequest;
-use Modules\AssesmentModule\Models\Answer;
 use Modules\AssesmentModule\Services\V1\AnswerService;
-use Modules\AssesmentModule\Transformers\AnswerResource;
 use Throwable;
 
 /**
@@ -20,13 +16,16 @@ use Throwable;
  */
 class AnswerController extends Controller
 {
+    private $answerService;
 
     /**
      * AnswerController constructor.
      *
      * @param AnswerService $answerService
      */
-    public function __construct(private AnswerService $answerService) {
+    public function __construct(AnswerService $answerService)
+    {
+        $this->answerService = $answerService;
         $this->middleware('permission:list-answers')->only('index');
         $this->middleware('permission:show-answer')->only('show');
         $this->middleware('permission:create-answer')->only('store');
@@ -35,75 +34,21 @@ class AnswerController extends Controller
     }
 
     /**
-     * Display a listing of the answers based on filters.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
-    {
-        try {
-            // Extracting filters for querying answers
-            $filters = $request->only([
-                'attempt_id',
-                'question_id',
-                'selected_option_id',
-                'answer_text',
-                'min_score',
-                'max_score',
-                'graded_by',
-                'graded_at',
-            ]);
-
-            if ($request->has('is_correct')) {
-                $filters['is_correct'] = $request->query('is_correct');
-            }
-            if ($request->has('boolean_answer')) {
-                $filters['boolean_answer'] = $request->query('boolean_answer');
-            }
-
-            // Handling pagination
-            $perPage = (int) $request->integer('per_page', 15);
-
-            // Fetching answers
-            $res = $this->answerService->index($filters, $perPage);
-
-            // Checking if the operation was successful
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
-
-            $data = $res['data'] ?? null;
-
-            if ($data instanceof LengthAwarePaginator) {
-                return self::paginated($data, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
-            }
-
-            return self::success($data, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
-
-        } catch (Throwable $e) {
-            return self::error($e->getMessage(), 500);
-        }
-    }
-
-    /**
      * Store a newly created answer.
      *
-     * @param StoreAnswerRequest $request
-     * @return \Illuminate\Http\Response
+     * @param StoreAnswerRequest $request The validated request data.
+     * @throws Throwable If an unexpected error occurs during the request.
      */
     public function store(StoreAnswerRequest $request)
     {
         try {
-            // Storing the answer
-            $res = $this->answerService->store($request->validated());
+            // Pass validated data to the service for processing
+            $data = $request->validated();
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
+            // Call service to store the answer
+            $answer = $this->answerService->store($data);
 
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Operation successful', $res['code'] ?? 201);
-
+            return self::success($answer, 'Answer created successfully', 201);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }
@@ -112,21 +57,38 @@ class AnswerController extends Controller
     /**
      * Display the specified answer.
      *
-     * @param Answer $answer
-     * @return \Illuminate\Http\Response
+     * @param int $id The ID of the answer to retrieve.
+     * @return \Illuminate\Http\Response A JSON response containing the answer.
+     *
+     * @throws Throwable If an unexpected error occurs during the request.
      */
-    public function show(Answer $answer)
+    public function show($id)
     {
         try {
-            // Fetching the specified answer
-            $res = $this->answerService->show($answer->id);
+            $answer = $this->answerService->show($id);
+            return self::success($answer, 'Operation successful', 200);
+        } catch (Throwable $e) {
+            return self::error($e->getMessage(), 500);
+        }
+    }
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 404, $res);
-            }
+    /**
+     * List all answers with pagination.
+     *
+     * @param Request $request The request containing filtering and pagination parameters.
+     * @return \Illuminate\Http\JsonResponse JSON response with paginated data or error.
+     */
+    public function index(Request $request)
+    {
+        try {
+            $filters = $request->only([
+                'quiz_id', 'student_id', 'question_id', 'is_correct', 'graded_by'
+            ]);
 
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
+            $perPage = (int) $request->integer('per_page', 15);
+            $answers = $this->answerService->index($filters, $perPage);
 
+            return self::paginated($answers, 'Operation successful', 200);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }
@@ -135,45 +97,39 @@ class AnswerController extends Controller
     /**
      * Update the specified answer.
      *
-     * @param UpdateAnswerRequest $request
-     * @param Answer $answer
-     * @return \Illuminate\Http\Response
+     * @param StoreAnswerRequest $request The validated request data.
+     * @param int $id The ID of the answer to update.
+     * @return \Illuminate\Http\Response A JSON response indicating the success or failure of the operation.
+     *
+     * @throws Throwable If an unexpected error occurs during the request.
      */
-    public function update(UpdateAnswerRequest $request, Answer $answer)
+    public function update(StoreAnswerRequest $request, $id)
     {
         try {
-            // Updating the answer
-            $res = $this->answerService->update($answer->id, $request->validated());
+            $data = $request->validated();
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
+            $answer = $this->answerService->update($id, $data);
 
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
-
+            return self::success($answer, 'Answer updated successfully', 200);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }
     }
 
     /**
-     * Remove the specified answer from the database.
+     * Remove the specified answer from storage.
      *
-     * @param Answer $answer
-     * @return \Illuminate\Http\Response
+     * @param int $id The ID of the answer to delete.
+     * @return \Illuminate\Http\Response A JSON response indicating the success or failure of the operation.
+     *
+     * @throws Throwable If an unexpected error occurs during the request.
      */
-    public function destroy(Answer $answer)
+    public function destroy($id)
     {
         try {
-            // Deleting the specified answer
-            $res = $this->answerService->destroy($answer->id);
+            $this->answerService->destroy($id);
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
-
-            return self::success(null, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
-
+            return self::success(null, 'Answer deleted successfully', 200);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }

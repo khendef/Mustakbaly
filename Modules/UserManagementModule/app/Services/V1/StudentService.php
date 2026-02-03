@@ -3,6 +3,7 @@
 namespace Modules\UserManagementModule\Services\V1;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\UserManagementModule\DTOs\ProfileDTO;
 use Modules\UserManagementModule\DTOs\StudentDTO;
@@ -12,19 +13,36 @@ use Modules\UserManagementModule\Models\User;
 
 class StudentService
 {
+    private const CACHE_TTL = 3600;
+    private const TAG_GLOBAL = 'students';
+    private const TAG_PREFIX_STUDENT = 'student_';
     public function list($filters, int $perPage=15)
     {
-        $students = User::whereHas('studentProfile')
-                    ->with('media','studentProfile', 'courses:id,name')
-                    ->filters($filters)
-                    ->paginate($perPage);
-        return $students;
+        $orgId = config('app.current_organization_id');
+        $orgkey = $orgId ? "_org_{$orgId}" : '';
+        
+        ksort($filters);
+        $filtersKey = md5(json_encode($filters));
+        $CacheKey = "students_list_{$filtersKey}_limit_{$perPage}_{$orgkey}";     
+
+        return Cache::tags([self::TAG_GLOBAL])->remember($CacheKey,self::CACHE_TTL,function() use($filters, $perPage){
+            $students = User::whereHas('studentProfile')
+                        ->with('media','studentProfile', 'courses:id,name')
+                        ->filters($filters)
+                        ->paginate($perPage);
+            return $students;
+        });
     }
 
     public function findById(int $id)
     {
-        return User::with('media','studentProfile','courses:id,name')
-        ->findOrFail($id);
+        $orgId = config('app.current_organization_id');
+        $orgkey = $orgId ? "_org_{$orgId}" : '';
+        $cacheKey = "student_details_{$id}_{$orgkey}";
+        return Cache::tags([self::TAG_GLOBAL, self::TAG_PREFIX_STUDENT . $id])->remember($cacheKey, self::CACHE_TTL, function() use($id) {
+            return User::with('media','studentProfile','courses:id,name')
+            ->findOrFail($id);
+        });
     }
 
     public function create(StudentDTO $studentDTO)

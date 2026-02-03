@@ -43,22 +43,26 @@ class NotificationService
             $student->notify(new QuizAttemptGraded($data));
         }
     }
-       /**
+
+    /**
      * Send notification for a new question created.
      *
      * @param QuestionNotificationData $data The data for the notification
      * @return void
      */
+    
     public function sendQuestionCreatedNotification(QuestionNotificationData $data): void
     {
-        // Retrieve the instructor
-        $instructor = User::find($data->quizId)->instructor;
-
-        if ($instructor) {
+        // Retrieve the quiz to get the associated instructor
+        $quiz = Quiz::find($data->quizId); // Ensure that quizId exists and the quiz is found
+        
+        if ($quiz && $quiz->instructor) {
             // Send the notification to the instructor
-            $instructor->notify(new QuestionCreatedNotification($data));
+            $quiz->instructor->notify(new QuestionCreatedNotification($data));
         }
     }
+
+
      /**
      * Send notification to the instructor when a student submits an assignment.
      *
@@ -67,12 +71,14 @@ class NotificationService
      */
     public function sendAssignmentSubmittedNotification(AssignmentNotificationData $data): void
     {
-        // Get the instructor related to the quiz
-        $instructor = User::find($data->quizId)->instructor;
+        $quiz = Quiz::find($data->quizId);
+        
+        if ($quiz && $quiz->type === 'assignment') {
 
-        if ($instructor) {
-            // Send the notification
-            $instructor->notify(new InstructorAssignmentSubmitted($data));
+            $instructor = $quiz->instructor;
+            if ($instructor) {
+                $instructor->notify(new InstructorAssignmentSubmitted($data));
+            }
         }
     }
 }

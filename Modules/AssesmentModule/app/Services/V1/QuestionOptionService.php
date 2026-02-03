@@ -22,13 +22,6 @@ use Throwable;
 class QuestionOptionService extends BaseService
 {
     /**
-     * Handle the service logic. Currently a placeholder for additional functionality.
-     *
-     * @return void
-     */
-    public function handle() {}
-
-    /**
      * Fetch a paginated list of question options based on the given filters.
      *
      * @param array $filters The filters to apply to the question options query (e.g., correctness, related question).
@@ -36,7 +29,7 @@ class QuestionOptionService extends BaseService
      *
      * @return array<string, mixed> The result of the operation with status and data.
      */
-    public function index(array $filters = [], int $perPage = 15): array
+    public function index(array $filters = [], int $perPage = 15)
     {
         try {
             $data = QuestionOption::query()
@@ -54,18 +47,16 @@ class QuestionOptionService extends BaseService
      *
      * @param array $data The data to create a new question option.
      *
-     * @return array<string, mixed> The result of the operation with status and the created question option.
      */
-    public function store(array $data): array
+     public function store(array $data): QuestionOption
     {
-        try {
-            $option = QuestionOption::create($data);
+    return QuestionOption::create([
+        'question_id' => $data['question_id'],
+        'option_text' => $data['option_text'],
+        'is_correct'  => $data['is_correct'] ?? false,
+    ]);
+     }
 
-            return $this->ok('Question option created successfully.', $option, 201);
-        } catch (Throwable $e) {
-            return $this->fail('Failed to create question option.', $e, 500);
-        }
-    }
 
     /**
      * Fetch a single question option by its ID.

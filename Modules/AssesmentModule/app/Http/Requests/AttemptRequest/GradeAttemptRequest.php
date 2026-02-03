@@ -45,7 +45,7 @@ class GradeAttemptRequest extends FormRequest
             'score' => ['required', 'integer', 'min:0'], // Ensures score is a non-negative integer
             'is_passed' => ['required', 'boolean'], // Ensures is_passed is a boolean value
             'graded_at' => ['sometimes', 'date'], // Optional, but must be a valid date if provided
-            'graded_by' => ['sometimes', 'integer', 'exists:users,id'], // Optional, but must be a valid user ID if provided
+            'graded_by' => ['required', 'integer', 'exists:users,id'], // Optional, but must be a valid user ID if provided
         ];
     }
 }

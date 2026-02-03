@@ -12,7 +12,7 @@ use Modules\AssesmentModule\Http\Controllers\Api\V1\QuizController;
 Route::middleware(['auth:api'])->prefix('v1')->group(function () {
     Route::apiResource('assesmentmodules', AssesmentModuleController::class)->names('assesmentmodule');
 });
-Route::prefix('v2')->group(function () {
+Route::prefix('v1')->group(function () {
 
     /*Quizzes*/
     Route::apiResource('quizzes', QuizController::class);
@@ -35,7 +35,7 @@ Route::prefix('v2')->group(function () {
     Route::post('attempts/start',            [AttemptController::class, 'start']);
     Route::post('attempts/{attempt}/submit', [AttemptController::class, 'submit']);
     Route::post('attempts/{attempt}/grade',  [AttemptController::class, 'grade']);
-/***Answer */
+    /***Answer */
     Route::apiResource('answer', AnswerController::class);
 });
 

@@ -54,7 +54,7 @@ class QuestionResource extends JsonResource
             'options' => QuestionOptionResource::collection($this->whenLoaded('options')),
 
             /** @var \Illuminate\Http\Resources\Json\AnonymousResourceCollection $this->media The collection of media associated with the question */
-            'media' => MediaResource::collection($this->whenLoaded('media')),
+            'media' => MediaResources::collection($this->whenLoaded('media')),
         ];
     }
 }

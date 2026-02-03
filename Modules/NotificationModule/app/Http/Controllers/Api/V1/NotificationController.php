@@ -7,6 +7,7 @@ use Modules\NotificationModule\DTO\NotificationData;
 use Modules\NotificationModule\DTO\QuestionNotificationData;
 use Modules\NotificationModule\Services\NotificationService;
 use Modules\UserManagementModule\Models\User;
+use Throwable;
 
 /**
  * API Controller for listing and updating notifications.
@@ -68,7 +69,7 @@ class NotificationController extends Controller
 
         return response()->json(['message' => 'Notification sent successfully!']);
     }
-    /**
+     /**
      * Handle sending the question created notification.
      *
      * @param Request $request
@@ -81,7 +82,9 @@ class NotificationController extends Controller
         $validated = $request->validate([
             'question_id' => 'required|integer',
             'quiz_id' => 'required|integer',
-            'question_text' => 'required|string',
+            'question_text' => 'required|array',
+            'question_text.en' => 'required|string',
+            'question_text.ar' => 'required|string',
         ]);
 
         // Create DTO from validated data
@@ -91,38 +94,36 @@ class NotificationController extends Controller
             $validated['question_text']
         );
 
-        // Send notification using the service
-        $notificationService->sendQuestionCreatedNotification($notificationData);
+        try {
+            // Send the notification
+            $notificationService->sendQuestionCreatedNotification($notificationData);
 
-        return response()->json(['message' => 'Notification sent successfully!']);
+            return response()->json(['message' => 'Notification sent successfully.'], 200);
+        } catch (Throwable $e) {
+            // Handle any errors during notification sending
+            return response()->json(['message' => 'Error sending notification: ' . $e->getMessage()], 500);
+        }
     }
-    /**
-    * Handle sending Assignment submitted
-     * @param Request $request
-     * @param NotificationService $notificationService
-     * @return \Illuminate\Http\Response
-     */
-    public function sendAssignmentNotification(Request $request, NotificationService $notificationService)
+
+    
+       public function sendAssignmentNotification(Request $request, NotificationService $notificationService)
     {
-        // Validate incoming request data
         $validated = $request->validate([
             'attempt_id' => 'required|integer',
             'quiz_id' => 'required|integer',
             'student_name' => 'required|string',
         ]);
 
-        // Create DTO from validated data
         $notificationData = new AssignmentNotificationData(
             $validated['attempt_id'],
             $validated['quiz_id'],
             $validated['student_name']
         );
 
-        // Use NotificationService to send the notification
+
         $notificationService->sendAssignmentSubmittedNotification($notificationData);
 
-        return response()->json(['message' => 'Notification sent successfully!']);
+        return response()->json(['message' => 'تم إرسال الإشعار بنجاح!']);
     }
-
 }
 

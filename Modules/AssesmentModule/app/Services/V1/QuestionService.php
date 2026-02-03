@@ -1,5 +1,4 @@
 <?php
-
 namespace Modules\AssesmentModule\Services\V1;
 
 use Illuminate\Support\Facades\DB;
@@ -7,46 +6,35 @@ use Modules\AssesmentModule\Models\Question;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
 
-/**
+ /**
  * Class QuestionService
  *
  * This service handles the business logic for managing questions, including:
  * - Fetching a list of questions with filters and pagination
  * - Creating, updating, and deleting questions
  * - Retrieving a single question by ID
- *
- * It encapsulates all question-related operations, ensuring that the business rules are respected.
- * The service uses exception handling to manage errors and provides consistent responses.
- *
- * @package Modules\AssesmentModule\Services\V1
  */
-class QuestionService extends BaseService
-{
-    /**
-     * Handle the service logic. Currently a placeholder for additional functionality.
-     *
-     * @return void
-     */
-    public function handle() {}
-
+    class QuestionService extends BaseService
+    {
     /**
      * Fetch a paginated list of questions based on the given filters.
      *
-     * @param array $filters The filters to apply to the question query (e.g., question type, status).
-     * @param int $perPage The number of questions per page (default is 15).
+     * @param array $filters The filters to apply to the question query.
+     * @param int $perPage The number of questions per page.
      *
-     * @return array<string, mixed> The result of the operation with status and data.
+     * @return mixed The result with questions.
      */
-    public function index(array $filters = [], int $perPage = 15): array
+    public function index(array $filters = [], int $perPage = 15)
     {
         try {
+            // Applying filters and getting paginated data
             $data = Question::query()
                 ->filter($filters)
                 ->paginate($perPage);
-
-            return $this->ok('Questions fetched successfully.', $data, 200);
+            //return data
+            return $data; 
         } catch (Throwable $e) {
-            return $this->fail('Failed to fetch questions.', $e, 500);
+            throw new \Exception('Failed to fetch questions: ' . $e->getMessage());
         }
     }
 
@@ -55,15 +43,15 @@ class QuestionService extends BaseService
      *
      * @param array $data The data to create a new question.
      *
-     * @return array<string, mixed> The result of the operation with status and the created question.
+     * @return mixed The created question data.
      */
-    public function store(array $data): array
+    public function store(array $data)
     {
         try {
             $question = Question::create($data);
-            return $this->ok('Question created successfully.', $question, 201);
+            return $question; 
         } catch (Throwable $e) {
-            return $this->fail('Failed to create question.', $e, 500);
+            throw new \Exception('Failed to create question: ' . $e->getMessage());
         }
     }
 
@@ -72,17 +60,17 @@ class QuestionService extends BaseService
      *
      * @param int $id The ID of the question.
      *
-     * @return array<string, mixed> The result of the operation with status and the fetched question.
+     * @return mixed The fetched question.
      */
-    public function show(int $id): array
+    public function show(int $id)
     {
         try {
             $question = Question::query()->findOrFail($id);
-            return $this->ok('Question fetched successfully.', $question, 200);
+            return $question; 
         } catch (ModelNotFoundException $e) {
-            return $this->fail('Question not found.', $e, 404);
+            throw new \Exception('Question not found: ' . $e->getMessage());
         } catch (Throwable $e) {
-            return $this->fail('Failed to fetch question.', $e, 500);
+            throw new \Exception('Failed to fetch question: ' . $e->getMessage());
         }
     }
 
@@ -92,19 +80,18 @@ class QuestionService extends BaseService
      * @param int $id The ID of the question to update.
      * @param array $data The data to update the question.
      *
-     * @return array<string, mixed> The result of the operation with status and the updated question.
+     * @return mixed The updated question data.
      */
-    public function update(int $id, array $data): array
+    public function update(int $id, array $data)
     {
         try {
             $question = Question::query()->findOrFail($id);
             $question->update($data);
-
-            return $this->ok('Question updated successfully.', $question->fresh(), 200);
+            return $question->fresh(); 
         } catch (ModelNotFoundException $e) {
-            return $this->fail('Question not found.', $e, 404);
+            throw new \Exception('Question not found: ' . $e->getMessage());
         } catch (Throwable $e) {
-            return $this->fail('Failed to update question.', $e, 500);
+            throw new \Exception('Failed to update question: ' . $e->getMessage());
         }
     }
 
@@ -113,19 +100,18 @@ class QuestionService extends BaseService
      *
      * @param int $id The ID of the question to delete.
      *
-     * @return array<string, mixed> The result of the operation with status.
+     * @return bool Whether the delete was successful or not.
      */
-    public function destroy(int $id): array
+    public function destroy(int $id)
     {
         try {
             $question = Question::query()->findOrFail($id);
             $question->delete();
-
-            return $this->ok('Question deleted successfully.', null, 200);
+            return true; // Return true if deletion is successful
         } catch (ModelNotFoundException $e) {
-            return $this->fail('Question not found.', $e, 404);
+            throw new \Exception('Question not found: ' . $e->getMessage());
         } catch (Throwable $e) {
-            return $this->fail('Failed to delete question.', $e, 500);
+            throw new \Exception('Failed to delete question: ' . $e->getMessage());
         }
     }
 }
