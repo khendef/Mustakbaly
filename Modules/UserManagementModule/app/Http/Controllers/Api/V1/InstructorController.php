@@ -30,7 +30,7 @@ class InstructorController extends Controller
     public function index(InstructorFilterRequest $request)
     {
         $instructors = $this->instructorService->list($request->validated());
-        return self::paginate($instructors, 'instructors retrieved successfully');
+        return self::paginated($instructors, 'instructors retrieved successfully');
     }
 
     /**
