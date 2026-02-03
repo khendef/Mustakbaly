@@ -13,6 +13,12 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            //role permissions
+            'create-roles',
+            'update-roles',      
+            'delete-roles',
+            'list-roles',
+            'show-roles',
             //users permissions (all users accounts, managers accounts)
             'create-user',
             'update-user',
@@ -41,6 +47,13 @@ class PermissionSeeder extends Seeder
             'list-auditors',
             'show-auditor',
 
+            //donor permissions
+            'create-donor',
+            'update-donor',
+            'delete-donor',
+            'list-donors',
+            'show-donor',
+
             //program permissions
             'create-program',
             'update-program',
@@ -55,6 +68,13 @@ class PermissionSeeder extends Seeder
             'list-courses',
             'show-course',
 
+            //course categories permissions
+            'create-category',
+            'update-category',
+            'delete-category',
+            'list-categories',
+            'show-category',
+
             //unit permissions
             'create-unit',
             'update-unit',
@@ -68,6 +88,48 @@ class PermissionSeeder extends Seeder
             'delete-lesson',
             'list-lessons',
             'show-lesson',
+
+            // quiz permissions
+            'create-quiz',
+            'update-quiz',
+            'delete-quiz',
+            'list-quiz',
+            'show-quiz',
+
+            //question permissions
+            'create-question',
+            'update-question',
+            'delete-question',
+            'list-questions',
+            'show-question',
+
+            //question option permissions
+            'create-option',
+            'update-option',
+            'delete-option',
+            'list-options',
+            'show-option',
+
+            //attempt permissions
+            'create-attempt',
+            'update-attempt',
+            'delete-attempt',
+            'list-attempts',
+            'show-attempt',
+
+            //answer permissions
+            'create-answer',
+            'update-answer',
+            'delete-answer',
+            'list-answers',
+            'show-answer',
+
+            //certificate permissions
+            'create-certificate',
+            'update-certificate',
+            'delete-certificate',
+            'list-certificates',
+            'show-certificate',
 
         ];
 

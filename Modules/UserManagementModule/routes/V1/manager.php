@@ -31,8 +31,8 @@ use Modules\ReportingModule\Http\Controllers\ManagerPartnerOrganizationDashboard
  * @middleware can:manage-organization
  * @scope   OrganizationScope (filters data based on requeste organization to insure data isolation between organizations)
  */
-Route::group(['prefix' => '/{organization}/manage', 'middleware' => ['auth:api', 'role:manager', 'can:manage-organization,organization']], function () {
-    /**
+Route::group(['prefix'=>'/{organization}/manage','middleware'=>['auth:api','role:manager','can:manage-organization,organization','requested_organization']],function(){
+  /** 
     |--------------------------------------------------------------------------
     | Dashboard & Reports
     |--------------------------------------------------------------------------

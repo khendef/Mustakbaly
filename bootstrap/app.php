@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'requested_organization' => \Modules\UserManagementModule\Http\Middleware\GetRequestedOrganization::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
@@ -31,58 +32,58 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         
-        $exceptions->render(function( Throwable $e, Request $request){
-            if($request->expectsJson() && !$request->is('api/*')){
-                return null;
-            }
+        // $exceptions->render(function( Throwable $e, Request $request){
+        //     if($request->expectsJson() && !$request->is('api/*')){
+        //         return null;
+        //     }
 
-            if($e instanceof HttpResponseException){
-                return $e->getResponse();
-            }
-            Log::error(
-                "API Exception: ". get_class($e)." - Message: ".$e->getMessage()." - File: ".$e->getFile()." - line: ".$e->getLine()
-            );
+        //     if($e instanceof HttpResponseException){
+        //         return $e->getResponse();
+        //     }
+        //     Log::error(
+        //         "API Exception: ". get_class($e)." - Message: ".$e->getMessage()." - File: ".$e->getFile()." - line: ".$e->getLine()
+        //     );
 
-            $responseDetails = match(get_class($e)){
-                ValidationException::class => [
-                    'statusCode' => 422,
-                    'message' => $e->getMessage(),
-                    'errors' => $e->errors()->all(),
-                ],
-                AuthenticationException::class => [
-                    'statusCode' => 401,
-                    'message' => 'Unauthenticated',
-                ],
-                AuthorizationException::class => [
-                    'statusCode' => 403,
-                    'message' => 'This action is unauthorized',
-                ],
-                NotFoundResourceException::class => [
-                    'statusCode' => 404,
-                    'message' => 'This requested resource was not found',
-                ],
-                default => [
-                    'statusCode' => $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500,
-                    'message' => app()->isProduction() ? 'An unexpected server error occured' : $e->getMessage()
+        //     $responseDetails = match(get_class($e)){
+        //         ValidationException::class => [
+        //             'statusCode' => 422,
+        //             'message' => $e->getMessage(),
+        //             'errors' => $e->errors()->all(),
+        //         ],
+        //         AuthenticationException::class => [
+        //             'statusCode' => 401,
+        //             'message' => 'Unauthenticated',
+        //         ],
+        //         AuthorizationException::class => [
+        //             'statusCode' => 403,
+        //             'message' => 'This action is unauthorized',
+        //         ],
+        //         NotFoundResourceException::class => [
+        //             'statusCode' => 404,
+        //             'message' => 'This requested resource was not found',
+        //         ],
+        //         default => [
+        //             'statusCode' => $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500,
+        //             'message' => app()->isProduction() ? 'An unexpected server error occured' : $e->getMessage()
 
-                ]
+        //         ]
 
-            };
+        //     };
 
-            $payload = [
-                'status' => 'error',
-                'message' => $responseDetails ['message']
-            ];
+        //     $payload = [
+        //         'status' => 'error',
+        //         'message' => $responseDetails ['message']
+        //     ];
 
-            if(!empty($responseDetails['errors'])){
-                $payload['errors'] = $responseDetails['errors'];
-            }
+        //     if(!empty($responseDetails['errors'])){
+        //         $payload['errors'] = $responseDetails['errors'];
+        //     }
 
-            $statusCode =( $responseDetails ['statusCode'] >= 400 && $responseDetails['statusCode']< 600)
-                            ? $responseDetails['statusCode'] : 500;
+        //     $statusCode =( $responseDetails ['statusCode'] >= 400 && $responseDetails['statusCode']< 600)
+        //                     ? $responseDetails['statusCode'] : 500;
 
-            return response()->json($payload, $statusCode);
-        });
+        //     return response()->json($payload, $statusCode);
+        // });
 
         
     })->create();

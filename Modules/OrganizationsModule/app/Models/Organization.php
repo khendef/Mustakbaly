@@ -1,6 +1,7 @@
 <?php
 namespace Modules\OrganizationsModule\Models;
 
+use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Model;
@@ -12,8 +13,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Organization extends Model implements HasMedia
 
-{
-    use HasTranslations , SoftDeletes , InteractsWithMedia;
+{ 
+    use HasTranslations , SoftDeletes , InteractsWithMedia, CascadeSoftDeletes;
     protected $fillable = [
         'name',
         'email',
@@ -23,6 +24,9 @@ class Organization extends Model implements HasMedia
         'description',
         'logo',
     ];
+
+    protected $cascadeDeletes = ['programs'];
+
 
     /**
      * * Translatable attributes.
