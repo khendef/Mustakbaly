@@ -8,8 +8,14 @@ use Modules\LearningModule\Http\Controllers\LessonController;
 use Modules\LearningModule\Http\Controllers\UnitController;
 use Modules\OrganizationsModule\Http\Controllers\Api\V1\OrganizationController;
 use Modules\OrganizationsModule\Http\Controllers\Api\V1\ProgramController;
+use Modules\UserManagementModule\Http\Controllers\Api\V1\AuditorController;
+use Modules\UserManagementModule\Http\Controllers\Api\V1\InstructorController;
+use Modules\UserManagementModule\Http\Controllers\Api\V1\PermissionController;
+use Modules\UserManagementModule\Http\Controllers\Api\V1\RoleController;
+use Modules\UserManagementModule\Http\Controllers\Api\V1\StudentController;
 use Modules\UserManagementModule\Http\Controllers\Api\V1\UserController;
 use Modules\ReportingModule\Http\Controllers\AdminDashboardController;
+use Spatie\Permission\Models\Permission;
 
 /**
  | -----------------------------------------------------------------------------------------------
@@ -116,7 +122,7 @@ Route::group(['prefix' => '/super-admin', 'middleware' => ['auth:api', 'role:sup
      * @body   {name: string, description: text, organization_id: int}
      * @controller ProgramController@store
      */
-    Route::post('/programs', [ProgramController::class, 'store']);
+    Route::post('/organizations/{organization}/programs',[ProgramController::class,'store']);
 
     /**
      * @name   Update Program
@@ -750,6 +756,156 @@ Route::group(['prefix' => '/super-admin', 'middleware' => ['auth:api', 'role:sup
      * @path   DELETE /api/v1/super-admin/users/{user}
      * @desc   Soft Deletes a user from the platform.
      * @controller UserController@destroy
+    */
+     Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+    /** 
+    |--------------------------------------------------------------------------
+    | Profiles Management
+    |--------------------------------------------------------------------------
+    */
+
+   /**
+     * @name   List Organization Instructors
+     * @path   GET /api/v1/super-admin/instructors
+     * @desc   List all users assigned as instructors in this organization.
+     * @controller InstructorController@index
+     * 
+    */
+   Route::get('/instructors',[InstructorController::class,'index']);
+   /**
+     * @name   Assign Instructor
+     * @path   POST /api/v1/super-admin/instructors
+     * @desc   Invite a user to teach within this organization.
+     * @controller InstructorController@store
+    */
+   Route::post('/instructors',[InstructorController::class,'store']);
+
+   /**
+     * @name   View Instructor Details
+     * @path   GET /api/v1/super-admin/instructors/{instructor}
+     * @desc   Retrieve Instructor's account informations and profile details
+     * @param  {instructor: id}
+     * @controller  InstructorController@show
+    */
+   Route::get('/instructors/{instructor}',[InstructorController::class,'show']);
+   //6.2. students authorized routes
+   /**
+     * @name   List Enrolled Students
+     * @path   GET /api/v1/super-admin/students
+     * @desc   Retrieve a list of all students enrolled in this organization's courses.
+     * @controller StudentController@index
+    */
+
+   /**
+     * @name   Update Instructor Information
+     * @path   PUT /api/v1/super-admin/instructors/{instructor}
+     * @desc   Update Instructor's account informations and profile details
+     * @param  {instructor: id}
+     * @controller  InstructorController@update
+    */
+   Route::put('/instructors/{instructor}',[InstructorController::class,'update']);
+
+    /**
+      * @name   Delete Instructor Account
+      * @path   DELETE /api/v1/super-admin/instructors/{instructor}
+      * @desc   Soft Deletes an instructor account from the organization.
+      * @param  {instructor: id}
+      * @controller  InstructorController@destroy
      */
-    Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    Route::delete('/instructors/{instructor}',[InstructorController::class,'destroy']);
+
+    /**
+      * @name   View Student Details
+      * @path   GET /api/v1/super-admin/students/{student}
+      * @desc   Retrieve Student's account informations and profile details
+      * @param  {student: id}
+      * @controller  StudentController@show
+     */
+   Route::get('/students',[StudentController::class,'index']);
+
+   /**
+     * @name   View Student Details
+     * @path   GET /api/v1/super-admin/students/{student}
+     * @desc   Retrieve Student's account informations and profile details
+     * @param  {student: id}
+     * @controller  StudentController@show
+    */
+   Route::get('/students/{student}',[StudentController::class,'show']);
+
+   /**
+     * @name   Register Student in the organization 
+     * @path   POST /api/v1/super-admin/students
+     * @desc   Manually register a new student into the organization
+     * @controller StudentController@store
+    */
+    Route::post('/students', [StudentController::class, 'store']);
+
+    /**
+     * @name   Update Student Information
+     * @path   PUT /api/v1/super-admin/students/{student}
+     * @desc   Update Student's account informations and profile details            
+     * @param  {student: id}
+     * @controller  StudentController@update
+     */
+    Route::put('/students/{student}', [StudentController::class, 'update']);
+
+    /**
+     * @name   Delete Student Account
+     * @path   DELETE /api/v1/super-admin/students/{student}
+     * @desc   Soft Deletes a student account from the organization.
+     * @param  {student: id}
+     * @controller  StudentController@destroy
+    */
+    Route::delete('/students/{student}', [StudentController::class, 'destroy']);
+
+
+   /**
+     * @name   View Auditor List
+     * @path   GET /api/v1/super-admin/auditors
+     * @desc   List all auditors assigned to this organization.
+     * @controller AuditorController@index
+    */
+   Route::get('/auditors',[AuditorController::class,'index']);
+
+   /**
+     * @name   Assign Auditor
+     * @path   POST /api/v1/super-admin/auditors
+     * @desc   Invite an auditor to this organization.
+     * @controller AuditorController@store
+    */
+   Route::post('/auditors',[AuditorController::class,'store']);
+
+   /**
+     * @name   View Auditor Details
+     * @path   GET /api/v1/super-admin/auditors/{auditor}
+     * @desc   Retrieve Auditor's account informations and profile details
+     * @param  {auditor: id}
+     * @controller  AuditorController@show
+    */
+   Route::get('/auditors/{auditor}',[AuditorController::class,'show']);  
+
+
+   /**
+     * @name   Update Auditor Information
+     * @path   PUT /api/v1/super-admin/auditors/{auditor}
+     * @desc   Update Auditor's account informations and profile details            
+     * @param  {auditor: id}
+     * @controller  AuditorController@update
+    */
+   Route::put('/auditors/{auditor}',[AuditorController::class,'update']);
+
+   /**
+     * @name   Delete Auditor Account
+     * @path   DELETE /api/v1/super-admin/auditors/{auditor}
+     * @desc   Soft Deletes an auditor account from the organization.
+     * @param  {auditor: id}
+     * @controller  AuditorController@destroy
+    */
+    Route::delete('/auditors/{auditor}',[AuditorController::class,'destroy']);
+   
+
+    Route::apiResource('roles', RoleController::class);
+    Route::get('permissions', [PermissionController::class, 'index']);
+    
 });

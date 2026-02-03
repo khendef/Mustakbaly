@@ -3,6 +3,7 @@
 namespace Modules\UserManagementModule\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use Modules\UserManagementModule\DTOs\AuditorDTO;
 use Modules\UserManagementModule\Models\User;
 use Modules\UserManagementModule\Services\V1\AuditorService;
 use Modules\UserManagementModule\Http\Requests\Api\V1\Auditor\AuditorFilterRequest;
@@ -16,7 +17,7 @@ class AuditorController extends Controller
 
     public function __construct(AuditorService $auditorService)
     {
-        $this->$auditorService = $auditorService;
+        $this->auditorService = $auditorService;
 
         $this->middleware('permission:list-auditors')->only('index');
         $this->middleware('permission:show-auditor')->only('show');
@@ -37,7 +38,9 @@ class AuditorController extends Controller
      */
     public function store(AuditorStoreRequest $request)
     {
-        $auditor = $this->auditorService->create($request->validated());
+        $auditorDTO = AuditorDTO::fromArray($request->validated());
+
+        $auditor = $this->auditorService->create($auditorDTO);
         return self::success($auditor, 'auditor created successfully', 201);
     }
 
@@ -56,7 +59,8 @@ class AuditorController extends Controller
      */
     public function update(AuditorUpdateRequest $request, User $auditor)
     {
-        $auditor = $this->auditorService->update($auditor, $request->validated());
+        $auditorDTO = AuditorDTO::fromArray($request->validated());
+        $auditor = $this->auditorService->update($auditor, $auditorDTO);
         return self::success($auditor, 'auditor update successfully',);
     }
 

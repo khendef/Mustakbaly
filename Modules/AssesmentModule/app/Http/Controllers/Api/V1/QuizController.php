@@ -26,6 +26,11 @@ class QuizController extends Controller
      */
     public function __construct(private QuizService $quizService)
     {
+         $this->middleware('permission:list-quiz')->only('index');
+        $this->middleware('permission:show-quiz')->only('show');
+        $this->middleware('permission:create-quiz')->only('store');
+        $this->middleware('permission:update-quiz')->only('update');
+        $this->middleware('permission:delete-quiz')->only('destroy');
     }
 
     /**

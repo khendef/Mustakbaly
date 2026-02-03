@@ -13,8 +13,8 @@ class AuditorService
     public function list($filters, int $perPage=15)
     {
         $auditors = User::whereHas('auditorProfile')
-                    ->with('media','auditorProfile', 'organizations:id,name')
-                    ->filters($filters)
+                    ->with('auditorProfile', 'organizations:id,name')
+                    //->filters($filters)
                     ->paginate($perPage);
         return $auditors;
     }
@@ -39,19 +39,18 @@ class AuditorService
 
             //3. create auditor profile
             if (isset($auditorDTO->avatar)) {
-            $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
-        }
+                $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
+            }
 
-            // user_id = $user->id
-            $auditor = $user->auditorProfile()->updateOrCreate(['user_id' => $user->id],$auditorData);
+            $user->auditorProfile()->updateOrCreate(['user_id' => $user->id],$auditorData);
             if (isset($auditorDTO->cv)) {
-            $auditor->addMedia($auditorDTO->cv)->toMediaCollection('cv');
+            $user->addMedia($auditorDTO->cv)->toMediaCollection('cv');
         }
             //4. attach to organization
-            $user->organizations()->attach($auditorDTO->organizationId,['role'=>UserRole::AUDITOR->value]);
+            $user->organizations()->syncWithoutDetaching($auditorDTO->organizationId,['role'=>UserRole::AUDITOR->value]);
             //5. assign role
             $user->assignRole(UserRole::AUDITOR->value);
-            return $auditor;
+            return $user->load('auditorProfile');
        });
     }
 
@@ -64,10 +63,11 @@ class AuditorService
             $user->addMedia($auditorDTO->avatar)->toMediaCollection('avatar');
         }
             $user->auditorProfile()->update($auditorDTO->auditorData());
-                    if (isset($auditorDTO->cv)) {
+
+            if (isset($auditorDTO->cv)) {
                 $user->addMedia($auditorDTO->cv)->toMediaCollection('cv');
-        }
-            return $user->refresh();
+            }
+            return $user->load('auditorProfile')->refresh();
         });
 
 

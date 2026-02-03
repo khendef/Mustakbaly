@@ -20,13 +20,13 @@ class OrganizationResource extends JsonResource
             'phone' => $this->phone,
             'status' => $this->status,
 
-            'media' => [
-                'logo' => [
-                    'original' => $this->getFirstMediaUrl('logo'),
-                    'thumb' => $this->getFirstMediaUrl('logo', 'thumb'),
-                    'optimized' => $this->getFirstMediaUrl('logo', 'optimized'),
-                ],
-            ],
+            // 'media' => [
+            //     'logo' => [
+            //         'original' => $this->getFirstMediaUrl('logo'),
+            //         'thumb' => $this->getFirstMediaUrl('logo', 'thumb'),
+            //         'optimized' => $this->getFirstMediaUrl('logo', 'optimized'),
+            //     ],
+            // ],
 
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
         ];

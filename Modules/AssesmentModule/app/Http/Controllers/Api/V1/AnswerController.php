@@ -26,7 +26,13 @@ class AnswerController extends Controller
      *
      * @param AnswerService $answerService
      */
-    public function __construct(private AnswerService $answerService) {}
+    public function __construct(private AnswerService $answerService) {
+        $this->middleware('permission:list-answers')->only('index');
+        $this->middleware('permission:show-answer')->only('show');
+        $this->middleware('permission:create-answer')->only('store');
+        $this->middleware('permission:update-answer')->only('update');
+        $this->middleware('permission:delete-answer')->only('destroy');
+    }
 
     /**
      * Display a listing of the answers based on filters.
