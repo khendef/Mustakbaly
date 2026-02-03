@@ -29,7 +29,7 @@ class StudentController extends Controller
     public function index(StudentFilterRequest $request)
     {
         $students = $this->studentService->list($request->validated());
-        return self::paginate($students,'students retrieved successfully');
+        return self::paginated($students, 'students retrieved successfully');
     }
 
     /**
@@ -38,7 +38,7 @@ class StudentController extends Controller
     public function store(StudentStoreRequest $request)
     {
         $student = $this->studentService->create($request->validated());
-        return self::success($student,'student created successfully',201);       
+        return self::success($student, 'student created successfully', 201);
     }
 
     /**
@@ -46,10 +46,9 @@ class StudentController extends Controller
      */
     public function show($id)
     {
-        
+
         $student = $this->studentService->findById($id);
-        return self::success($student);  
-       
+        return self::success($student);
     }
 
     /**
@@ -57,8 +56,8 @@ class StudentController extends Controller
      */
     public function update(StudentUpdateRequest $request, User $student)
     {
-        $student = $this->studentService->update($student,$request->validated());
-        return self::success($student,'student updated successfully');      
+        $student = $this->studentService->update($student, $request->validated());
+        return self::success($student, 'student updated successfully');
     }
 
     /**
@@ -67,6 +66,6 @@ class StudentController extends Controller
     public function destroy(User $student)
     {
         $this->studentService->delete($student);
-        return self::success(null,'student deleted successfully');
+        return self::success(null, 'student deleted successfully');
     }
 }

@@ -29,7 +29,7 @@ class AuditorController extends Controller
     public function index(AuditorFilterRequest $request)
     {
         $auditors = $this->auditorService->list($request->validated());
-        return self::paginate($auditors,'auditors retrieved successfully');
+        return self::paginated($auditors, 'auditors retrieved successfully');
     }
 
     /**
@@ -38,7 +38,7 @@ class AuditorController extends Controller
     public function store(AuditorStoreRequest $request)
     {
         $auditor = $this->auditorService->create($request->validated());
-        return self::success($auditor,'auditor created successfully',201);
+        return self::success($auditor, 'auditor created successfully', 201);
     }
 
     /**
@@ -46,28 +46,26 @@ class AuditorController extends Controller
      */
     public function show($id)
     {
-        
+
         $auditor = $this->auditorService->findById($id);
-        return self::success($auditor,'auditor retrieved successfully');
-       
+        return self::success($auditor, 'auditor retrieved successfully');
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update( AuditorUpdateRequest $request, User $auditor)
-    {   
-        $auditor = $this->auditorService->update($auditor,$request->validated());
-        return self::success($auditor,'auditor update successfully',);
-      
+    public function update(AuditorUpdateRequest $request, User $auditor)
+    {
+        $auditor = $this->auditorService->update($auditor, $request->validated());
+        return self::success($auditor, 'auditor update successfully',);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy( User $auditor)
+    public function destroy(User $auditor)
     {
         $this->auditorService->delete($auditor);
-        return self::success(null,'auditor deleted successfully');
+        return self::success(null, 'auditor deleted successfully');
     }
 }
