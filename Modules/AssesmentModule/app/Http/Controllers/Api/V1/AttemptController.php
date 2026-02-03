@@ -30,7 +30,14 @@ class AttemptController extends Controller
      *
      * @param AttemptService $attemptService
      */
-    public function __construct(private AttemptService $attemptService) {}
+    public function __construct(private AttemptService $attemptService) 
+    {
+         $this->middleware('permission:list-attempts')->only('index');
+        $this->middleware('permission:show-attempt')->only('show');
+        $this->middleware('permission:create-attempt')->only('store');
+        $this->middleware('permission:update-attempt')->only('update');
+        $this->middleware('permission:delete-attempt')->only('destroy');
+    }
 
     /**
      * Display a listing of attempts based on filters.

@@ -31,8 +31,8 @@ class OrganizationScope implements Scope
         $user = auth()->user();
         if($user->hasRole('manager'))
         {
-            $organization = Route::input('organization');
-            $builder->where('organization_id',$organization->id);
+            $organization = config('app.current_organization_id') ?? request()->route('organization');
+            $builder->where('organization_id',$organization);
         }
     }
 }

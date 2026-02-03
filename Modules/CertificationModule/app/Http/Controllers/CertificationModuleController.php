@@ -11,9 +11,14 @@ use Modules\CertificationModule\Http\Requests\UpdateCertificateRequest;
 
 class CertificationModuleController extends Controller
 {
-public function __construct(
-        protected CertificateService $service
-    ) {}
+public function __construct(protected CertificateService $service) 
+{
+        $this->middleware('permission:list-certificates')->only('index');
+        $this->middleware('permission:show-certificate')->only('show');
+        $this->middleware('permission:create-certificate')->only('store');
+        $this->middleware('permission:update-certificate')->only('update');
+        $this->middleware('permission:delete-certificate')->only('destroy');
+}
 
 public function index(CertificateFilterRequest $request)
 {
