@@ -14,7 +14,7 @@ class OrganizationService
     public function getAll()
     {
         try {
-       return Organization::with('media')->latest()->paginate(15);
+       return Organization::with('users')->latest()->paginate(15);
         } catch (\Exception $e) {
             Log::error('Failed to retrieve organizations', [
                 'error' => $e->getMessage(),
@@ -29,7 +29,11 @@ class OrganizationService
     public function find(Organization $organization) : Organization
     {
         try {
-            return $organization->load('media','programs:id,organization_id,name');
+            
+            return $organization->load(['users'=> function($q){
+                $q->select('users.id','users.name','users.email')->wherePivot('role', 'manager');
+            },'programs:id,organization_id,title']);
+
         } catch (\Exception $e) {
             Log::error('Failed to find organization', [
                 'organization_id' => $organization->id,

@@ -24,7 +24,7 @@ class UserService
 {
     public function list($filters, int $perPage=15)
     {
-        $users = User::with('media','organizations:id,name')
+        $users = User::with('organizations:id,name')
                     ->filter($filters)
                     ->paginate($perPage);
         return $users;

@@ -3,6 +3,7 @@ namespace Modules\OrganizationsModule\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
 
 class Program extends Model
 {
@@ -11,7 +12,6 @@ class Program extends Model
     protected $table = 'programs';
 
     protected $fillable = [
-        'organization_id',
         'title',
         'description',
         'objectives',
@@ -19,7 +19,20 @@ class Program extends Model
         'required_budget',
         'total_funded_amount'
     ];
+    
+        /**
+     * The "booted" method of the model.
+     *
+     * Logic:
+     * - Used to define model event hooks and global scopes.
+     * - Here, we would add the OrganizationScope to limit queries by organization.
+     */
 
+    protected static function booted()
+    {
+        static::addGlobalScope(new OrganizationScope());
+    }
+    
     // Relationship with Organization
     public function organization()
     {

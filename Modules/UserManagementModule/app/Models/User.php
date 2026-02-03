@@ -89,18 +89,6 @@ class User extends Authenticatable implements JWTSubject,HasMedia
             'date_of_birth' => 'date'
         ];
     }
-    /**
-     * The "booted" method of the model.
-     *
-     * Logic:
-     * - Used to define model event hooks and global scopes.
-     * - Here, we would add the OrganizationScope to limit queries by organization.
-     */
-
-    // protected static function booted()
-    // {
-    //     static::addGlobalScope(new OrganizationScope);
-    // }
 
 
     /**

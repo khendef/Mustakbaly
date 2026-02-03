@@ -19,7 +19,6 @@ class StoreProgramRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'organization_id' => ['required', 'exists:organizations,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'objectives' => ['nullable', 'string'],

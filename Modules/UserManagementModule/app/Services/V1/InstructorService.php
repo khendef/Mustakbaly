@@ -14,7 +14,7 @@ class InstructorService
     {
         $instructors = User::whereHas('instructorProfile')
                     ->with('media','instructorProfile', 'organizations:id,name')
-                    ->filters($filters)
+                    //->filters($filters)
                     ->paginate($perPage);
         return $instructors;
     }
@@ -24,6 +24,7 @@ class InstructorService
         return User::with('media','instructorProfile','organizations:id,name')
         ->findOrFail($id);
     }
+
 
     public function create( InstructorDTO $instructorDTO)
     {
@@ -42,19 +43,19 @@ class InstructorService
 
             //3. create instructor profile
             if (isset($instructorDTO->avatar)) {
-            $user->addMedia($instructorDTO->avatar)->toMediaCollection('avatar');
-        }
+                $user->addMedia($instructorDTO->avatar)->toMediaCollection('avatar');
+            }
 
-            // user_id = $user->id
-            $instructor = $user->instructorProfile()->updateOrCreate(['user_id' => $user->id],$instructorData);
+            $user->instructorProfile()->updateOrCreate(['user_id' => $user->id],$instructorData);
+
             if (isset($instructorDTO->cv)) {
-              $instructor->addMedia($instructorDTO->cv)->toMediaCollection('cv');
-        }
+              $user->addMedia($instructorDTO->cv)->toMediaCollection('cv');
+            }
             //4. attach to organization
             $user->organizations()->syncWithoutDetaching($instructorDTO->organizationId,['role'=>UserRole::INSTRUCTOR->value]);
             //5. assign role
             $user->assignRole(UserRole::INSTRUCTOR->value);
-            return $instructor;
+            return $user->load('instructorProfile');
        });
     }
 
@@ -69,7 +70,7 @@ class InstructorService
                if (isset($instructorDTO->cv)) {
             $user->addMedia($instructorDTO->cv)->toMediaCollection('cv');
         }
-            return $user->refresh();
+            return $user->load('instructorProfile')->refresh();
         });
     }
 

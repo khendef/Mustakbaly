@@ -54,6 +54,11 @@ class CourseController extends Controller
     {
         $this->courseService = $courseService;
         $this->courseInstructorService = $courseInstructorService;
+         $this->middleware('permission:list-courses')->only('index');
+        $this->middleware('permission:show-course')->only('show');
+        $this->middleware('permission:create-course')->only('store');
+        $this->middleware('permission:update-course')->only('update');
+        $this->middleware('permission:delete-course')->only('destroy');
     }
 
     /**
