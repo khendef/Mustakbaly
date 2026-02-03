@@ -29,34 +29,18 @@ class StartAttemptRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * This method defines the validation rules for the `score` and `is_passed` fields. 
-     * Both fields are optional, but if provided, the following rules apply:
-     * - `score`: Must be an integer and non-negative.
-     * - `is_passed`: Must be a boolean.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
-    {
-        return [
-            'score' => ['sometimes', 'integer', 'min:0'], // Ensures score is a non-negative integer, if provided
-            'is_passed' => ['sometimes', 'boolean'], // Ensures is_passed is a boolean, if provided
-        ];
-    }
+   /**
+ * Define the validation rules for starting an attempt.
+ *
+ * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+ */
+public function rules(): array
+{
+    return [
+        'quiz_id' => ['required', 'integer', 'exists:quizzes,id'],
+        
+        'student_id' => ['required', 'integer', 'exists:users,id'],
+    ];
+}
 
-    /**
-     * Get the custom validation error messages.
-     *
-     * This method returns an array of custom error messages. In this case, it returns 
-     * an empty array as no custom messages are defined.
-     *
-     * @return array
-     */
-    public function messages(): array
-    {
-        return [];
-    }
 }

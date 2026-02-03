@@ -11,12 +11,13 @@ namespace Modules\NotificationModule\Listeners;
 use Modules\AssesmentModule\Events\QuestionCreated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 use Modules\NotificationModule\DTO\QuestionNotificationData;
 use Modules\NotificationModule\Services\NotificationService;
 
 class SendQuestionCreated implements ShouldQueue
 {
-    use InteractsWithQueue;
+       use InteractsWithQueue;
 
     protected NotificationService $notificationService;
 
@@ -38,17 +39,25 @@ class SendQuestionCreated implements ShouldQueue
      */
     public function handle(QuestionCreated $event): void
     {
-        $question = $event->question;
+        try {
+            $question = $event->question;
 
-        // Prepare data for notification
-        $notificationData = new QuestionNotificationData(
-            questionId: $question->id,
-            quizId: $question->quiz_id,
-            questionText: $question->question_text['ar'] ?? $question->question_text['en']
-        );
+            // Ensure question text exists and is an array
+            $questionText = $question->question_text['ar'] ?? $question->question_text['en'] ?? 'New question created';
 
-        // Send notification
-        $this->notificationService->sendQuestionCreatedNotification($notificationData);
+            $notificationData = new QuestionNotificationData(
+                questionId: $question->id,
+                quizId: $question->quiz_id,
+                questionText: $questionText
+            );
+
+            // Send the notification
+            $this->notificationService->sendQuestionCreatedNotification($notificationData);
+        } catch (\Exception $e) {
+            Log::error('Error while sending Question Created Notification', [
+                'question_id' => $event->question->id,
+                'error_message' => $e->getMessage(),
+            ]);
+        }
     }
-
 }

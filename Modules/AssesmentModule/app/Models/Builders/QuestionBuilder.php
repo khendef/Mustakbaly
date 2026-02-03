@@ -57,7 +57,7 @@ class QuestionBuilder extends Builder
      * - `order`: Orders the questions by `order_index` in ascending or descending order.
      *
      * @param array $filters An array of filters to apply.
-     * @return \Modules\AssesmentModule\Models\Builders\QuestionBuilder
+     * @return \Modules\AssesmentModule\Models\Builders\QuestionBuilder 
      */
     public function filter(array $filters): self
     {

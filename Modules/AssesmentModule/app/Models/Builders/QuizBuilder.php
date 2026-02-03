@@ -91,7 +91,7 @@ class QuizBuilder extends Builder
      * @param array $filters An array of filters to apply.
      * @return \Modules\AssesmentModule\Models\Builders\QuizBuilder
      */
-    public function filter(array $filters): self
+    public function filter(array $filters)
     {
         return $this
             /**** Filter by Course */

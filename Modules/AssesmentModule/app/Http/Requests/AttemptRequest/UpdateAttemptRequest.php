@@ -52,12 +52,9 @@ class UpdateAttemptRequest extends FormRequest
             'student_id' => ['sometimes', 'integer', 'exists:users,id'],
             'attempt_number' => ['sometimes', 'integer', 'min:1'],
 
-            'status' => ['sometimes', 'string', 'in:in_progress,submitted,graded'],
+            'status' => ['required', 'string', 'in:in_progress,submitted,graded'],
             'score' => ['sometimes', 'integer', 'min:0'],
             'is_passed' => ['sometimes', 'boolean'],
-
-            'start_at' => ['sometimes', 'nullable', 'date'],
-            'ends_at' => ['sometimes', 'nullable', 'date'],
 
             'submitted_at' => ['sometimes', 'nullable', 'date'],
             'graded_at' => ['sometimes', 'nullable', 'date'],

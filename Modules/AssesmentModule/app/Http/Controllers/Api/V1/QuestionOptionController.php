@@ -45,6 +45,7 @@ class QuestionOptionController extends Controller
 
             $perPage = (int) $request->integer('per_page', 15);
 
+            // Fetching question options from the service
             $res = $this->questionOptionService->index($filters, $perPage);
 
             if (!($res['success'] ?? false)) {
@@ -82,26 +83,20 @@ class QuestionOptionController extends Controller
      * @param StoreQuestionOptionRequest $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreQuestionOptionRequest $request)
-    {
-        try {
-            $res = $this->questionOptionService->store($request->validated());
+  public function store(StoreQuestionOptionRequest $request)
+   {
+    try {
+        $option = $this->questionOptionService->store($request->validated());
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
-
-            $opt = $res['data'] ?? null;
-
-            return self::success(
-                $opt ? new QuestionOptionResource($opt) : null,
-                $res['message'] ?? 'Operation successful',
-                $res['code'] ?? 201
-            );
-        } catch (Throwable $e) {
-            return self::error($e->getMessage(), 500);
-        }
+        return self::success(
+            new QuestionOptionResource($option),
+            'Question option created successfully',
+            201
+        );
+    } catch (Throwable $e) {
+        return self::error($e->getMessage(), 500);
     }
+   }
 
     /**
      * Display the specified question option.

@@ -10,6 +10,7 @@ use Modules\AssesmentModule\Services\V1\QuizService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\AssesmentModule\Http\Requests\QuizRequest\StoreQuizRequest;
 use Modules\AssesmentModule\Http\Requests\QuizRequest\UpdateQuizRequest;
+use Throwable;
 
 /**
  * QuizController handles the CRUD operations for managing quizzes.
@@ -36,14 +37,15 @@ class QuizController extends Controller
      */
     public function index(Request $request)
     {
-          $filters=$request->only(['instructor_id','course_id','type','status','available_now']);
-           $perPage =(int) $request->integer('per_page', 15);
-           $res = $this->quizService->index(
-            filters:$filters,
-            perPage:$perPage
-         );
+        try {
+            $filters = $request->only(['instructor_id', 'course_id', 'type', 'status', 'available_now']);
+            $perPage = (int) $request->integer('per_page', 15);
+            $res = $this->quizService->index(filters: $filters, perPage: $perPage);
 
-        return $this->respond($res, paginated: true, resource: QuizResource::class);
+            return $this->respond($res, paginated: true, resource: QuizResource::class);
+        } catch (Throwable $e) {
+            return self::error('Failed to fetch quizzes.', 500, $e->getMessage());
+        }
     }
 
     /**
@@ -54,9 +56,13 @@ class QuizController extends Controller
      */
     public function store(StoreQuizRequest $request)
     {
-        $res = $this->quizService->store($request->validated());
+        try {
+            $res = $this->quizService->store($request->validated());
 
-        return $this->respond($res, resource: QuizResource::class);
+            return $this->respond($res, resource: QuizResource::class);
+        } catch (Throwable $e) {
+            return self::error('Failed to create quiz.', 500, $e->getMessage());
+        }
     }
 
     /**
@@ -67,9 +73,13 @@ class QuizController extends Controller
      */
     public function show(Quiz $quiz)
     {
-        $res = $this->quizService->show($quiz->id);
+        try {
+            $res = $this->quizService->show($quiz->id);
 
-        return $this->respond($res, resource: QuizResource::class);
+            return $this->respond($res, resource: QuizResource::class);
+        } catch (Throwable $e) {
+            return self::error('Failed to fetch quiz.', 500, $e->getMessage());
+        }
     }
 
     /**
@@ -81,9 +91,13 @@ class QuizController extends Controller
      */
     public function update(UpdateQuizRequest $request, Quiz $quiz)
     {
-        $res = $this->quizService->update($quiz, $request->validated());
+        try {
+            $res = $this->quizService->update($quiz, $request->validated());
 
-        return $this->respond($res, resource: QuizResource::class);
+            return $this->respond($res, resource: QuizResource::class);
+        } catch (Throwable $e) {
+            return self::error('Failed to update quiz.', 500, $e->getMessage());
+        }
     }
 
     /**
@@ -94,9 +108,13 @@ class QuizController extends Controller
      */
     public function destroy(Quiz $quiz)
     {
-        $res = $this->quizService->destroy($quiz);
+        try {
+            $res = $this->quizService->destroy($quiz);
 
-        return $this->respond($res);
+            return $this->respond($res);
+        } catch (Throwable $e) {
+            return self::error('Failed to delete quiz.', 500, $e->getMessage());
+        }
     }
 
     /**
@@ -107,9 +125,13 @@ class QuizController extends Controller
      */
     public function publish(Quiz $quiz)
     {
-        $res = $this->quizService->publish($quiz);
+        try {
+            $res = $this->quizService->publish($quiz);
 
-        return $this->respond($res, resource: QuizResource::class);
+            return $this->respond($res, resource: QuizResource::class);
+        } catch (Throwable $e) {
+            return self::error('Failed to publish quiz.', 500, $e->getMessage());
+        }
     }
 
     /**
@@ -120,9 +142,13 @@ class QuizController extends Controller
      */
     public function unpublish(Quiz $quiz)
     {
-        $res = $this->quizService->unpublish($quiz);
+        try {
+            $res = $this->quizService->unpublish($quiz);
 
-        return $this->respond($res, resource: QuizResource::class);
+            return $this->respond($res, resource: QuizResource::class);
+        } catch (Throwable $e) {
+            return self::error('Failed to unpublish quiz.', 500, $e->getMessage());
+        }
     }
 
     /**

@@ -34,6 +34,7 @@ use Modules\LearningModule\Models\Enrollment;
 use Modules\OrganizationsModule\Models\Organization;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
 // use Modules\UserManagementModule\Database\Factories\UserFactory;
 

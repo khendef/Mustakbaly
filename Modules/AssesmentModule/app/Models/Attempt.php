@@ -85,7 +85,6 @@ class Attempt extends Model
         'submitted_at' => 'datetime',
         'graded_at' => 'datetime',
         'is_passed' => 'boolean',
-        'time_spent_seconds' => 'integer'
     ];
 
     /**

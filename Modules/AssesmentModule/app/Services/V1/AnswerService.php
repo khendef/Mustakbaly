@@ -6,95 +6,87 @@ use Modules\AssesmentModule\Models\Answer;
 use Throwable;
 
 /**
- * Class AnswerService
- *
- * This service handles the business logic for managing answers, including:
- * - Fetching a list of answers with filters and pagination
- * - Creating, updating, and deleting answers
- * - Retrieving a single answer by ID
- *
- * It encapsulates all operations related to answers, ensuring that business rules are respected.
- * The service uses exception handling to manage errors and provides consistent responses.
+ * AnswerService handles the business logic for managing answers, including:
+ * - Storing new answers.
+ * - Retrieving a specific answer by ID.
+ * - Updating an existing answer.
+ * - Deleting an answer.
  *
  * @package Modules\AssesmentModule\Services\V1
  */
 class AnswerService extends BaseService
 {
     /**
-     * Handle the service logic. Currently a placeholder for additional functionality.
-     *
-     * @return void
-     */
-    public function handle() {}
-
-    /**
      * Fetch a paginated list of answers based on the given filters.
      *
-     * @param array $filters The filters to apply to the answer query (e.g., attempt_id, question_id).
+     * @param array $filters The filters to apply to the answer query (e.g., student_id, quiz_id).
      * @param int $perPage The number of answers per page (default is 15).
+     * @return mixed The paginated list of answers.
      *
-     * @return array<string, mixed> The result of the operation with status and data.
+     * @throws \Exception If an error occurs while fetching the answers.
      */
-    public function index(array $filters, int $perPage = 15): array
+    public function index(array $filters = [], int $perPage = 15)
     {
         try {
-            $q = Answer::query()->filter($filters)->latest('id');
-            $data = $q->paginate($perPage);
-
-            return $this->ok('Operation successful', $data, 200);
+            return Answer::query()->filter($filters)->paginate($perPage);
         } catch (Throwable $e) {
-            return $this->fail('Failed to fetch answers.', $e, 500);
+            throw new \Exception('Failed to fetch answers: ' . $e->getMessage());
         }
     }
 
     /**
-     * Store a new answer or update an existing one with the provided data.
+     * Store a new answer with the provided data.
      *
-     * @param array $payload The data to create or update the answer.
+     * @param array $data The data to create the answer.
+     * @return \Modules\AssesmentModule\Models\Answer The created answer.
      *
-     * @return array<string, mixed> The result of the operation with status and the answer.
+     * @throws Throwable If an error occurs while saving the answer.
      */
-    public function store(array $payload): array
+    public function store(array $data)
     {
         try {
-            $attemptId  = (int)($payload['attempt_id'] ?? 0);
-            $questionId = (int)($payload['question_id'] ?? 0);
-            $answer = Answer::query()->updateOrCreate(
-                [
-                    'attempt_id'  => $attemptId,
-                    'question_id' => $questionId,
-                ],
-                $payload
-            );
+            $attemptId = isset($data['attempt_id']) ? (int) $data['attempt_id'] : null;
+            $questionId = (int)($data['question_id'] ?? 0);
 
-            $code = $answer->wasRecentlyCreated ? 201 : 200;
-            $msg  = $answer->wasRecentlyCreated ? 'Answer created successfully' : 'Answer saved successfully';
+            // Create the new answer in the database
+            $answer = Answer::create([
+                'attempt_id' => $attemptId,
+                'question_id' => $questionId,
+                'selected_option_id' => $data['selected_option_id'] ?? null,
+                'answer_text' => $data['answer_text'] ?? null,
+                'boolean_answer' => $data['boolean_answer'] ?? null,
+                'is_correct' => $data['is_correct'] ?? null,
+                'question_score' => $data['question_score'] ?? null,
+                'graded_at' => $data['graded_at'] ?? null,
+                'graded_by' => $data['graded_by'] ?? null,
+            ]);
 
-            return $this->ok($msg, $answer, $code);
+            return $answer;
         } catch (Throwable $e) {
-            return $this->fail('Failed to create answer.', $e, 500);
+            throw new \Exception('Failed to create answer: ' . $e->getMessage());
         }
     }
 
     /**
-     * Fetch a single answer by its ID.
+     * Retrieve a specific answer by its ID.
      *
      * @param int $id The ID of the answer to retrieve.
+     * @return \Modules\AssesmentModule\Models\Answer The retrieved answer.
      *
-     * @return array<string, mixed> The result of the operation with status and the fetched answer.
+     * @throws Throwable If an error occurs while retrieving the answer.
      */
-    public function show(int $id): array
+    public function show($id)
     {
         try {
-            $answer = Answer::query()->find($id);
+            $answer = Answer::find($id);
 
             if (!$answer) {
-                return $this->fail('Answer not found.', null, 404);
+                throw new \Exception('Answer not found');
             }
 
-            return $this->ok('Operation successful', $answer, 200);
+            return $answer;
         } catch (Throwable $e) {
-            return $this->fail('Failed to fetch answer.', $e, 500);
+            throw new \Exception('Failed to retrieve answer: ' . $e->getMessage());
         }
     }
 
@@ -102,22 +94,22 @@ class AnswerService extends BaseService
      * Update an existing answer with the provided data.
      *
      * @param int $id The ID of the answer to update.
-     * @param array $payload The data to update the answer.
+     * @param array $data The data to update the answer.
+     * @return \Modules\AssesmentModule\Models\Answer The updated answer.
      *
-     * @return array<string, mixed> The result of the operation with status and the updated answer.
+     * @throws Throwable If an error occurs while updating the answer.
      */
-    public function update(int $id, array $payload): array
+    public function update($id, array $data)
     {
         try {
-            $answer = Answer::query()->find($id);
-            if (!$answer) return $this->fail('Answer not found.', null, 404);
+            $answer = Answer::findOrFail($id);
 
-            $answer->fill($payload);
-            $answer->save();
+            // Update the answer with new data
+            $answer->update($data);
 
-            return $this->ok('Answer updated successfully', $answer, 200);
+            return $answer;
         } catch (Throwable $e) {
-            return $this->fail('Failed to update answer.', $e, 500);
+            throw new \Exception('Failed to update answer: ' . $e->getMessage());
         }
     }
 
@@ -125,20 +117,17 @@ class AnswerService extends BaseService
      * Delete an answer by its ID.
      *
      * @param int $id The ID of the answer to delete.
+     * @return void
      *
-     * @return array<string, mixed> The result of the operation with status.
+     * @throws Throwable If an error occurs while deleting the answer.
      */
-    public function destroy(int $id): array
+    public function destroy($id)
     {
         try {
-            $answer = Answer::query()->find($id);
-            if (!$answer) return $this->fail('Answer not found.', null, 404);
-
+            $answer = Answer::findOrFail($id);
             $answer->delete();
-
-            return $this->ok('Answer deleted successfully', null, 200);
         } catch (Throwable $e) {
-            return $this->fail('Failed to delete answer.', $e, 500);
+            throw new \Exception('Failed to delete answer: ' . $e->getMessage());
         }
     }
 }

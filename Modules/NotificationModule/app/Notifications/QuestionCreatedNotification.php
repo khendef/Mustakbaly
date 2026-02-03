@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notification;
 use Modules\AssesmentModule\Models\Question;
 use Modules\NotificationModule\DTO\QuestionNotificationData;
 
-class QuestionCreatedNotification extends Notification implements ShouldQueue
+class QuestionCreatedNotification extends Notification implements ShouldQueue 
 {
    
 /**
@@ -43,19 +43,13 @@ class QuestionCreatedNotification extends Notification implements ShouldQueue
         return ['database', 'broadcast'];  
     }
 
-    /**
-     * Get the array representation of the notification for the database.
-     *
-     * @param mixed $notifiable
-     * @return array
-     */
     public function toDatabase($notifiable): array
     {
         return [
             'question_id' => $this->data->questionId,
             'quiz_id'     => $this->data->quizId,
             'title'       => 'New Question Created',
-            'body'        => $this->getQuestionText(),
+            'body'        => $this->getQuestionText(), 
         ];
     }
 
@@ -80,6 +74,6 @@ class QuestionCreatedNotification extends Notification implements ShouldQueue
      */
     private function getQuestionText(): string
     {
-        return $this->data->questionText ?? 'New question created';
+        return $this->data->questionText['ar'] ?? $this->data->questionText['en'] ?? 'New question created';
     }
-} 
+}

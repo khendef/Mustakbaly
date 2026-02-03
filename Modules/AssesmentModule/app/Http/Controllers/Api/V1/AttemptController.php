@@ -2,9 +2,9 @@
 
 namespace Modules\AssesmentModule\Http\Controllers\Api\V1;
 
-use Modules\AssesmentModule\Transformers\AttemptResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\AssesmentModule\Http\Requests\AttemptRequest\GradeAttemptRequest;
 use Modules\AssesmentModule\Http\Requests\AttemptRequest\StartAttemptRequest;
 use Modules\AssesmentModule\Http\Requests\AttemptRequest\SubmitAttemptRequest;
@@ -12,7 +12,6 @@ use Modules\AssesmentModule\Http\Requests\AttemptRequest\StoreAttemptRequest;
 use Modules\AssesmentModule\Http\Requests\AttemptRequest\UpdateAttemptRequest;
 use Modules\AssesmentModule\Models\Attempt;
 use Modules\AssesmentModule\Services\V1\AttemptService;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
 
@@ -24,49 +23,41 @@ use Throwable;
  */
 class AttemptController extends Controller
 {
+    private AttemptService $attemptService;
 
     /**
      * AttemptController constructor.
      *
-     * @param AttemptService $attemptService
+     * @param AttemptService $attemptService The service for managing attempt business logic.
      */
-    public function __construct(private AttemptService $attemptService) {}
+    public function __construct(AttemptService $attemptService)
+    {
+        $this->attemptService = $attemptService;
+    }
 
     /**
      * Display a listing of attempts based on filters.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\Response
+     * @param Request $request The request containing filtering and pagination parameters.
+     * @return \Illuminate\Http\JsonResponse JSON response with paginated data or error.
      */
     public function index(Request $request)
     {
         try {
-            // Extracting filters and pagination information
             $filters = $request->only([
                 'quiz_id', 'student_id', 'status', 'is_passed', 'graded_by', 'attempt_number',
                 'start_at', 'ends_at', 'min_score', 'max_score', 'submitted_at', 'graded_at',
                 'min_time_spent', 'max_time_spent', 'order'
             ]);
 
-            // Handling pagination
             $perPage = (int) $request->integer('per_page', 15);
-            if($request->has('is_passed')){
-                $filters['is_passed'] = $request->query('is_passed');
-            }
-
-            $res = $this->attemptService->index($filters, $perPage);
-
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 404, $res);
-            }
-
-            $data = $res['data'] ?? null;
+            $data = $this->attemptService->index($filters, $perPage);
 
             if ($data instanceof LengthAwarePaginator) {
-                return self::paginated($data, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
+                return self::paginated($data, 'Operation successful', 200);
             }
 
-            return self::success($data, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
+            return self::success($data, 'Operation successful', 200);
 
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
@@ -76,143 +67,161 @@ class AttemptController extends Controller
     /**
      * Display the specified attempt.
      *
-     * @param Attempt $attempt
-     * @return \Illuminate\Http\Response
+     * @param Attempt $attempt The attempt model instance.
+     * @return \Illuminate\Http\JsonResponse JSON response with the attempt data or error.
      */
     public function show(Attempt $attempt)
     {
         try {
-            // Fetching the specified attempt
-            $res = $this->attemptService->show($attempt);
-
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 404, $res);
-            }
-
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Operation successful', $res['code'] ?? 200);
-
+            $data = $this->attemptService->show($attempt);
+            return self::success($data, 'Operation successful', 200);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }
     }
 
-    /**
-     * Store a newly created attempt.
-     *
-     * @param StoreAttemptRequest $request
-     * @return \Illuminate\Http\Response
-     */
+/**
+* Store a newly created attempt.
+ *
+ * This method validates the incoming request data and passes it to the service for storing
+ * a new attempt in the database. It then returns a success response if the attempt is created
+ * successfully or an error response if something goes wrong.
+ *
+ * @param StoreAttemptRequest $request The request object containing validated data for the attempt.
+ * 
+ * @return \Illuminate\Http\JsonResponse A JSON response indicating the result of the operation.
+ *         If successful, returns the created attempt data with status 201.
+ *         If there's an error, returns an error message with status 500.
+ * 
+ * @throws \Throwable If there is an error while storing the attempt.
+ */
     public function store(StoreAttemptRequest $request)
     {
-        try {
-            // Storing the attempt
-            $res = $this->attemptService->store($request->validated());
+    try {
+        // Get validated data from the request
+        $data = $request->validated();
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
-
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Attempt created successfully', $res['code'] ?? 201);
-
-        } catch (Throwable $e) {
-            return self::error($e->getMessage(), 500);
-        }
+        // Use the service to store the attempt
+        $data = $this->attemptService->store($data);
+        
+        return self::success($data, 'Attempt created successfully', 201);
+    } catch (Throwable $e) {
+        // Handle errors and return error response
+        return self::error($e->getMessage(), 500);
     }
+    }
+ 
 
     /**
      * Update the specified attempt.
      *
-     * @param UpdateAttemptRequest $request
-     * @param int $attempt
-     * @return \Illuminate\Http\Response
+     * @param UpdateAttemptRequest $request The request with validated data to update the attempt.
+     * @param int $attempt The ID of the attempt to update.
+     * @return \Illuminate\Http\JsonResponse JSON response with the updated attempt data or error.
      */
     public function update(UpdateAttemptRequest $request, int $attempt)
     {
         try {
-            // Updating the attempt
-            $res = $this->attemptService->update($attempt, $request->validated());
-
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 400, $res);
-            }
-
-            return self::success($res['data'], $res['message'] ?? 'Attempt updated successfully', $res['code'] ?? 200);
-
+            $data = $this->attemptService->update($attempt, $request->validated());
+            return self::success($data, 'Attempt updated successfully', 200);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }
     }
 
-    /**
-     * Start a new attempt.
-     *
-     * @param StartAttemptRequest $request
-     * @return \Illuminate\Http\Response
-     */
-    public function start(StartAttemptRequest $request)
-    {
-        try {
-            // Starting the attempt
-            $payload = $request->validated();
-            $res = $this->attemptService->start($payload);
-
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 422, $res);
-            }
-
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Operation successful', $res['code'] ?? 201);
-
-        } catch (Throwable $e) {
-            return self::error($e->getMessage(), 500);
-        }
+   /**
+ * Start a new attempt for the student.
+ *
+ * This method receives the validated data from the `StartAttemptRequest`, 
+ * then it passes the data to the `AttemptService` for creating the attempt.
+ * If successful, it returns a success JSON response. If there's an error, 
+ * it returns an error response.
+ *
+ * @param StartAttemptRequest $request The validated data from the request.
+ * 
+ * @return \Illuminate\Http\JsonResponse JSON response indicating the result.
+ *         - Success: Returns the created attempt data with status 201.
+ *         - Failure: Returns the error message with status 500.
+ * 
+ * @throws \Throwable If an error occurs while starting the attempt.
+ */
+   public function start(StartAttemptRequest $request)
+   {
+    try {
+        // Pass validated data to the service for processing
+        $data = $this->attemptService->start($request->validated());
+        return self::success($data, 'Attempt started successfully', 201);
+    } catch (Throwable $e) {
+        return self::error($e->getMessage(), 500);
+    }
     }
 
-    /**
-     * Submit the attempt.
-     *
-     * @param SubmitAttemptRequest $request
-     * @param int $attempt
-     * @return \Illuminate\Http\Response
-     */
-    public function submit(SubmitAttemptRequest $request, int $attempt)
-    {
-        try {
-            // Submitting the attempt
-            $res = $this->attemptService->submit($attempt, $request->validated());
 
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 422, $res);
-            }
-
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Attempt submitted successfully', $res['code'] ?? 200);
-
-        } catch (Throwable $e) {
-            return self::error($e->getMessage(), 500);
-        }
+/**
+ * Submit the attempt.
+ *
+ * This method validates the incoming request and passes the validated data
+ * to the `AttemptService` to submit the attempt. If successful, it returns
+ * a success response. If there's an error, it returns an error response.
+ *
+ * @param SubmitAttemptRequest $request The validated data from the request.
+ * @param int $attempt The ID of the attempt to submit.
+ * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure.
+ */
+public function submit(SubmitAttemptRequest $request, int $attempt)
+{
+    try {
+        // Pass validated data to the service for submission
+        $data = $this->attemptService->submit($attempt, $request->validated());
+        
+        // Return success response with the submitted attempt data
+        return self::success($data, 'Attempt submitted successfully', 200);
+    } catch (Throwable $e) {
+        // Return error response if something goes wrong
+        return self::error($e->getMessage(), 500);
     }
+}
+
 
     /**
      * Grade the attempt.
      *
-     * @param GradeAttemptRequest $request
-     * @param int $attempt
-     * @return \Illuminate\Http\Response
+     * @param GradeAttemptRequest $request The request containing grading data for the attempt.
+     * @param int $attempt The ID of the attempt to grade.
+     * @return \Illuminate\Http\JsonResponse JSON response with the graded attempt data or error.
      */
     public function grade(GradeAttemptRequest $request, int $attempt)
     {
         try {
-            // Grading the attempt
-            $graderId = Auth::id();
-            $res = $this->attemptService->grade($attempt, $request->validated(), $graderId);
-
-            if (!($res['success'] ?? false)) {
-                return self::error($res['message'] ?? 'Operation failed', $res['code'] ?? 422, $res);
-            }
-
-            return self::success($res['data'] ?? null, $res['message'] ?? 'Attempt graded successfully', $res['code'] ?? 200);
-
+            $data = $this->attemptService->grade($attempt, $request->validated(), Auth::id());
+            return self::success($data, 'Attempt graded successfully', 200);
         } catch (Throwable $e) {
             return self::error($e->getMessage(), 500);
         }
     }
+    /**
+ * Destroy the specified attempt.
+ *
+ * This method receives the attempt ID from the request, passes it to the service,
+ * and deletes the attempt from the database if it exists. If successful, it returns
+ * a success response. If the attempt is not found or if there is an error, it returns
+ * an error response.
+ *
+ * @param int $attempt The ID of the attempt to delete.
+ * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure.
+ */
+    public function destroy(int $attempt)
+   {
+    try {
+        // Pass attempt ID to the service to delete the attempt
+        $data = $this->attemptService->delete($attempt);
+        
+        // Return success response if deletion is successful
+        return self::success($data, 'Attempt deleted successfully', 200);
+    } catch (Throwable $e) {
+        // Return error response if there is an issue
+        return self::error($e->getMessage(), 500);
+    }
+    }
+
 }
