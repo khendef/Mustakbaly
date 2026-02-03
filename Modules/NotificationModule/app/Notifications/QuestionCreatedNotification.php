@@ -1,5 +1,4 @@
 <?php
-
 namespace Modules\NotificationModule\Notifications;
 
 use Illuminate\Bus\Queueable;
@@ -7,17 +6,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Modules\AssesmentModule\Models\Question;
 use Modules\NotificationModule\DTO\QuestionNotificationData;
 
-class QuestionCreatedNotification extends Notification implements ShouldQueue 
+class QuestionCreatedNotification extends Notification implements ShouldQueue
 {
-   
-/**
- * Notification sent when a new question is created.
- *
- * @package Modules\NotificationModule\Notifications
- */
     use Queueable;
 
     private QuestionNotificationData $data;
@@ -40,7 +32,7 @@ class QuestionCreatedNotification extends Notification implements ShouldQueue
      */
     public function via($notifiable): array
     {
-        return ['database', 'broadcast'];  
+        return ['database', 'broadcast'];
     }
 
     public function toDatabase($notifiable): array
@@ -49,7 +41,7 @@ class QuestionCreatedNotification extends Notification implements ShouldQueue
             'question_id' => $this->data->questionId,
             'quiz_id'     => $this->data->quizId,
             'title'       => 'New Question Created',
-            'body'        => $this->getQuestionText(), 
+            'body'        => $this->getQuestionText(),
         ];
     }
 
