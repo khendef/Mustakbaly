@@ -4,6 +4,7 @@ namespace Modules\LearningModule\Http\Controllers;
 
 use Exception;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Traits\CachesQueries;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -54,7 +55,7 @@ class CourseController extends Controller
     {
         $this->courseService = $courseService;
         $this->courseInstructorService = $courseInstructorService;
-         $this->middleware('permission:list-courses')->only('index');
+        $this->middleware('permission:list-courses')->only('index');
         $this->middleware('permission:show-course')->only('show');
         $this->middleware('permission:create-course')->only('store');
         $this->middleware('permission:update-course')->only('update');
@@ -70,10 +71,7 @@ class CourseController extends Controller
     public function index(FilterCoursesRequest $request): JsonResponse
     {
         try {
-            // Generate cache key based on query parameters
-            $cacheKey = 'courses.index.' . md5($request->getQueryString());
-
-            $courses = $this->remember($cacheKey, 900, function () use ($request) {
+            $getCourses = function () use ($request) {
                 $query = Course::query();
                 return $query
                     ->filterByRequest($request)
@@ -81,7 +79,16 @@ class CourseController extends Controller
                     ->ordered()
                     ->paginateFromRequest($request)
                     ->through(fn($course) => new CourseResource($course));
-            }, ['courses']);
+            };
+
+            // Only use cache when filters are applied; "list all" (no params) always hits DB
+            $queryString = $request->getQueryString();
+            if ($queryString !== null && $queryString !== '') {
+                $cacheKey = 'courses.index.' . md5($queryString);
+                $courses = $this->remember($cacheKey, 900, $getCourses, ['courses']);
+            } else {
+                $courses = $getCourses();
+            }
 
             return self::paginated($courses, 'Courses retrieved successfully.');
         } catch (Exception $e) {
@@ -238,7 +245,7 @@ class CourseController extends Controller
             $publishedCourse = $this->courseService->publish($course);
 
             if (!$publishedCourse) {
-                throw new Exception('Course cannot be published. Please ensure it has at least one instructor, one unit, and all required information.', 422);
+                throw new HttpException(422, 'Course cannot be published. Please ensure it has at least one instructor, one unit, and all required information.');
             }
 
             return self::success(
@@ -246,6 +253,10 @@ class CourseController extends Controller
                 'Course published successfully.'
             );
         } catch (Exception $e) {
+            // Rethrow HTTP exceptions so the client gets the correct status and message
+            if ($e instanceof HttpException) {
+                throw $e;
+            }
             Log::error('Unexpected error publishing course', [
                 'course_id' => $course->course_id ?? null,
                 'user_id' => Auth::id(),

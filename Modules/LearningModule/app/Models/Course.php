@@ -121,7 +121,7 @@ class Course extends Model implements HasMedia
      */
     public function program(): BelongsTo
     {
-        return $this->belongsTo(Program::class, 'program_id', 'program_id');
+        return $this->belongsTo(Program::class, 'program_id', 'id');
     }
 
     /**
@@ -188,7 +188,8 @@ class Course extends Model implements HasMedia
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $event) =>
+            ->setDescriptionForEvent(
+                fn(string $event) =>
                 "Course '{$this->getTranslation('title', 'en')}' was {$event}"
             );
     }

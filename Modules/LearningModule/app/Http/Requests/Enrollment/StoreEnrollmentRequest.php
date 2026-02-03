@@ -129,8 +129,9 @@ class StoreEnrollmentRequest extends FormRequest
             $this->merge(['course_id' => (int)$this->course_id]);
         }
 
-        if ($this->has('enrolled_by')) {
-            $this->merge(['enrolled_by' => (int)$this->enrolled_by]);
+        // Only cast enrolled_by when a value is provided (leave null as null for self-enrollment)
+        if ($this->filled('enrolled_by')) {
+            $this->merge(['enrolled_by' => (int) $this->enrolled_by]);
         }
 
         // Default enrollment type to 'self' if not provided

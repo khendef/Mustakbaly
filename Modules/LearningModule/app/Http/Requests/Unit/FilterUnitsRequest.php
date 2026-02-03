@@ -22,6 +22,22 @@ class FilterUnitsRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     * Converts query string "true"/"false" to booleans so Laravel's boolean rule accepts them.
+     *
+     * @return void
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('has_lessons') && is_string($this->has_lessons)) {
+            $value = filter_var($this->has_lessons, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($value !== null) {
+                $this->merge(['has_lessons' => $value]);
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>

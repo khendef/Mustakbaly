@@ -144,17 +144,17 @@ class UnitBuilder extends Builder
         $query = $this;
 
         // Filter by course
-        if ($request->has('course_id')) {
-            $query = $query->byCourse($request->input('course_id'));
+        if ($request->filled('course_id')) {
+            $query = $query->byCourse((int) $request->input('course_id'));
         }
 
         // Filter by order
-        if ($request->has('unit_order')) {
-            $query = $query->byOrder($request->input('unit_order'));
+        if ($request->filled('unit_order')) {
+            $query = $query->byOrder((int) $request->input('unit_order'));
         }
 
-        // Filter by has lessons
-        if ($request->has('has_lessons')) {
+        // Filter by has lessons (only when explicitly true or false; empty = no filter)
+        if ($request->filled('has_lessons')) {
             if ($request->boolean('has_lessons')) {
                 $query = $query->withLessons();
             } else {
@@ -163,7 +163,7 @@ class UnitBuilder extends Builder
         }
 
         // Search
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $query = $query->search($request->input('search'));
         }
 

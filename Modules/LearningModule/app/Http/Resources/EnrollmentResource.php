@@ -39,7 +39,7 @@ class EnrollmentResource extends JsonResource
             'enrollment_status' => $this->enrollment_status?->value,
 
             // Progress and timing
-            'progress_percentage' => (float)$this->progress_percentage,
+            'progress_percentage' => $this->progress_percentage !== null ? (float) $this->progress_percentage : null,
             'final_grade' => $this->final_grade !== null ? (float)$this->final_grade : null,
             'enrolled_at' => $this->enrolled_at?->toDateTimeString(),
             'completed_at' => $this->completed_at?->toDateTimeString(),
@@ -53,33 +53,33 @@ class EnrollmentResource extends JsonResource
             'enrollment_duration_days' => $this->getEnrollmentDurationDays(),
             'is_completed' => $this->enrollment_status?->value === 'completed',
 
-            // Relationships (only included if loaded)
+            // Relationships (only included if loaded; null-safe in case relation is missing)
             'learner' => $this->whenLoaded('learner', function () {
-                return [
+                return $this->learner ? [
                     'id' => $this->learner->id,
                     'name' => $this->learner->name,
                     'email' => $this->learner->email,
-                ];
+                ] : null;
             }),
 
             'course' => $this->whenLoaded('course', function () use ($request) {
-                return [
+                return $this->course ? [
                     'id' => $this->course->course_id,
                     'title' => $this->getTranslatedAttribute($this->course, 'title', $this->getRequestLocale($request)),
                     'slug' => $this->course->slug,
                     'description' => $this->getTranslatedAttribute($this->course, 'description', $this->getRequestLocale($request)),
-                    'status' => $this->course->status?->value,
+                    'status' => $this->course->status,
                     'actual_duration_hours' => $this->course->actual_duration_hours,
                     'min_score_to_pass' => $this->course->min_score_to_pass,
-                ];
+                ] : null;
             }),
 
             'enrolled_by_user' => $this->whenLoaded('enrolledBy', function () {
-                return [
+                return $this->enrolledBy ? [
                     'id' => $this->enrolledBy->id,
                     'name' => $this->enrolledBy->name,
                     'email' => $this->enrolledBy->email,
-                ];
+                ] : null;
             }),
         ];
     }
