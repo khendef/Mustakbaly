@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * AuditorService
+ *
+ * Service responsible for managing auditor users: listing, retrieving,
+ * creating, updating and deleting auditors. Includes caching helpers
+ * for list and detail retrieval.
+ *
+ * @package Modules\UserManagementModule\Services\V1
+ */
 namespace Modules\UserManagementModule\Services\V1;
 
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +22,16 @@ class AuditorService
     private const CACHE_TTL = 3600;
     private const TAG_GLOBAL = 'auditors';
     private const TAG_PREFIX_AUDITOR = 'auditor_';
+    /**
+     * Get a paginated list of auditors.
+     *
+     * Results are cached using a key derived from the supplied filters,
+     * the page size and the current organization context.
+     *
+     * @param array $filters  Associative array of filters to apply.
+     * @param int $perPage    Number of items per page (default 15).
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
     public function list($filters, int $perPage=15)
     {
         $orgId = config('app.current_organization_id');
@@ -30,7 +49,15 @@ class AuditorService
             return $auditors;
         });
     }
-
+    /**
+     * Find an auditor by id, including related media and profile.
+     *
+     * The result is cached and tagged for invalidation when the auditor
+     * or global auditors data changes.
+     *
+     * @param int $id
+     * @return \Modules\UserManagementModule\Models\User
+     */
     public function findById(int $id)
     {
         $orgId = config('app.current_organization_id'); 
@@ -42,7 +69,15 @@ class AuditorService
             ->findOrFail($id);
         });
     }
-
+    /**
+     * Create a new auditor user along with their auditor profile,
+     * uploaded media (avatar, CV), and organization membership.
+     *
+     * This operation is executed inside a database transaction.
+     *
+     * @param \Modules\UserManagementModule\DTOs\AuditorDTO $auditorDTO
+     * @return \Modules\UserManagementModule\Models\User
+     */
     public function create(AuditorDTO $auditorDTO)
     {
         return DB::transaction(function() use($auditorDTO) {
@@ -71,7 +106,16 @@ class AuditorService
             return $user->load('auditorProfile');
        });
     }
-
+    /**
+     * Update an existing auditor user and their profile.
+     *
+     * Updates user basic data, profile data and optional media. Runs
+     * inside a database transaction and returns the refreshed user.
+     *
+     * @param \Modules\UserManagementModule\Models\User $user
+     * @param \Modules\UserManagementModule\DTOs\AuditorDTO $auditorDTO
+     * @return \Modules\UserManagementModule\Models\User
+     */
     public function update(User $user,AuditorDTO $auditorDTO)
     {
         return DB::transaction(function () use ($auditorDTO, $user) {
@@ -90,7 +134,12 @@ class AuditorService
 
 
     }
-
+    /**
+     * Delete an auditor and their auditor profile inside a transaction.
+     *
+     * @param \Modules\UserManagementModule\Models\User $user
+     * @return void
+     */
     public function delete(User $user)
     {
         DB::transaction(function() use($user){
