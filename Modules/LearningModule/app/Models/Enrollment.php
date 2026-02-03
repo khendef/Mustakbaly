@@ -114,6 +114,7 @@ class Enrollment extends Pivot
      *
      * @return BelongsTo
      */
+
     public function enrolledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'enrolled_by', 'id');
