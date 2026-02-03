@@ -37,8 +37,6 @@ class AnswerController extends Controller
      * Store a newly created answer.
      *
      * @param StoreAnswerRequest $request The validated request data.
-     * @return \Illuminate\Http\Response A JSON response indicating the success or failure of the operation.
-     *
      * @throws Throwable If an unexpected error occurs during the request.
      */
     public function store(StoreAnswerRequest $request)

@@ -1,12 +1,5 @@
 <?php
 namespace Modules\NotificationModule\Listeners;
-/**
- * Listener: SendQuestionCreated
- *
- * Handles sending a notification when a Question is created.
- *
- * @package Modules\NotificationModule\Listeners
- */
 
 use Modules\AssesmentModule\Events\QuestionCreated;
 use Illuminate\Queue\InteractsWithQueue;
@@ -17,7 +10,7 @@ use Modules\NotificationModule\Services\NotificationService;
 
 class SendQuestionCreated implements ShouldQueue
 {
-       use InteractsWithQueue;
+    use InteractsWithQueue;
 
     protected NotificationService $notificationService;
 
@@ -45,6 +38,7 @@ class SendQuestionCreated implements ShouldQueue
             // Ensure question text exists and is an array
             $questionText = $question->question_text['ar'] ?? $question->question_text['en'] ?? 'New question created';
 
+            // Create the notification data
             $notificationData = new QuestionNotificationData(
                 questionId: $question->id,
                 quizId: $question->quiz_id,
