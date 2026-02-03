@@ -3,6 +3,7 @@
 namespace Modules\UserManagementModule\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use Modules\UserManagementModule\DTOs\InstructorDTO;
 use Modules\UserManagementModule\Models\User;
 use Modules\UserManagementModule\Services\V1\InstructorService;
 use Modules\UserManagementModule\Http\Requests\Api\V1\Instructor\InstructorFilterRequest;
@@ -30,7 +31,7 @@ class InstructorController extends Controller
     public function index(InstructorFilterRequest $request)
     {
         $instructors = $this->instructorService->list($request->validated());
-        return self::paginate($instructors,'instructors retrieved successfully');
+        return self::paginated($instructors,'instructors retrieved successfully');
     }
 
     /**
@@ -38,7 +39,8 @@ class InstructorController extends Controller
      */
     public function store(InstructorStoreRequest $request)
     {
-        $instructor = $this->instructorService->create($request->validated());
+        $instructorDTO = InstructorDTO::fromArray($request->validated());
+        $instructor = $this->instructorService->create($instructorDTO);
         return self::success($instructor,'instructor created successfuly',201);
     }
 
@@ -56,7 +58,8 @@ class InstructorController extends Controller
      */
     public function update(InstructorUpdateRequest $request, User $instructor)
     {
-        $instructor = $this->instructorService($instructor, $request->validated());
+        $instructorDTO = InstructorDTO::fromArray($request->validated());
+        $instructor = $this->instructorService->update($instructor, $instructorDTO);
         return self::success($instructor,'instructor updated successfully');    
     }
 

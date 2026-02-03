@@ -2,7 +2,9 @@
 namespace Modules\OrganizationsModule\Services\V1;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Modules\OrganizationsModule\Models\Organization;
 use Modules\OrganizationsModule\Models\Program;
+use function PHPUnit\Framework\isNull;
 
 /**
  * Service class for managing Program.
@@ -34,13 +36,13 @@ class ProgramService
         }
         $cacheKey = 'list:' . md5(json_encode($filters));
 
-        return Cache::tags([self::TAG_GLOBAL])
-            ->remember($cacheKey, self::CACHE_TTL, fn () =>
-                Program::query()
+        // return Cache::tags([self::TAG_GLOBAL])
+        //     ->remember($cacheKey, self::CACHE_TTL, fn () =>
+               return Program::query()
                     ->filter($filters)
                     ->orderByDesc('created_at')
-                    ->paginate($perPage)
-            );
+                    ->paginate($perPage);
+            //);
     }
 
     /**
@@ -50,22 +52,26 @@ class ProgramService
     {
         $cacheKey = self::TAG_PREFIX_PROGRAM . $programId;
 
-        return Cache::tags([
-                self::TAG_GLOBAL,
-                self::TAG_PREFIX_PROGRAM . $programId,
-            ])
-            ->remember($cacheKey, self::CACHE_TTL, function () use ($programId) {
+        // return Cache::tags([
+        //         self::TAG_GLOBAL,
+        //         self::TAG_PREFIX_PROGRAM . $programId,
+        //     ])
+        //     ->remember($cacheKey, self::CACHE_TTL, function () use ($programId) {
                 return Program::findOrFail($programId);
-            });
+            //});
     }
 
     /**
      * Create program and invalidate cache
      */
-    public function create(array $data): Program
+    public function create(Organization $organization,array $data): Program
     {
-        $program = Program::create($data);
 
+        if(isNull($organization)){
+            $organization = config('app.current_organization_id');
+        }
+        
+       $program = $organization->programs()->create($data);
         $this->flushGlobalCache();
 
         return $program;

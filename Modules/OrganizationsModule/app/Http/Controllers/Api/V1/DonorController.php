@@ -1,21 +1,25 @@
 <?php
 namespace Modules\OrganizationsModule\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
+use Modules\OrganizationsModule\Http\Requests\V1\Donor\StoreDonorRequest;
+use Modules\OrganizationsModule\Http\Requests\V1\Donor\UpdateDonorRequest;
 use Modules\OrganizationsModule\Models\Donor;
-
-use Modules\OrganizationsModule\Services\DonorService;
-use Modules\OrganizationsModule\Http\Requests\StoreDonorRequest;
-use Modules\OrganizationsModule\Http\Requests\UpdateDonorRequest;
 use Modules\OrganizationsModule\Http\Requests\V1\Donor\DonorFilterRequest;
+use Modules\OrganizationsModule\Services\V1\DonorService;
 
 class DonorController extends Controller
 {
     /**
      * Constructor to initialize DonorService.
      */
-    public function __construct(
-        protected DonorService $donorservice
-    ) {}
+    public function __construct(protected DonorService $donorservice) 
+    {
+        $this->middleware('permission:list-donors')->only('index');
+        $this->middleware('permission:show-donor')->only('show');
+        $this->middleware('permission:create-donor')->only('store');
+        $this->middleware('permission:update-donor')->only('update');
+        $this->middleware('permission:delete-donor')->only('destroy');
+    }
 
 
     /**

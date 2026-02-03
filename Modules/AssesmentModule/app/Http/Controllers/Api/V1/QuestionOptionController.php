@@ -27,6 +27,11 @@ class QuestionOptionController extends Controller
      */
     public function __construct(private QuestionOptionService $questionOptionService)
     {
+         $this->middleware('permission:list-options')->only('index');
+        $this->middleware('permission:show-option')->only('show');
+        $this->middleware('permission:create-option')->only('store');
+        $this->middleware('permission:update-option')->only('update');
+        $this->middleware('permission:delete-option')->only('destroy');
     }
 
     /**

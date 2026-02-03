@@ -43,10 +43,13 @@ class AppServiceProvider extends ServiceProvider
          */
         Gate::define('manage-organization', function ($user, $organization) {
 
-          return $user->organizations()
-                        ->where('id', $organization->id)
+        $organizationId = $organization instanceof Organization ? $organization->id : $organization;
+        $isAuthorized = $user->organizations()
+                        ->where('organization_id', $organizationId)
                         ->wherePivot('role', 'manager')
                         ->exists();
+
+         return $isAuthorized;
         });
 
     }

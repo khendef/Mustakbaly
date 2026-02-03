@@ -33,6 +33,11 @@ class AttemptController extends Controller
     public function __construct(AttemptService $attemptService)
     {
         $this->attemptService = $attemptService;
+        $this->middleware('permission:list-attempts')->only('index');
+        $this->middleware('permission:show-attempt')->only('show');
+        $this->middleware('permission:create-attempt')->only('store');
+        $this->middleware('permission:update-attempt')->only('update');
+        $this->middleware('permission:delete-attempt')->only('destroy');
     }
 
     /**

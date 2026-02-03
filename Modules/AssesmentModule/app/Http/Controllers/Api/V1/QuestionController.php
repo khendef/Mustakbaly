@@ -35,6 +35,11 @@ use Throwable;
     public function __construct(QuestionService $questionService)
     {
         $this->questionService = $questionService;
+         $this->middleware('permission:list-questions')->only('index');
+        $this->middleware('permission:show-question')->only('show');
+        $this->middleware('permission:create-question')->only('store');
+        $this->middleware('permission:update-question')->only('update');
+        $this->middleware('permission:delete-question')->only('destroy');
     }
 
         public function index(Request $request)
