@@ -25,6 +25,7 @@ class CourseInstructor extends Pivot
      */
     protected $primaryKey = 'course_instructor_id';
 
+
     /**
      * Indicates if the IDs are auto-incrementing.
      *
