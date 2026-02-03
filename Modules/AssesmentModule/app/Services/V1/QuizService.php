@@ -5,7 +5,6 @@ namespace Modules\AssesmentModule\Services\V1;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Modules\AssesmentModule\Models\Quiz;
-use Modules\AssesmentModule\Models\Builders\QuizBuilder;
 use Throwable;
 
 /**
@@ -15,9 +14,6 @@ use Throwable;
  * - Fetching a list of quizzes with filters and pagination
  * - Viewing, creating, updating, publishing, and unpublishing quizzes
  * - Deleting quizzes
- *
- * It encapsulates all quiz-related operations, ensuring that the business rules are respected.
- * The service uses database transactions to maintain data integrity and handles exceptions for robustness.
  *
  * @package Modules\AssesmentModule\Services\V1
  */

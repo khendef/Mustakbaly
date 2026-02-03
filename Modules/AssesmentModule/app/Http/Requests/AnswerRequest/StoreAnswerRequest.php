@@ -52,7 +52,6 @@ class StoreAnswerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // The attempt_id must be required, an integer, and must exist in the attempts table.
             'attempt_id' => ['required', 'integer', 'exists:attempts,id'],
 
             // The question_id must be required, an integer, and must exist in the questions table.

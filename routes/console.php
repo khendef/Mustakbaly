@@ -1,6 +1,4 @@
 <?php
-
-use App\Console\Commands\SendNotification;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 

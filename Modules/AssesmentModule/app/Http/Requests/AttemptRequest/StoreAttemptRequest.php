@@ -50,7 +50,7 @@ class StoreAttemptRequest extends FormRequest
             'quiz_id' => ['required', 'integer', 'exists:quizzes,id'],
             'student_id' => ['required', 'integer', 'exists:users,id'],
             'attempt_number' => [
-                'sometimes', 
+                'required', 
                 'integer', 
                 'min:1',
                 Rule::unique('attempts', 'attempt_number')

@@ -81,7 +81,7 @@ class QuizResource extends JsonResource
             'questions' => QuestionResource::collection($this->whenLoaded('questions')),
 
             /** @var \Illuminate\Http\Resources\Json\AnonymousResourceCollection $this->media Collection of associated media */
-            'media' => MediaResource::collection($this->whenLoaded('media')),
+            'media' => MediaResources::collection($this->whenLoaded('media')),
 
             /** @var string|null $this->created_at The timestamp of when the quiz was created */
             'created_at' => optional($this->created_at)->toISOString(),

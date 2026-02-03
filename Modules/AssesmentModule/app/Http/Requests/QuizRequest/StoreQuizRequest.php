@@ -26,7 +26,7 @@ class StoreQuizRequest extends FormRequest
         return [
             'course_id' => [
                 'required',
-                'exists:courses,id',
+                'exists:courses,course_id',
             ],
 
             'instructor_id' => [

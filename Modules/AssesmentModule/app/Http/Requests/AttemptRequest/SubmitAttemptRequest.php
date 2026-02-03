@@ -21,8 +21,9 @@ class SubmitAttemptRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-          
+        return [ 
+            'status' => 'required|in:in_progress,submitted,graded',
+            'submitted_at' => 'sometimes|date',
         ];
     }
 }

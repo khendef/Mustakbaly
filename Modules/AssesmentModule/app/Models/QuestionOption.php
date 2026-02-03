@@ -70,18 +70,6 @@ class QuestionOption extends Model
     }
 
     /**
-     * Define a custom setter for the `option_text` attribute.
-     * 
-     * This method ensures that the `option_text` is trimmed before saving it to the database.
-     *
-     * @return \Illuminate\Database\Eloquent\Casts\Attribute
-     */
-    protected function optionText(): Attribute
-    {
-        return Attribute::make(set: fn($v) => trim((string)$v));
-    }
-
-    /**
      * Create a new instance of the custom Eloquent query builder for this model.
      *
      * @param \Illuminate\Database\Eloquent\Builder 

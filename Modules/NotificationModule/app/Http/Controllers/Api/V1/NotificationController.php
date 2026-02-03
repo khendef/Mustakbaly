@@ -7,6 +7,7 @@ use Modules\NotificationModule\DTO\NotificationData;
 use Modules\NotificationModule\DTO\QuestionNotificationData;
 use Modules\NotificationModule\Services\NotificationService;
 use Modules\UserManagementModule\Models\User;
+use Throwable;
 
 /**
  * API Controller for listing and updating notifications.
@@ -79,10 +80,12 @@ class NotificationController extends Controller
     {
         // Validate the request
         $validated = $request->validate([
-            'question_id' => 'required|integer',
-            'quiz_id' => 'required|integer',
-            'question_text' => 'required|string',
-        ]);
+        'question_id' => 'required|integer',
+        'quiz_id' => 'required|integer',
+        'question_text' => 'required|array',
+        'question_text.en' => 'required|string', // Assuming the "en" and "ar" keys must exist
+        'question_text.ar' => 'required|string',
+    ]);
 
         // Create DTO from validated data
         $notificationData = new QuestionNotificationData(
@@ -91,11 +94,15 @@ class NotificationController extends Controller
             $validated['question_text']
         );
 
-        // Send notification using the service
+       try {
         $notificationService->sendQuestionCreatedNotification($notificationData);
-
-        return response()->json(['message' => 'Notification sent successfully!']);
+        return response()->json(['message' => 'Notification sent successfully.'], 200);
+    } catch (Throwable $e) {
+        // Handle any errors during notification sending
+        return response()->json(['message' => 'Error sending notification: ' . $e->getMessage()], 500);
     }
+    }
+    
     /**
     * Handle sending Assignment submitted
      * @param Request $request
