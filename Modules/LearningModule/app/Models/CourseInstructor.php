@@ -17,6 +17,7 @@ class CourseInstructor extends Pivot
      * Manages instructor assignments to courses, including primary instructor designation and assignment tracking.
      */
 
+
     /**
      * The primary key for the model.
      *

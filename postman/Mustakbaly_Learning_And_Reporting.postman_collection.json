@@ -1,0 +1,387 @@
+{
+	"info": {
+		"_postman_id": "mustakbaly-learning-reporting-v1",
+		"name": "Mustakbaly API - Learning & Reporting",
+		"description": "**Learning Module** and **Reporting Module** API collection.\n\n- **Grouped by role**: Super Admin, Manager, Instructor, Student, Donor.\n- **Reporting Module** in a separate top-level folder.\n- All authenticated routes use JWT: set `token` (from login) in collection/environment variables.\n- Set `base_url` (e.g. http://localhost:8000) and role-specific variables (`organization`, `program`, `course`, etc.) as needed.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8000" },
+		{ "key": "token", "value": "" },
+		{ "key": "organization", "value": "" },
+		{ "key": "program", "value": "" },
+		{ "key": "course", "value": "" },
+		{ "key": "unit", "value": "" },
+		{ "key": "lesson", "value": "" },
+		{ "key": "courseType", "value": "" },
+		{ "key": "enrollment", "value": "" },
+		{ "key": "instructorId", "value": "" },
+		{ "key": "learnerId", "value": "" },
+		{ "key": "donorId", "value": "" },
+		{ "key": "organizationId", "value": "" },
+		{ "key": "courseId", "value": "" },
+		{ "key": "user", "value": "" }
+	],
+	"item": [
+		{
+			"name": "Learning Module",
+			"description": "Learning Module routes grouped by user role. Requires JWT and role middleware.",
+			"item": [
+				{
+					"name": "Super Admin",
+					"description": "Prefix: /api/v1/super-admin. Role: super-admin.",
+					"item": [
+						{ "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/dashboard", "description": "Super admin dashboard (ReportingModule)." } },
+						{
+							"name": "Programs",
+							"item": [
+								{ "name": "List All Programs", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/programs", "description": "Paginated list of all learning programs." } },
+								{ "name": "Show Program", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/programs/{{program}}", "description": "Details of one program (slug)." } },
+								{ "name": "Create Program", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"description\": \"\",\n  \"organization_id\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/programs", "description": "Create a new program." } },
+								{ "name": "Update Program", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"description\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/programs/{{program}}", "description": "Update program (slug)." } },
+								{ "name": "Delete Program", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/programs/{{program}}", "description": "Soft delete program." } }
+							]
+						},
+						{
+							"name": "Course Types",
+							"item": [
+								{ "name": "List Course Types", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/course-types", "description": "List all course types." } },
+								{ "name": "Show Course Type", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/course-types/{{courseType}}", "description": "Details of one course type." } },
+								{ "name": "Create Course Type", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/course-types", "description": "Create course type." } },
+								{ "name": "Update Course Type", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/course-types/{{courseType}}", "description": "Update course type." } },
+								{ "name": "Delete Course Type", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/course-types/{{courseType}}", "description": "Soft delete course type." } },
+								{ "name": "Activate Course Type", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/course-types/{{courseType}}/activate", "description": "Mark course type as active." } },
+								{ "name": "Deactivate Course Type", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/course-types/{{courseType}}/deactivate", "description": "Mark course type as inactive." } }
+							]
+						},
+						{
+							"name": "Enrollments",
+							"item": [
+								{ "name": "List Enrollments", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/enrollments", "description": "List all enrollments (paginated)." } },
+								{ "name": "Show Enrollment", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/enrollments/{{enrollment}}", "description": "Details of one enrollment (id)." } },
+								{ "name": "Create Enrollment", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"learner_id\": 1,\n  \"course_id\": 1,\n  \"enrollment_type\": \"self\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/enrollments", "description": "Create enrollment." } },
+								{ "name": "Update Enrollment", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{}" }, "url": "{{base_url}}/api/v1/super-admin/enrollments/{{enrollment}}", "description": "Update enrollment." } },
+								{ "name": "Update Enrollment Status", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"status\": \"active\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/enrollments/{{enrollment}}/status", "description": "Change enrollment status." } },
+								{ "name": "Get Enrollment Progress", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/enrollments/{{enrollment}}/progress", "description": "Progress for an enrollment." } }
+							]
+						},
+						{
+							"name": "Courses",
+							"item": [
+								{ "name": "List Courses", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses", "description": "List all courses." } },
+								{ "name": "Enrollable List", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/enrollable/list", "description": "Courses available for enrollment." } },
+								{ "name": "Courses by Instructor", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/instructor/{{instructorId}}", "description": "Courses by instructor id." } },
+								{ "name": "Show Course", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}", "description": "Course details (slug)." } },
+								{ "name": "Create Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"program_id\": 1,\n  \"difficulty_level\": \"beginner\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses", "description": "Create course." } },
+								{ "name": "Update Course", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"difficulty_level\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}", "description": "Update course." } },
+								{ "name": "Delete Course", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}", "description": "Soft delete course." } },
+								{ "name": "Publish Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/publish", "description": "Publish course." } },
+								{ "name": "Unpublish Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/unpublish", "description": "Unpublish course." } },
+								{ "name": "Change Course Status", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"status\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/status", "description": "Change course status." } },
+								{ "name": "Check Publishability", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/publishability", "description": "Check if course can be published." } },
+								{ "name": "Get Course Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/duration", "description": "Total duration of course." } },
+								{ "name": "Assign Instructor", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"instructor_id\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/instructors/assign", "description": "Assign instructor to course." } },
+								{ "name": "Remove Instructor", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/instructors/remove", "description": "Remove instructor from course." } },
+								{ "name": "Set Primary Instructor", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"instructor_id\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/instructors/primary", "description": "Set primary instructor." } },
+								{ "name": "Unset Primary Instructor", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/instructors/primary", "description": "Unset primary instructor." } },
+								{ "name": "Get Course Instructors", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/instructors", "description": "List instructors for course." } }
+							]
+						},
+						{
+							"name": "Units (Super Admin)",
+							"item": [
+								{ "name": "List Units", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units", "description": "List all units." } },
+								{ "name": "Units by Course", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units/course/{{course}}", "description": "Units for a course." } },
+								{ "name": "Reorder Units", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"unit_ids\": [1, 2, 3]\n}" }, "url": "{{base_url}}/api/v1/super-admin/units/course/{{course}}/reorder", "description": "Reorder units in course." } },
+								{ "name": "Unit Count", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units/course/{{course}}/count", "description": "Number of units in course." } },
+								{ "name": "Show Unit", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units/{{unit}}", "description": "Unit details (slug)." } },
+								{ "name": "Create Unit", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"course_id\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/units", "description": "Create unit." } },
+								{ "name": "Update Unit", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/units/{{unit}}", "description": "Update unit." } },
+								{ "name": "Delete Unit", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units/{{unit}}", "description": "Soft delete unit." } },
+								{ "name": "Unit Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units/{{unit}}/duration", "description": "Unit duration." } },
+								{ "name": "Unit Can Delete", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/units/{{unit}}/can-delete", "description": "Check if unit can be deleted." } },
+								{ "name": "Move Unit Position", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"position\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/units/{{unit}}/position", "description": "Change unit position." } },
+								{ "name": "List Units (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units", "description": "Units under course (nested)." } },
+								{ "name": "Show Unit (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}", "description": "Unit under course." } },
+								{ "name": "Create Unit (nested)", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units", "description": "Create unit under course." } },
+								{ "name": "Update Unit (nested)", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}", "description": "Update unit under course." } },
+								{ "name": "Delete Unit (nested)", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}", "description": "Delete unit under course." } }
+							]
+						},
+						{
+							"name": "Lessons (Super Admin)",
+							"item": [
+								{ "name": "List Lessons", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/lessons", "description": "List all lessons." } },
+								{ "name": "Lessons by Unit", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/lessons/unit/{{unit}}", "description": "Lessons in a unit." } },
+								{ "name": "Reorder Lessons", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"lesson_ids\": [1, 2, 3]\n}" }, "url": "{{base_url}}/api/v1/super-admin/lessons/unit/{{unit}}/reorder", "description": "Reorder lessons in unit." } },
+								{ "name": "Lesson Count", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/lessons/unit/{{unit}}/count", "description": "Number of lessons in unit." } },
+								{ "name": "Show Lesson", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/lessons/{{lesson}}", "description": "Lesson details (slug)." } },
+								{ "name": "Create Lesson", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"unit_id\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/lessons", "description": "Create lesson." } },
+								{ "name": "Update Lesson", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/lessons/{{lesson}}", "description": "Update lesson." } },
+								{ "name": "Delete Lesson", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/lessons/{{lesson}}", "description": "Soft delete lesson." } },
+								{ "name": "Lesson Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/lessons/{{lesson}}/duration", "description": "Lesson duration." } },
+								{ "name": "Move Lesson Position", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"position\": 1\n}" }, "url": "{{base_url}}/api/v1/super-admin/lessons/{{lesson}}/position", "description": "Change lesson position." } },
+								{ "name": "List Lessons (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}/lessons", "description": "Lessons under course/unit." } },
+								{ "name": "Show Lesson (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Lesson under course/unit." } },
+								{ "name": "Create Lesson (nested)", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}/lessons", "description": "Create lesson under unit." } },
+								{ "name": "Update Lesson (nested)", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Update lesson under unit." } },
+								{ "name": "Delete Lesson (nested)", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/super-admin/courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Delete lesson under unit." } }
+							]
+						}
+					]
+				},
+				{
+					"name": "Manager",
+					"description": "Prefix: /api/v1/{{organization}}/manage. Role: manager. Set variable 'organization' (slug).",
+					"item": [
+						{ "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/dashboard", "description": "Manager dashboard for organization." } },
+						{
+							"name": "Programs",
+							"item": [
+								{ "name": "List Programs", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/programs", "description": "Programs for this organization." } },
+								{ "name": "Show Program", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/programs/{{program}}", "description": "Program details." } },
+								{ "name": "Create Program", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"description\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/programs", "description": "Create program." } },
+								{ "name": "Update Program", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"description\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/programs/{{program}}", "description": "Update program." } },
+								{ "name": "Delete Program", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/programs/{{program}}", "description": "Soft delete program." } }
+							]
+						},
+						{
+							"name": "Course Types",
+							"item": [
+								{ "name": "List Course Types", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types", "description": "List course types." } },
+								{ "name": "Show Course Type", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types/{{courseType}}", "description": "Course type details." } },
+								{ "name": "Create Course Type", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types", "description": "Create course type." } },
+								{ "name": "Update Course Type", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types/{{courseType}}", "description": "Update course type." } },
+								{ "name": "Delete Course Type", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types/{{courseType}}", "description": "Delete course type." } },
+								{ "name": "Activate Course Type", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types/{{courseType}}/activate", "description": "Activate course type." } },
+								{ "name": "Deactivate Course Type", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/course-types/{{courseType}}/deactivate", "description": "Deactivate course type." } }
+							]
+						},
+						{
+							"name": "Enrollments",
+							"item": [
+								{ "name": "List Enrollments", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/enrollments", "description": "List enrollments (org-scoped)." } },
+								{ "name": "Show Enrollment", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/enrollments/{{enrollment}}", "description": "Enrollment details." } },
+								{ "name": "Create Enrollment", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"learner_id\": 1,\n  \"course_id\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/enrollments", "description": "Create enrollment." } },
+								{ "name": "Update Enrollment", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/enrollments/{{enrollment}}", "description": "Update enrollment." } },
+								{ "name": "Update Enrollment Status", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"status\": \"active\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/enrollments/{{enrollment}}/status", "description": "Update status." } },
+								{ "name": "Get Enrollment Progress", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/enrollments/{{enrollment}}/progress", "description": "Enrollment progress." } }
+							]
+						},
+						{
+							"name": "Courses",
+							"item": [
+								{ "name": "List Courses", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses", "description": "Courses for organization." } },
+								{ "name": "Enrollable List", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/enrollable/list", "description": "Enrollable courses." } },
+								{ "name": "Courses by Instructor", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/instructor/{{instructorId}}", "description": "Courses by instructor." } },
+								{ "name": "Show Course", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}", "description": "Course details." } },
+								{ "name": "Create Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"program_id\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses", "description": "Create course." } },
+								{ "name": "Update Course", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}", "description": "Update course." } },
+								{ "name": "Delete Course", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}", "description": "Delete course." } },
+								{ "name": "Publish Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/publish", "description": "Publish course." } },
+								{ "name": "Unpublish Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/unpublish", "description": "Unpublish course." } },
+								{ "name": "Change Status", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"status\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/status", "description": "Change course status." } },
+								{ "name": "Publishability", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/publishability", "description": "Check publishability." } },
+								{ "name": "Course Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/duration", "description": "Course duration." } },
+								{ "name": "Assign Instructor", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"instructor_id\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/instructors/assign", "description": "Assign instructor." } },
+								{ "name": "Remove Instructor", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/instructors/remove", "description": "Remove instructor." } },
+								{ "name": "Set Primary Instructor", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"instructor_id\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/instructors/primary", "description": "Set primary instructor." } },
+								{ "name": "Unset Primary Instructor", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/instructors/primary", "description": "Unset primary instructor." } },
+								{ "name": "Get Instructors", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/instructors", "description": "List course instructors." } }
+							]
+						},
+						{
+							"name": "Units (Manager)",
+							"item": [
+								{ "name": "List Units", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/units", "description": "List units." } },
+								{ "name": "Units by Course", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/units/course/{{course}}", "description": "Units for course." } },
+								{ "name": "Reorder Units", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"unit_ids\": [1, 2, 3]\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/units/course/{{course}}/reorder", "description": "Reorder units." } },
+								{ "name": "Unit Count", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/units/course/{{course}}/count", "description": "Unit count." } },
+								{ "name": "Show Unit", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/units/{{unit}}", "description": "Unit details." } },
+								{ "name": "Create Unit", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"course_id\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/units", "description": "Create unit." } },
+								{ "name": "Update Unit", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/units/{{unit}}", "description": "Update unit." } },
+								{ "name": "Delete Unit", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/units/{{unit}}", "description": "Delete unit." } },
+								{ "name": "Unit Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/units/{{unit}}/duration", "description": "Unit duration." } },
+								{ "name": "Move Unit Position", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"position\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/units/{{unit}}/position", "description": "Move unit." } },
+								{ "name": "List Units (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units", "description": "Units under course." } },
+								{ "name": "Show Unit (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}", "description": "Unit under course." } },
+								{ "name": "Create Unit (nested)", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units", "description": "Create unit under course." } },
+								{ "name": "Update Unit (nested)", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}", "description": "Update unit under course." } },
+								{ "name": "Delete Unit (nested)", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}", "description": "Delete unit under course." } }
+							]
+						},
+						{
+							"name": "Lessons (Manager)",
+							"item": [
+								{ "name": "List Lessons", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons", "description": "List lessons." } },
+								{ "name": "Lessons by Unit", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/unit/{{unit}}", "description": "Lessons in unit." } },
+								{ "name": "Reorder Lessons", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"lesson_ids\": [1, 2, 3]\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/unit/{{unit}}/reorder", "description": "Reorder lessons." } },
+								{ "name": "Lesson Count", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/unit/{{unit}}/count", "description": "Lesson count." } },
+								{ "name": "Show Lesson", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/{{lesson}}", "description": "Lesson details." } },
+								{ "name": "Create Lesson", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\",\n  \"unit_id\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons", "description": "Create lesson." } },
+								{ "name": "Update Lesson", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/{{lesson}}", "description": "Update lesson." } },
+								{ "name": "Delete Lesson", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/{{lesson}}", "description": "Delete lesson." } },
+								{ "name": "Lesson Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/{{lesson}}/duration", "description": "Lesson duration." } },
+								{ "name": "Move Lesson Position", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"position\": 1\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/lessons/{{lesson}}/position", "description": "Move lesson." } },
+								{ "name": "List Lessons (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}/lessons", "description": "Lessons under course/unit." } },
+								{ "name": "Show Lesson (nested)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Lesson under course/unit." } },
+								{ "name": "Create Lesson (nested)", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}/lessons", "description": "Create lesson under unit." } },
+								{ "name": "Update Lesson (nested)", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Update lesson under unit." } },
+								{ "name": "Delete Lesson (nested)", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/{{organization}}/manage/courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Delete lesson under unit." } }
+							]
+						}
+					]
+				},
+				{
+					"name": "Instructor",
+					"description": "Prefix: /api/v1. Role: instructor.",
+					"item": [
+						{ "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboard", "description": "Instructor dashboard (uses auth user id)." } },
+						{ "name": "List My Courses", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses", "description": "Courses assigned to instructor." } },
+						{ "name": "Show Course", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}", "description": "Assigned course details." } },
+						{ "name": "Course Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/duration", "description": "Course duration." } },
+						{ "name": "Course Publishability", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/publishability", "description": "Check publishability." } },
+						{ "name": "List Units", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units", "description": "Units for assigned course." } },
+						{ "name": "Reorder Units", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"unit_ids\": [1, 2, 3]\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/reorder", "description": "Reorder units." } },
+						{ "name": "Unit Count", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/count", "description": "Unit count." } },
+						{ "name": "Create Unit", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units", "description": "Create unit." } },
+						{ "name": "Show Unit", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}", "description": "Unit details." } },
+						{ "name": "Update Unit", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}", "description": "Update unit." } },
+						{ "name": "Delete Unit", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}", "description": "Delete unit." } },
+						{ "name": "Unit Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/duration", "description": "Unit duration." } },
+						{ "name": "Move Unit Position", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"position\": 1\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/position", "description": "Move unit." } },
+						{ "name": "List Lessons", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons", "description": "Lessons in unit." } },
+						{ "name": "Reorder Lessons", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"lesson_ids\": [1, 2, 3]\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/reorder", "description": "Reorder lessons." } },
+						{ "name": "Lesson Count", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/count", "description": "Lesson count." } },
+						{ "name": "Create Lesson", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons", "description": "Create lesson." } },
+						{ "name": "Show Lesson", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Lesson details." } },
+						{ "name": "Update Lesson", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"title\": \"\"\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Update lesson." } },
+						{ "name": "Delete Lesson", "request": { "method": "DELETE", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Delete lesson." } },
+						{ "name": "Lesson Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/{{lesson}}/duration", "description": "Lesson duration." } },
+						{ "name": "Move Lesson Position", "request": { "method": "PUT", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"position\": 1\n}" }, "url": "{{base_url}}/api/v1/my-courses/{{course}}/units/{{unit}}/lessons/{{lesson}}/position", "description": "Move lesson." } },
+						{ "name": "Units by Course (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/units/course/{{course}}", "description": "Units for course (flat)." } },
+						{ "name": "Show Unit (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/units/{{unit}}", "description": "Unit (flat)." } },
+						{ "name": "Unit Duration (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/units/{{unit}}/duration", "description": "Unit duration (flat)." } },
+						{ "name": "Lessons by Unit (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/lessons/unit/{{unit}}", "description": "Lessons in unit (flat)." } },
+						{ "name": "Show Lesson (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/lessons/{{lesson}}", "description": "Lesson (flat)." } },
+						{ "name": "Lesson Duration (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/lessons/{{lesson}}/duration", "description": "Lesson duration (flat)." } }
+					]
+				},
+				{
+					"name": "Student",
+					"description": "Prefix: /api/v1. Role: student.",
+					"item": [
+						{ "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboard", "description": "Student dashboard (uses auth user id)." } },
+						{ "name": "List Enrollable Courses", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/courses/enrollable/list", "description": "Courses available to enroll." } },
+						{ "name": "Enroll in Course", "request": { "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}], "body": { "mode": "raw", "raw": "{\n  \"course_id\": 1,\n  \"enrollment_type\": \"self\"\n}" }, "url": "{{base_url}}/api/v1/enrollments", "description": "Enroll authenticated student (learner_id from auth)." } },
+						{ "name": "My Enrollments", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/enrollments", "description": "List enrollments for student." } },
+						{ "name": "Show Enrollment", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/enrollments/{{enrollment}}", "description": "Enrollment details." } },
+						{ "name": "Enrollment Progress", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/enrollments/{{enrollment}}/progress", "description": "Progress for enrollment." } },
+						{ "name": "My Learning (List Courses)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning", "description": "Enrolled courses." } },
+						{ "name": "Show Enrolled Course", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}", "description": "Enrolled course details." } },
+						{ "name": "List Course Units", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}/units", "description": "Units in enrolled course." } },
+						{ "name": "Show Unit", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}/units/{{unit}}", "description": "Unit in enrolled course." } },
+						{ "name": "Unit Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}/units/{{unit}}/duration", "description": "Unit duration." } },
+						{ "name": "List Unit Lessons", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}/units/{{unit}}/lessons", "description": "Lessons in unit." } },
+						{ "name": "Show Lesson", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}/units/{{unit}}/lessons/{{lesson}}", "description": "Lesson in enrolled course." } },
+						{ "name": "Lesson Duration", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/my-learning/{{course}}/units/{{unit}}/lessons/{{lesson}}/duration", "description": "Lesson duration." } },
+						{ "name": "Units by Course (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/units/course/{{course}}", "description": "Units for course (flat, enrolled only)." } },
+						{ "name": "Show Unit (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/units/{{unit}}", "description": "Unit (flat)." } },
+						{ "name": "Unit Duration (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/units/{{unit}}/duration", "description": "Unit duration (flat)." } },
+						{ "name": "Lessons by Unit (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/lessons/unit/{{unit}}", "description": "Lessons in unit (flat)." } },
+						{ "name": "Show Lesson (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/lessons/{{lesson}}", "description": "Lesson (flat)." } },
+						{ "name": "Lesson Duration (flat)", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/lessons/{{lesson}}/duration", "description": "Lesson duration (flat)." } }
+					]
+				},
+				{
+					"name": "Donor",
+					"description": "Prefix: /api/v1. Role: donor.",
+					"item": [
+						{ "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboard", "description": "Donor dashboard (uses auth user id)." } }
+					]
+				}
+			]
+		},
+		{
+			"name": "Reporting Module",
+			"description": "Reporting Module routes: dashboards and reports. Base path: /api/v1. Use JWT where required by your app.",
+			"item": [
+				{
+					"name": "Dashboards",
+					"description": "Dashboard endpoints from ReportingModule (dashboards.php). Set learnerId, instructorId, donorId, organizationId as needed.",
+					"item": [
+						{
+							"name": "Admin Dashboard",
+							"item": [
+								{ "name": "Admin Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard", "description": "Super admin dashboard." } },
+								{ "name": "Generate Course Popularity Report", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard/generate-course-popularity-report", "description": "Course popularity report." } },
+								{ "name": "Identify Learning Gaps", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard/identify-learning-gaps", "description": "Identify learning gaps." } },
+								{ "name": "Get Content Performance", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard/get-content-performance/{{courseId}}", "description": "Content performance for a course." } },
+								{ "name": "Generate Learner Performance Report", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard/generate-learner-performance-report", "description": "Learner performance report." } },
+								{ "name": "Get Completion Rates", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard/get-completion-rates", "description": "Completion rates." } },
+								{ "name": "Get Learning Time Analysis", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/admin-dashboard/get-learning-time-analysis", "description": "Learning time analysis." } }
+							]
+						},
+						{ "name": "Student Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/student-dashboard/{{learnerId}}", "description": "Student dashboard by learner id." } },
+						{ "name": "Teacher Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/teacher-dashboard/{{instructorId}}", "description": "Teacher/Instructor dashboard by instructor id." } },
+						{ "name": "Donor Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/donor-dashboard/{{donorId}}", "description": "Donor dashboard by donor id." } },
+						{
+							"name": "Manager Partner Organization Dashboard",
+							"item": [
+								{ "name": "Dashboard", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/manager-partner-organization-dashboard/{{organizationId}}", "description": "Manager/partner org dashboard." } },
+								{ "name": "Generate Course Popularity Report", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/manager-partner-organization-dashboard/{{organizationId}}/generate-course-popularity-report", "description": "Course popularity for org." } },
+								{ "name": "Identify Learning Gaps", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/manager-partner-organization-dashboard/{{organizationId}}/identify-learning-gaps", "description": "Learning gaps for org." } },
+								{ "name": "Get Content Performance", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/dashboards/manager-partner-organization-dashboard/{{organizationId}}/get-content-performance/{{courseId}}", "description": "Content performance for org/course." } }
+							]
+						}
+					]
+				},
+				{
+					"name": "Reports",
+					"description": "Report endpoints from ReportingModule (reports.php).",
+					"item": [
+						{
+							"name": "Learners",
+							"item": [
+								{ "name": "Performance Report", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/learners/performance", "description": "Learner performance report." } },
+								{ "name": "Completion Rates", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/learners/completion-rates", "description": "Learner completion rates." } },
+								{ "name": "Learning Time", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/learners/learning-time", "description": "Learning time analysis." } }
+							]
+						},
+						{
+							"name": "Courses",
+							"item": [
+								{ "name": "Popularity", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/courses/popularity", "description": "Course popularity report." } },
+								{ "name": "Content Performance", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/courses/content-performance/{{courseId}}", "description": "Content performance for course." } },
+								{ "name": "Learning Gaps", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/courses/learning-gaps", "description": "Identify learning gaps." } }
+							]
+						},
+						{
+							"name": "Partner Organization",
+							"item": [
+								{
+									"name": "Courses",
+									"item": [
+										{ "name": "Popularity", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/partner-organization/courses/popularity", "description": "Partner org course popularity." } },
+										{ "name": "Content Performance", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/partner-organization/courses/content-performance/{{courseId}}", "description": "Partner org content performance." } },
+										{ "name": "Learning Gaps", "request": { "method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/reports/partner-organization/courses/learning-gaps", "description": "Partner org learning gaps." } }
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}

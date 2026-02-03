@@ -18,6 +18,11 @@ class OrganizationController extends Controller
      */
     public function __construct(private OrganizationService $organizationService)
     {
+        $this->middleware('permission:list-organizations')->only('index');
+        $this->middleware('permission:show-organization')->only('show');
+        $this->middleware('permission:create-organization')->only('store');
+        $this->middleware('permission:update-organization')->only('update');
+        $this->middleware('permission:delete-organization')->only('destroy');
     }
 
     /**
@@ -26,7 +31,7 @@ class OrganizationController extends Controller
     public function index()
     {
         $organizations = $this->organizationService->getAll();
-           $organizations->getCollection()->transform(function ($organization) {
+        $organizations->getCollection()->transform(function ($organization) {
         return new OrganizationResource($organization);
            });
 

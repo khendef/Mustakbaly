@@ -1,4 +1,5 @@
 <?php
+
 /**
  * User model for the UserManagementModule.
  *
@@ -23,8 +24,9 @@ namespace Modules\UserManagementModule\Models;
 use Dyrynda\Database\Support\CascadeSoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
@@ -32,18 +34,20 @@ use Modules\LearningModule\Models\Course;
 use Modules\LearningModule\Models\CourseInstructor;
 use Modules\LearningModule\Models\Enrollment;
 use Modules\OrganizationsModule\Models\Organization;
+use Modules\UserManagementModule\Models\Auditor;
 use Modules\UserManagementModule\Models\Builders\UserBuilder;
+use Modules\UserManagementModule\Models\Instructor;
 use Modules\UserManagementModule\Models\Scopes\OrganizationScope;
-use Spatie\MediaLibrary\InteractsWithMedia;
+use Modules\UserManagementModule\Models\Student;
 use Spatie\Permission\Traits\HasRoles;
-// use Modules\UserManagementModule\Database\Factories\UserFactory;
+
 
 class User extends Authenticatable implements JWTSubject, HasMedia
 {
-/** @use HasFactory<\Database\Factories\UserFactory> */
-  use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable,  HasRoles, SoftDeletes, CascadeSoftDeletes, InteractsWithMedia;
 
-     /**
+    /**
      * The attributes that are mass assignable.
      *
      * We define this list to protect against Mass Assignment Vulnerabilities.
@@ -66,7 +70,7 @@ class User extends Authenticatable implements JWTSubject, HasMedia
         'remember_token',
     ];
 
-    protected $cascadeDeletes = ['studentProfile','instructorProfile','auditorProfile'];
+    protected $cascadeDeletes = ['studentProfile', 'instructorProfile', 'auditorProfile'];
 
     protected $guard_name = 'api';
 
@@ -89,18 +93,6 @@ class User extends Authenticatable implements JWTSubject, HasMedia
             'date_of_birth' => 'date'
         ];
     }
-    /**
-     * The "booted" method of the model.
-     *
-     * Logic:
-     * - Used to define model event hooks and global scopes.
-     * - Here, we would add the OrganizationScope to limit queries by organization.
-     */
-
-    // protected static function booted()
-    // {
-    //     static::addGlobalScope(new OrganizationScope);
-    // }
 
 
     /**
@@ -171,7 +163,7 @@ class User extends Authenticatable implements JWTSubject, HasMedia
      */
     public function instructorProfile()
     {
-        return $this->hasOne(instructor::class);
+        return $this->hasOne(Instructor::class);
     }
 
 
@@ -189,13 +181,13 @@ class User extends Authenticatable implements JWTSubject, HasMedia
      */
     public function auditorProfile()
     {
-        return $this->hasOne(auditor::class);
+        return $this->hasOne(Auditor::class);
     }
 
 
 
 
-    
+
     /**
      * Define a many-to-many relationship between users and organizations.
      *
@@ -210,29 +202,31 @@ class User extends Authenticatable implements JWTSubject, HasMedia
     public function organizations()
     {
         return $this->belongsToMany(Organization::class, 'organization_user')
-                ->withPivot('role')
-                ->withTimestamps();
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
-public function registerMediaCollections(): void
-{
-    $this->addMediaCollection('avatar')
-         ->singleFile()  
-         ->useFallbackUrl(asset('images/default-avatar.png'));
-}
 
-public function registerMediaConversions(?Media $media = null): void
-{
-    $this->addMediaConversion('thumb')
-         ->width(100)
-         ->height(100)
-         ->nonQueued();
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile()
+            ->useFallbackUrl(asset('images/default-avatar.png'));
+    }
 
-    $this->addMediaConversion('preview')
-         ->width(300)
-         ->height(300)
-         ->queued();
-}
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(100)
+            ->height(100)
+            ->nonQueued();
+
+        $this->addMediaConversion('preview')
+            ->width(300)
+            ->height(300)
+            ->queued();
+    }
+
 
     // LearningModule relations (inverse of Course, CourseInstructor, Enrollment)
 

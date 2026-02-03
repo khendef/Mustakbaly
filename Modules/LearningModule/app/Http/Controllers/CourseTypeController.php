@@ -36,6 +36,11 @@ class CourseTypeController extends Controller
     public function __construct(CourseTypeService $courseTypeService)
     {
         $this->courseTypeService = $courseTypeService;
+         $this->middleware('permission:list-categories')->only('index');
+        $this->middleware('permission:show-category')->only('show');
+        $this->middleware('permission:create-category')->only('store');
+        $this->middleware('permission:update-category')->only('update');
+        $this->middleware('permission:delete-category')->only('destroy');
     }
 
     /**
