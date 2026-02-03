@@ -15,6 +15,7 @@
 
 namespace Modules\UserManagementModule\Services\V1;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\UserManagementModule\Enums\UserRole;
 use Modules\UserManagementModule\Models\User;
@@ -22,12 +23,21 @@ use Modules\UserManagementModule\Transformers\UserResource;
 
 class UserService
 {
+    private const CACHE_TTL = 3600;
+    private const TAG_GLOBAL = 'users';
+    private const TAG_PREFIX_USER = 'user_';
     public function list($filters, int $perPage=15)
     {
-        $users = User::with('organizations:id,name')
-                    ->filter($filters)
-                    ->paginate($perPage);
-        return $users;
+        ksort($filters);
+        $filtersKey = md5(json_encode($filters));
+        $CacheKey = "users_list_{$filtersKey}_limit_{$perPage}";
+        
+        return Cache::tags([self::TAG_GLOBAL])->remember($CacheKey,self::CACHE_TTL,function() use($filters, $perPage){
+            $users = User::with('organizations:id,name')
+                        ->filter($filters)
+                        ->paginate($perPage);
+            return $users;
+        });
     }
 
     /**
@@ -48,13 +58,17 @@ class UserService
      */
     public function findById(int $id)
     {
-        $user = User::with(['roles'=>function($q){
+        $cacheKey = "user_details_{$id}";
+        return Cache::tags([self::TAG_GLOBAL, self::TAG_PREFIX_USER . $id])->remember($cacheKey, self::CACHE_TTL, function() use($id) {
+                  $user = User::with(['roles'=>function($q){
                         $q->select('id','name')
                         -> with('permissions:id,name');
                 } ,'organizations:id,name'])->findOrFail($id);
 
-        $user = $this->loadProfile($user,$user->getRoleNames()->toArray());
-        return new UserResource($user);
+                $user = $this->loadProfile($user,$user->getRoleNames()->toArray());
+                return new UserResource($user);
+            });
+
     }
 
     /**

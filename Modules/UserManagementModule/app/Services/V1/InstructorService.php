@@ -3,6 +3,7 @@
 namespace Modules\UserManagementModule\Services\V1;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\UserManagementModule\DTOs\InstructorDTO;
 use Modules\UserManagementModule\Enums\UserRole;
@@ -10,19 +11,36 @@ use Modules\UserManagementModule\Models\User;
 
 class InstructorService
 {
+    private const CACHE_TTL = 3600;
+    private const TAG_GLOBAL = 'instructors';
+    private const TAG_PREFIX_INSTRUCTOR = 'instructor_';
     public function list($filters, int $perPage=15)
     {
-        $instructors = User::whereHas('instructorProfile')
-                    ->with('media','instructorProfile', 'organizations:id,name')
-                    //->filters($filters)
-                    ->paginate($perPage);
-        return $instructors;
+        $orgId = config('app.current_organization_id');
+        $orgkey = $orgId ? "_org_{$orgId}" : '';
+        
+        ksort($filters);
+        $filtersKey = md5(json_encode($filters));
+        $CacheKey = "instructors_list_{$filtersKey}_limit_{$perPage}_{$orgkey}";     
+
+        return Cache::tags([self::TAG_GLOBAL])->remember($CacheKey,self::CACHE_TTL,function() use($filters, $perPage){
+            $instructors = User::whereHas('instructorProfile')
+                        ->with('media','instructorProfile', 'organizations:id,name')
+                        //->filters($filters)
+                        ->paginate($perPage);
+            return $instructors;
+        });
     }
 
     public function findById(int $id)
     {
-        return User::with('media','instructorProfile','organizations:id,name')
-        ->findOrFail($id);
+        $orgId = config('app.current_organization_id');
+        $orgkey = $orgId ? "_org_{$orgId}" : '';
+        $cacheKey = "instructor_details_{$id}_{$orgkey}";
+        return Cache::tags([self::TAG_GLOBAL, self::TAG_PREFIX_INSTRUCTOR . $id])->remember($cacheKey, self::CACHE_TTL, function() use($id) {
+            return User::with('media','instructorProfile','organizations:id,name')
+            ->findOrFail($id);
+        });
     }
 
 
