@@ -41,11 +41,22 @@ class LessonController extends Controller
     public function __construct(LessonService $lessonService)
     {
         $this->lessonService = $lessonService;
-         $this->middleware('permission:list-lessons')->only('index');
+
+        // Lesson CRUD permissions
+        $this->middleware('permission:list-lessons')->only('index');
         $this->middleware('permission:show-lesson')->only('show');
         $this->middleware('permission:create-lesson')->only('store');
         $this->middleware('permission:update-lesson')->only('update');
         $this->middleware('permission:delete-lesson')->only('destroy');
+
+        // Lesson listing permissions
+        $this->middleware('permission:list-lessons')->only(['byUnit', 'getLessonCount']);
+
+        // Lesson ordering permissions
+        $this->middleware('permission:update-lesson')->only(['reorder', 'moveToPosition']);
+
+        // Lesson information permissions
+        $this->middleware('permission:show-lesson')->only('getDuration');
     }
 
     /**

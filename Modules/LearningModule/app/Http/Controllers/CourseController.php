@@ -55,11 +55,29 @@ class CourseController extends Controller
     {
         $this->courseService = $courseService;
         $this->courseInstructorService = $courseInstructorService;
+
+        // Course CRUD permissions
         $this->middleware('permission:list-courses')->only('index');
         $this->middleware('permission:show-course')->only('show');
         $this->middleware('permission:create-course')->only('store');
         $this->middleware('permission:update-course')->only('update');
         $this->middleware('permission:delete-course')->only('destroy');
+
+        // Course status and publishing permissions
+        $this->middleware('permission:publish-course')->only('publish');
+        $this->middleware('permission:unpublish-course')->only('unpublish');
+        $this->middleware('permission:change-course-status')->only('changeStatus');
+
+        // Course information permissions
+        $this->middleware('permission:show-course')->only(['getDuration', 'checkPublishability', 'getInstructors']);
+
+        // Course listing permissions
+        $this->middleware('permission:list-courses')->only(['enrollable', 'byInstructor']);
+
+        // Instructor management permissions
+        $this->middleware('permission:assign-instructor')->only('assignInstructor');
+        $this->middleware('permission:remove-instructor')->only('removeInstructor');
+        $this->middleware('permission:set-primary-instructor')->only(['setPrimaryInstructor', 'unsetPrimaryInstructor']);
     }
 
     /**

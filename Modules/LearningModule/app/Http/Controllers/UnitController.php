@@ -41,11 +41,22 @@ class UnitController extends Controller
     public function __construct(UnitService $unitService)
     {
         $this->unitService = $unitService;
-         $this->middleware('permission:list-units')->only('index');
+
+        // Unit CRUD permissions
+        $this->middleware('permission:list-units')->only('index');
         $this->middleware('permission:show-unit')->only('show');
         $this->middleware('permission:create-unit')->only('store');
         $this->middleware('permission:update-unit')->only('update');
         $this->middleware('permission:delete-unit')->only('destroy');
+
+        // Unit listing permissions
+        $this->middleware('permission:list-units')->only(['byCourse', 'getUnitCount']);
+
+        // Unit ordering permissions
+        $this->middleware('permission:update-unit')->only(['reorder', 'moveToPosition']);
+
+        // Unit information permissions
+        $this->middleware('permission:show-unit')->only(['getDuration', 'canBeDeleted']);
     }
 
     /**

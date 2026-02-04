@@ -49,6 +49,19 @@ class EnrollmentController extends Controller
     public function __construct(EnrollmentService $enrollmentService)
     {
         $this->enrollmentService = $enrollmentService;
+
+        // Enrollment CRUD permissions
+        $this->middleware('permission:list-enrollments')->only('index');
+        $this->middleware('permission:show-enrollment')->only('show');
+        $this->middleware('permission:create-enrollment')->only('store');
+        $this->middleware('permission:update-enrollment')->only('update');
+        $this->middleware('permission:delete-enrollment')->only('destroy');
+
+        // Enrollment status permissions
+        $this->middleware('permission:change-enrollment-status')->only('updateStatus');
+
+        // Enrollment information permissions
+        $this->middleware('permission:show-enrollment')->only('getProgress');
     }
 
     /**
