@@ -63,13 +63,13 @@ class ProgramService
     }
 
     /**
-     * Create program and invalidate cache
+     * Create a program for the given organization and invalidate list cache.
+     *
+     * @param  Organization  $organization  Resolved by the controller after validation.
+     * @param  array<string, mixed>  $data  Program attributes (title, status, required_budget, etc.).
      */
     public function create(Organization $organization, array $data): Program
     {
-        // Route model binding ensures $organization is not null
-        // If organization doesn't exist, Laravel will throw ModelNotFoundException (404)
-
         $program = $organization->programs()->create($data);
         $this->flushGlobalCache();
 

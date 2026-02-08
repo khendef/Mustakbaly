@@ -20,7 +20,7 @@ abstract class Controller extends BaseController
      * Common exception handling for controllers.
      *
      * Keeps meaningful HTTP/business exception codes (4xx/5xx) so they can be rendered
-     * by the global exception renderer (see `bootstrap/app.php` and `app/Exceptions/Handler.php`).
+     * by the global exception renderer (see `app/Exceptions/Handler.php`; API handling is centralized there).
      * Falls back to a safe generic 500 message for unexpected/technical exceptions.
      *
      * @param Exception $e

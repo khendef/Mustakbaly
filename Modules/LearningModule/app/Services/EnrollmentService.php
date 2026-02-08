@@ -377,7 +377,7 @@ class EnrollmentService
         return Lesson::whereHas('unit', function ($query) use ($enrollment) {
             $query->where('course_id', $enrollment->course_id);
         })->whereHas('completedByEnrollments', function ($query) use ($enrollment) {
-            $query->where('enrollment_id', $enrollment->enrollment_id);
+            $query->where('enrollments.enrollment_id', $enrollment->enrollment_id);
         })->count();
     }
 
@@ -488,28 +488,18 @@ class EnrollmentService
             return null;
         }
 
-        try {
-            $totalUnits = Unit::where('course_id', $course->course_id)->count();
-            $totalLessons = $this->getTotalLessonsCount($course);
-            $completedLessons = $this->getCompletedLessonsCount($enrollment);
+        $totalUnits = Unit::where('course_id', $course->course_id)->count();
+        $totalLessons = $this->getTotalLessonsCount($course);
+        $completedLessons = $this->getCompletedLessonsCount($enrollment);
 
-            return [
-                'enrollment_id' => $enrollment->enrollment_id,
-                'progress_percentage' => (float)$enrollment->progress_percentage,
-                'total_units' => $totalUnits,
-                'total_lessons' => $totalLessons,
-                'completed_lessons' => $completedLessons,
-                'remaining_lessons' => max(0, $totalLessons - $completedLessons),
-                'is_completed' => $enrollment->enrollment_status === EnrollmentStatus::COMPLETED,
-            ];
-        } catch (\Exception $e) {
-            Log::error("Failed to get progress details", [
-                'enrollment_id' => $enrollment->enrollment_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return null;
-        }
+        return [
+            'enrollment_id' => $enrollment->enrollment_id,
+            'progress_percentage' => (float) $enrollment->progress_percentage,
+            'total_units' => $totalUnits,
+            'total_lessons' => $totalLessons,
+            'completed_lessons' => $completedLessons,
+            'remaining_lessons' => max(0, $totalLessons - $completedLessons),
+        ];
     }
 
     /**

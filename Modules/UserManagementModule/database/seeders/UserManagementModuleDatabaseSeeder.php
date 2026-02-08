@@ -18,12 +18,13 @@ class UserManagementModuleDatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-        PermissionSeeder::class,
-        SuperAdminRoleSeeder::class,
-        ManagerRoleSeeder::class,
-        StudentRoleSeeder::class,
-        InstructorRoleSeeder::class,
-        AuditorRoleSeeder::class, 
-       ]);
+            PermissionSeeder::class,
+            SuperAdminRoleSeeder::class,
+            ManagerRoleSeeder::class,
+            StudentRoleSeeder::class,
+            InstructorRoleSeeder::class,
+            AuditorRoleSeeder::class,
+            DemoDataSeeder::class,
+        ]);
     }
 }

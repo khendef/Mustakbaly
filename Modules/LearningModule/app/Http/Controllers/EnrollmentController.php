@@ -276,16 +276,19 @@ class EnrollmentController extends Controller
             $progress = $this->enrollmentService->getProgressDetails($enrollment);
 
             if (!$progress) {
-                throw new Exception('Failed to retrieve progress details. Course information may be missing.', 404);
+                throw new HttpException(404, 'Failed to retrieve progress details. Course information may be missing.');
             }
 
             return self::success($progress, 'Progress details retrieved successfully.');
-        } catch (Exception $e) {
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             Log::error('Unexpected error retrieving progress details', [
                 'enrollment_id' => $enrollment->enrollment_id ?? null,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw new Exception('Unable to retrieve enrollment progress.', 500);
+            throw new Exception('Unable to retrieve enrollment progress. ' . $e->getMessage(), 500);
         }
     }
 }
