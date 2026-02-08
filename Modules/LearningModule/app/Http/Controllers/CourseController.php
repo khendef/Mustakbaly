@@ -247,7 +247,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while deleting the course.', 500);
+            $this->throwReadable($e, 'An error occurred while deleting the course.');
         }
     }
 
@@ -280,7 +280,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while publishing the course.', 500);
+            $this->throwReadable($e, 'An error occurred while publishing the course.');
         }
     }
 
@@ -305,7 +305,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while unpublishing the course.', 500);
+            $this->throwReadable($e, 'An error occurred while unpublishing the course.');
         }
     }
 
@@ -336,7 +336,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while changing the course status.', 500);
+            $this->throwReadable($e, 'An error occurred while changing the course status.');
         }
     }
 
@@ -491,7 +491,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while assigning the instructor.', 500);
+            $this->throwReadable($e, 'An error occurred while assigning the instructor.');
         }
     }
 
@@ -524,7 +524,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while removing the instructor.', 500);
+            $this->throwReadable($e, 'An error occurred while removing the instructor.');
         }
     }
 
@@ -557,7 +557,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while setting the primary instructor.', 500);
+            $this->throwReadable($e, 'An error occurred while setting the primary instructor.');
         }
     }
 
@@ -586,7 +586,7 @@ class CourseController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while removing the primary instructor flag.', 500);
+            $this->throwReadable($e, 'An error occurred while removing the primary instructor flag.');
         }
     }
 

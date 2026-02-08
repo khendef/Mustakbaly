@@ -47,11 +47,11 @@ class Handler extends ExceptionHandler
     {
         // Handle all API requests with consistent JSON responses
         // Check if it's an API route or if the request expects JSON
-        $isApiRequest = $request->is('api/*') 
-            || $request->expectsJson() 
+        $isApiRequest = $request->is('api/*')
+            || $request->expectsJson()
             || $request->wantsJson()
             || str_starts_with($request->path(), 'api/');
-        
+
         if ($isApiRequest) {
             return $this->handleApiException($request, $e);
         }
@@ -417,11 +417,17 @@ class Handler extends ExceptionHandler
     protected function handleHttpException(HttpException $e): JsonResponse
     {
         $statusCode = $e->getStatusCode();
-        
+
         // For 404 errors, provide more user-friendly messages
         if ($statusCode === 404) {
+            // Laravel frequently wraps ModelNotFoundException inside NotFoundHttpException.
+            // In that case, the real "model not found" info is in the previous exception.
+            if ($e instanceof NotFoundHttpException && $e->getPrevious() instanceof ModelNotFoundException) {
+                return $this->handleModelNotFoundException($e->getPrevious());
+            }
+
             $message = $e->getMessage();
-            
+
             // Check if it's a model not found error (converted to NotFoundHttpException)
             if (str_contains($message, 'No query results for model')) {
                 // Extract model name from message
@@ -429,7 +435,7 @@ class Handler extends ExceptionHandler
                     $modelClass = $matches[1];
                     $modelName = class_basename($modelClass);
                     $modelName = str_replace('_', ' ', strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelName)));
-                    
+
                     return response()->json([
                         'status' => 'error',
                         'message' => "The requested {$modelName} was not found.",
@@ -439,7 +445,7 @@ class Handler extends ExceptionHandler
                     ], 404, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
                 }
             }
-            
+
             // For any 404, provide a user-friendly message
             $message = $message && !str_contains($message, 'Symfony') && !str_contains($message, 'HttpKernel')
                 ? $message

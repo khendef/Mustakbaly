@@ -1,5 +1,8 @@
 <?php
+
 namespace App\Http\Controllers;
+
+use Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use \Illuminate\Routing\Controller as BaseController;
@@ -12,6 +15,30 @@ use \Illuminate\Routing\Controller as BaseController;
 abstract class Controller extends BaseController
 {
     use AuthorizesRequests;
+
+    /**
+     * Common exception handling for controllers.
+     *
+     * Keeps meaningful HTTP/business exception codes (4xx/5xx) so they can be rendered
+     * by the global exception renderer (see `bootstrap/app.php` and `app/Exceptions/Handler.php`).
+     * Falls back to a safe generic 500 message for unexpected/technical exceptions.
+     *
+     * @param Exception $e
+     * @param string $fallbackMessage
+     * @return never
+     * @throws Exception
+     */
+    protected function throwReadable(Exception $e, string $fallbackMessage): never
+    {
+        $code = (int) $e->getCode();
+
+        // Preserve meaningful business/validation status codes (404/422/409/...)
+        if ($code >= 400 && $code < 600) {
+            throw $e;
+        }
+
+        throw new Exception($fallbackMessage, 500);
+    }
 
     /**
      * Return a success JSON response.

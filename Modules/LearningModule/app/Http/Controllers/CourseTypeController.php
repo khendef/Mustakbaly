@@ -100,7 +100,7 @@ class CourseTypeController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while creating the course type.', 500);
+            $this->throwReadable($e, 'An error occurred while creating the course type.');
         }
     }
 
@@ -154,7 +154,7 @@ class CourseTypeController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the course type.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the course type.');
         }
     }
 
@@ -180,7 +180,7 @@ class CourseTypeController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while deleting the course type.', 500);
+            $this->throwReadable($e, 'An error occurred while deleting the course type.');
         }
     }
 
@@ -209,7 +209,7 @@ class CourseTypeController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while activating the course type.', 500);
+            $this->throwReadable($e, 'An error occurred while activating the course type.');
         }
     }
 
@@ -238,7 +238,7 @@ class CourseTypeController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while deactivating the course type.', 500);
+            $this->throwReadable($e, 'An error occurred while deactivating the course type.');
         }
     }
 }

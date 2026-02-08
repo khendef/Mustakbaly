@@ -159,7 +159,7 @@ class EnrollmentController extends Controller
             if ($e instanceof HttpException) {
                 throw $e;
             }
-            throw new Exception('An error occurred while creating the enrollment.', 500);
+            $this->throwReadable($e, 'An error occurred while creating the enrollment.');
         }
     }
 
@@ -217,7 +217,7 @@ class EnrollmentController extends Controller
                 'enrollment_id' => $enrollment->enrollment_id ?? null,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the enrollment.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the enrollment.');
         }
     }
 
@@ -253,7 +253,7 @@ class EnrollmentController extends Controller
                 'status' => $request->validated()['status'] ?? null,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the enrollment status.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the enrollment status.');
         }
     }
 

@@ -11,9 +11,10 @@ use Illuminate\Validation\Rule;
  *
  * Validates:
  * - Enrollment type is valid (if updating)
- * - Progress percentage is within valid range (0-100)
- * - Final grade is within valid range (0-100)
- * - Only allows updating specific fields
+ * - Final grade can be updated by users with 'override-enrollment-final-grade' permission
+ * 
+ * Note: progress_percentage is calculated automatically and cannot be manually updated.
+ * Final grade is calculated automatically but can be manually overridden by authorized users.
  */
 class UpdateEnrollmentRequest extends FormRequest
 {
@@ -30,29 +31,43 @@ class UpdateEnrollmentRequest extends FormRequest
     }
 
     /**
+     * Check if the authenticated user can override the final grade.
+     *
+     * @return bool
+     */
+    protected function canOverrideFinalGrade(): bool
+    {
+        return $this->user() && $this->user()->can('override-enrollment-final-grade');
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             // Enrollment type can be updated
             'enrollment_type' => [
                 'nullable',
                 'string',
                 Rule::in(['self', 'assigned']),
             ],
+        ];
 
-            // Progress percentage can be updated
-            'progress_percentage' => [
+        // Users with override permission can manually update final_grade
+        if ($this->canOverrideFinalGrade()) {
+            $rules['final_grade'] = [
                 'nullable',
                 'numeric',
                 'min:0',
                 'max:100',
                 'decimal:0,2',
-            ],
-        ];
+            ];
+        }
+
+        return $rules;
     }
 
     /**
@@ -62,20 +77,20 @@ class UpdateEnrollmentRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
+        $messages = [
             'enrollment_type.string' => 'The enrollment type must be a string.',
             'enrollment_type.in' => 'The enrollment type must be either "self" or "assigned".',
-
-            'progress_percentage.numeric' => 'The progress percentage must be a number.',
-            'progress_percentage.min' => 'The progress percentage cannot be less than 0.',
-            'progress_percentage.max' => 'The progress percentage cannot be greater than 100.',
-            'progress_percentage.decimal' => 'The progress percentage can have at most 2 decimal places.',
-
-            'final_grade.numeric' => 'The final grade must be a number.',
-            'final_grade.min' => 'The final grade cannot be less than 0.',
-            'final_grade.max' => 'The final grade cannot be greater than 100.',
-            'final_grade.decimal' => 'The final grade can have at most 2 decimal places.',
         ];
+
+        // Add final_grade validation messages for users with override permission
+        if ($this->canOverrideFinalGrade()) {
+            $messages['final_grade.numeric'] = 'The final grade must be a number.';
+            $messages['final_grade.min'] = 'The final grade cannot be less than 0.';
+            $messages['final_grade.max'] = 'The final grade cannot be greater than 100.';
+            $messages['final_grade.decimal'] = 'The final grade can have at most 2 decimal places.';
+        }
+
+        return $messages;
     }
 
     /**
@@ -85,12 +100,18 @@ class UpdateEnrollmentRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return [
+        $attributes = [
             'enrollment_type' => 'enrollment type',
-            'progress_percentage' => 'progress percentage',
-            'final_grade' => 'final grade',
         ];
+
+        // Add final_grade attribute for users with override permission
+        if ($this->canOverrideFinalGrade()) {
+            $attributes['final_grade'] = 'final grade';
+        }
+
+        return $attributes;
     }
+
 
     /**
      * Prepare the data for validation.
@@ -99,13 +120,8 @@ class UpdateEnrollmentRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        // Convert progress_percentage to float if provided
-        if ($this->has('progress_percentage')) {
-            $this->merge(['progress_percentage' => (float)$this->progress_percentage]);
-        }
-
-        // Convert final_grade to float if provided
-        if ($this->has('final_grade')) {
+        // Convert final_grade to float if provided (users with override permission only)
+        if ($this->canOverrideFinalGrade() && $this->has('final_grade')) {
             $this->merge(['final_grade' => (float)$this->final_grade]);
         }
     }

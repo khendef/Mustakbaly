@@ -56,6 +56,9 @@ class StoreCourseRequest extends FormRequest
             'difficulty_level' => ['nullable', 'string', Rule::in(['beginner', 'intermediate', 'advanced'])],
             'cover' => 'nullable|image|max:2048',
             'intro_video' => 'nullable|mimes:mp4,mov|max:20480',
+            //make unique course name with course type id rule
+            'title.unique' => ['required', 'unique:courses,title->en,course_type_id,' . $this->course_type_id],
+
         ];
     }
 

@@ -34,6 +34,7 @@ class LessonResource extends JsonResource
             'lesson_order' => $this->lesson_order,
             'lesson_type' => $this->lesson_type,
             'is_required' => $this->is_required,
+            'is_completed' => $this->is_completed,
             'actual_duration_minutes' => $this->actual_duration_minutes,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),

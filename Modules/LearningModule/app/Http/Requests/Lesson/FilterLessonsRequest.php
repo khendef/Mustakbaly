@@ -22,6 +22,31 @@ class FilterLessonsRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     * Converts string boolean values from query parameters to actual booleans.
+     *
+     * @return void
+     */
+    protected function prepareForValidation(): void
+    {
+        // Convert string boolean values to actual booleans
+        if ($this->has('is_required')) {
+            $value = $this->input('is_required');
+
+            // Handle string boolean values from query parameters
+            if (is_string($value)) {
+                $lowerValue = strtolower(trim($value));
+                if (in_array($lowerValue, ['true', '1', 'yes', 'on'])) {
+                    $this->merge(['is_required' => true]);
+                } elseif (in_array($lowerValue, ['false', '0', 'no', 'off', ''])) {
+                    $this->merge(['is_required' => false]);
+                }
+                // If it doesn't match any known boolean string, leave it as is (validation will catch it)
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>

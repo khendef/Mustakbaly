@@ -1,10 +1,11 @@
 <?php
+
 namespace Modules\OrganizationsModule\Services\V1;
+
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\OrganizationsModule\Models\Organization;
 use Modules\OrganizationsModule\Models\Program;
-use function PHPUnit\Framework\isNull;
 
 /**
  * Service class for managing Program.
@@ -28,7 +29,7 @@ class ProgramService
     /**
      * Get programs with filters (cached)
      */
-    public function getPrograms(array $filters,int $perPage = 15) : LengthAwarePaginator
+    public function getPrograms(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         // ensure stable key generation
         if (!empty($filters)) {
@@ -38,11 +39,11 @@ class ProgramService
 
         // return Cache::tags([self::TAG_GLOBAL])
         //     ->remember($cacheKey, self::CACHE_TTL, fn () =>
-               return Program::query()
-                    ->filter($filters)
-                    ->orderByDesc('created_at')
-                    ->paginate($perPage);
-            //);
+        return Program::query()
+            ->filter($filters)
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+        //);
     }
 
     /**
@@ -57,21 +58,19 @@ class ProgramService
         //         self::TAG_PREFIX_PROGRAM . $programId,
         //     ])
         //     ->remember($cacheKey, self::CACHE_TTL, function () use ($programId) {
-                return Program::findOrFail($programId);
-            //});
+        return Program::findOrFail($programId);
+        //});
     }
 
     /**
      * Create program and invalidate cache
      */
-    public function create(Organization $organization,array $data): Program
+    public function create(Organization $organization, array $data): Program
     {
+        // Route model binding ensures $organization is not null
+        // If organization doesn't exist, Laravel will throw ModelNotFoundException (404)
 
-        if(isNull($organization)){
-            $organization = config('app.current_organization_id');
-        }
-        
-       $program = $organization->programs()->create($data);
+        $program = $organization->programs()->create($data);
         $this->flushGlobalCache();
 
         return $program;
