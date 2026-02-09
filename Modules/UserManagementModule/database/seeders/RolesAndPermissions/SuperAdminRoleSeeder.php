@@ -14,8 +14,11 @@ class SuperAdminRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $superAdminRole = Role::create(['name' => 'super-admin', 'guard_name' => 'api']);
-        $permissions = Permission::where('guard_name','api')->get();
+        $superAdminRole = Role::firstOrCreate(
+            ['name' => 'super-admin', 'guard_name' => 'api'],
+            ['name' => 'super-admin', 'guard_name' => 'api']
+        );
+        $permissions = Permission::where('guard_name', 'api')->get();
         $superAdminRole->syncPermissions($permissions);
      
 

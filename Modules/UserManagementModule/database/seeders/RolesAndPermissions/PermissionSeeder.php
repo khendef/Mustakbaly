@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
         $permissions = [
             //role permissions
             'create-roles',
-            'update-roles',      
+            'update-roles',
             'delete-roles',
             'list-roles',
             'show-roles',
@@ -25,6 +25,7 @@ class PermissionSeeder extends Seeder
             'delete-user',
             'list-users',
             'show-user',
+            'list-permissions',
 
             //students permissions 
             'create-student',
@@ -54,6 +55,13 @@ class PermissionSeeder extends Seeder
             'list-donors',
             'show-donor',
 
+            //organization permissions
+            'create-organization',
+            'update-organization',
+            'delete-organization',
+            'list-organizations',
+            'show-organization',
+
             //program permissions
             'create-program',
             'update-program',
@@ -67,6 +75,12 @@ class PermissionSeeder extends Seeder
             'delete-course',
             'list-courses',
             'show-course',
+            'publish-course',
+            'unpublish-course',
+            'change-course-status',
+            'assign-instructor',
+            'remove-instructor',
+            'set-primary-instructor',
 
             //course categories permissions
             'create-category',
@@ -88,6 +102,15 @@ class PermissionSeeder extends Seeder
             'delete-lesson',
             'list-lessons',
             'show-lesson',
+
+            // enrollment permissions
+            'create-enrollment',
+            'update-enrollment',
+            'delete-enrollment',
+            'list-enrollments',
+            'show-enrollment',
+            'change-enrollment-status',
+            'override-enrollment-final-grade',
 
             // quiz permissions
             'create-quiz',
@@ -133,8 +156,11 @@ class PermissionSeeder extends Seeder
 
         ];
 
-         foreach($permissions as $permission){
-            Permission::create(['name'=>$permission , 'guard_name'=>'api']);
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(
+                ['name' => $permission, 'guard_name' => 'api'],
+                ['name' => $permission, 'guard_name' => 'api']
+            );
         }
     }
 }

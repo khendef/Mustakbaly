@@ -42,10 +42,11 @@ class UpdateLessonRequest extends FormRequest
             'lesson_order' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'lesson_type' => ['sometimes', 'required', 'string', Rule::in(['lecture', 'video', 'interactive', 'reading'])],
             'is_required' => ['sometimes', 'nullable', 'boolean'],
+            'is_completed' => ['sometimes', 'nullable', 'boolean'],
             'actual_duration_minutes' => ['sometimes', 'required', 'integer', 'min:1'],
-            'video'=> 'nullable|file|mimes:mp4,mov,ogg,qt|max:51200',
-            'attachments'=> 'nullable|array',
-            'attachments.*'=> 'file|mimes:pdf,zip,rar,doc,docx,ppt,pptx|max:10240',
+            'video' => 'nullable|file|mimes:mp4,mov,ogg,qt|max:51200',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|mimes:pdf,zip,rar,doc,docx,ppt,pptx|max:10240',
         ];
     }
 

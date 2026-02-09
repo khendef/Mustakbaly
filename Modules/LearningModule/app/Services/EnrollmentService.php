@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\AssesmentModule\Models\Attempt;
+use Modules\AssesmentModule\Models\Quiz;
 use Modules\LearningModule\Enums\EnrollmentStatus;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Modules\LearningModule\Models\Course;
@@ -375,7 +377,7 @@ class EnrollmentService
         return Lesson::whereHas('unit', function ($query) use ($enrollment) {
             $query->where('course_id', $enrollment->course_id);
         })->whereHas('completedByEnrollments', function ($query) use ($enrollment) {
-            $query->where('enrollment_id', $enrollment->enrollment_id);
+            $query->where('enrollments.enrollment_id', $enrollment->enrollment_id);
         })->count();
     }
 
@@ -486,28 +488,18 @@ class EnrollmentService
             return null;
         }
 
-        try {
-            $totalUnits = Unit::where('course_id', $course->course_id)->count();
-            $totalLessons = $this->getTotalLessonsCount($course);
-            $completedLessons = $this->getCompletedLessonsCount($enrollment);
+        $totalUnits = Unit::where('course_id', $course->course_id)->count();
+        $totalLessons = $this->getTotalLessonsCount($course);
+        $completedLessons = $this->getCompletedLessonsCount($enrollment);
 
-            return [
-                'enrollment_id' => $enrollment->enrollment_id,
-                'progress_percentage' => (float)$enrollment->progress_percentage,
-                'total_units' => $totalUnits,
-                'total_lessons' => $totalLessons,
-                'completed_lessons' => $completedLessons,
-                'remaining_lessons' => max(0, $totalLessons - $completedLessons),
-                'is_completed' => $enrollment->enrollment_status === EnrollmentStatus::COMPLETED,
-            ];
-        } catch (\Exception $e) {
-            Log::error("Failed to get progress details", [
-                'enrollment_id' => $enrollment->enrollment_id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return null;
-        }
+        return [
+            'enrollment_id' => $enrollment->enrollment_id,
+            'progress_percentage' => (float) $enrollment->progress_percentage,
+            'total_units' => $totalUnits,
+            'total_lessons' => $totalLessons,
+            'completed_lessons' => $completedLessons,
+            'remaining_lessons' => max(0, $totalLessons - $completedLessons),
+        ];
     }
 
     /**
@@ -536,7 +528,7 @@ class EnrollmentService
                 $updateData = ['progress_percentage' => 100.00];
 
                 // Set completed_at if not already set
-                // Note: We don't check exams/assignments here as per user's request
+                // Note: We don't check exams/assignments it's calculated automatically when the course is completed
                 if (!$enrollment->completed_at) {
                     $updateData['completed_at'] = now();
                 }
@@ -561,6 +553,128 @@ class EnrollmentService
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+        }
+    }
+
+    /**
+     * Calculate and update final grade for an enrollment based on quiz scores.
+     * 
+     * Only calculates final grade if:
+     * - Course is completed (progress_percentage = 100%)
+     * - There are graded quiz attempts for the course
+     * 
+     * Calculation: Average of all graded quiz attempt scores (as percentage of max_score)
+     * 
+     * @param Enrollment $enrollment
+     * @return Enrollment|null
+     */
+    public function calculateFinalGrade(Enrollment $enrollment): ?Enrollment
+    {
+        try {
+            // Only calculate final grade if course is completed
+            if ($enrollment->progress_percentage < 100.00 || $enrollment->enrollment_status !== EnrollmentStatus::COMPLETED->value || !$enrollment->completed_at) {
+                Log::info("Skipping final grade calculation - course not completed or enrollment status is not completed", [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'progress_percentage' => $enrollment->progress_percentage,
+                    'enrollment_status' => $enrollment->enrollment_status,
+                    'completed_at' => $enrollment->completed_at,
+                ]);
+                return null;
+            }
+
+            $course = $enrollment->course;
+            if (!$course) {
+                Log::warning("Course not found for enrollment when calculating final grade", [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                ]);
+                return null;
+            }
+
+            // Get all quizzes for this course
+            $quizzes = Quiz::where('course_id', $course->course_id)
+                ->pluck('id');
+
+            if ($quizzes->isEmpty()) {
+                Log::info("No quizzes found for course", [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'course_id' => $course->course_id,
+                ]);
+                return null;
+            }
+
+            // Get best attempt per quiz (highest score)
+            $bestAttempts = Attempt::whereIn('quiz_id', $quizzes)
+                ->where('student_id', $enrollment->learner_id)
+                ->where('status', 'graded')
+                ->whereNotNull('score')
+                ->with('quiz:id,max_score')
+                ->get()
+                ->groupBy('quiz_id')
+                ->map(function ($attempts) {
+                    // Get the attempt with the highest score for this quiz
+                    return $attempts->sortByDesc('score')->first();
+                })
+                ->filter(); // Remove null values
+
+            if ($bestAttempts->isEmpty()) {
+                Log::info("No graded quiz attempts found for enrollment", [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                    'course_id' => $course->course_id,
+                    'learner_id' => $enrollment->learner_id,
+                ]);
+                return null;
+            }
+
+            // Calculate average: (score / max_score) * 100 for each quiz, then average
+            $totalPercentage = 0;
+            $quizCount = 0;
+
+            foreach ($bestAttempts as $attempt) {
+                $quiz = $attempt->quiz;
+                if (!$quiz || !$quiz->max_score || $quiz->max_score == 0) {
+                    continue;
+                }
+
+                // Calculate percentage score for this quiz attempt
+                $percentageScore = ($attempt->score / $quiz->max_score) * 100;
+                $totalPercentage += $percentageScore;
+                $quizCount++;
+            }
+
+            if ($quizCount === 0) {
+                Log::warning("No valid quiz attempts with max_score found", [
+                    'enrollment_id' => $enrollment->enrollment_id,
+                ]);
+                return null;
+            }
+
+            // Calculate final grade as average of all quiz percentages
+            $finalGrade = round($totalPercentage / $quizCount, 2);
+
+            // Ensure final grade is between 0 and 100
+            $finalGrade = max(0, min(100, $finalGrade));
+
+            // Update enrollment
+            $enrollment->update(['final_grade' => $finalGrade]);
+
+            // Clear enrollment cache
+            $this->clearEnrollmentCache($enrollment->learner_id, $enrollment->course_id);
+
+            Log::info("Final grade calculated and updated for enrollment", [
+                'enrollment_id' => $enrollment->enrollment_id,
+                'final_grade' => $finalGrade,
+                'quiz_count' => $quizCount,
+                'total_attempts' => $bestAttempts->count(),
+            ]);
+
+            return $enrollment->fresh();
+        } catch (\Exception $e) {
+            Log::error("Failed to calculate final grade for enrollment", [
+                'enrollment_id' => $enrollment->enrollment_id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return null;
         }
     }
 }

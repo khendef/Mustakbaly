@@ -1,6 +1,11 @@
 <?php
+
 namespace Modules\OrganizationsModule\Http\Requests\V1\Program;
+
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\OrganizationsModule\Models\Organization;
+
 class StoreProgramRequest extends FormRequest
 {
     /**
@@ -12,6 +17,16 @@ class StoreProgramRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation (merge route param so we can validate it).
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'organization_id' => $this->route('orgId'),
+        ]);
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
@@ -19,6 +34,7 @@ class StoreProgramRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'organization_id' => ['required', 'integer', Rule::exists(Organization::class, 'id')],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'objectives' => ['nullable', 'string'],
@@ -42,6 +58,18 @@ class StoreProgramRequest extends FormRequest
             'required_budget.required' => 'The required budget is required.',
             'required_budget.numeric' => 'The required budget must be a number.',
             'required_budget.min' => 'The required budget must be at least 0.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'organization_id' => 'organization',
+            'title' => 'Program Title',
+            'description' => 'Program Description',
+            'objectives' => 'Program Objectives',
+            'status' => 'Program Status',
+            'required_budget' => 'Required Budget',
         ];
     }
 }

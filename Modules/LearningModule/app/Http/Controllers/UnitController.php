@@ -41,11 +41,22 @@ class UnitController extends Controller
     public function __construct(UnitService $unitService)
     {
         $this->unitService = $unitService;
-         $this->middleware('permission:list-units')->only('index');
+
+        // Unit CRUD permissions
+        $this->middleware('permission:list-units')->only('index');
         $this->middleware('permission:show-unit')->only('show');
         $this->middleware('permission:create-unit')->only('store');
         $this->middleware('permission:update-unit')->only('update');
         $this->middleware('permission:delete-unit')->only('destroy');
+
+        // Unit listing permissions
+        $this->middleware('permission:list-units')->only(['byCourse', 'getUnitCount']);
+
+        // Unit ordering permissions
+        $this->middleware('permission:update-unit')->only(['reorder', 'moveToPosition']);
+
+        // Unit information permissions
+        $this->middleware('permission:show-unit')->only(['getDuration', 'canBeDeleted']);
     }
 
     /**
@@ -115,7 +126,7 @@ class UnitController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while creating the unit.', 500);
+            $this->throwReadable($e, 'An error occurred while creating the unit.');
         }
     }
 
@@ -176,7 +187,7 @@ class UnitController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the unit.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the unit.');
         }
     }
 
@@ -202,7 +213,7 @@ class UnitController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while deleting the unit.', 500);
+            $this->throwReadable($e, 'An error occurred while deleting the unit.');
         }
     }
 
@@ -261,7 +272,7 @@ class UnitController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while reordering units.', 500);
+            $this->throwReadable($e, 'An error occurred while reordering units.');
         }
     }
 
@@ -293,7 +304,7 @@ class UnitController extends Controller
                 'new_order' => $request->input('unit_order'),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while moving the unit.', 500);
+            $this->throwReadable($e, 'An error occurred while moving the unit.');
         }
     }
 

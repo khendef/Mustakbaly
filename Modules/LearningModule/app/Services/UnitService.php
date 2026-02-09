@@ -5,6 +5,7 @@ namespace Modules\LearningModule\Services;
 use App\Traits\CachesQueries;
 use App\Traits\HelperTrait;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\LearningModule\Models\Course;
@@ -31,6 +32,20 @@ class UnitService
         try {
             $data['course_id'] = $course->course_id;
 
+            // Check for duplicate title (English) in the same course
+            if (isset($data['title']) && is_array($data['title'])) {
+                $titleEn = $this->translatableToSlugSource($data['title'], 'en');
+                if ($titleEn !== '') {
+                    $existingUnit = Unit::where('course_id', $course->course_id)
+                        ->whereJsonContains('title->en', $titleEn)
+                        ->first();
+
+                    if ($existingUnit) {
+                        throw new Exception("A unit with the title '{$titleEn}' already exists in this course.", 422);
+                    }
+                }
+            }
+
             // Set unit_order if not provided (set to next available order)
             if (!isset($data['unit_order'])) {
                 $data['unit_order'] = $this->getNextOrder(Unit::class, 'course_id', $course->course_id, 'unit_order');
@@ -52,6 +67,29 @@ class UnitService
             ]);
 
             return $unit;
+        } catch (QueryException $e) {
+            Log::error("Database error creating unit", [
+                'course_id' => $course->course_id,
+                'data' => $data,
+                'error' => $e->getMessage(),
+                'sql' => $e->getSql() ?? null,
+                'bindings' => $e->getBindings() ?? null,
+            ]);
+
+            // Check for specific database errors
+            if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                // Check if it's a duplicate order
+                if (str_contains($e->getMessage(), 'unit_order')) {
+                    throw new Exception("A unit with this order already exists in this course. Please choose a different order.", 422);
+                }
+                // Generic duplicate entry message
+                throw new Exception("A unit with this information already exists.", 422);
+            }
+            if (str_contains($e->getMessage(), 'foreign key constraint')) {
+                throw new Exception("The referenced course does not exist.", 422);
+            }
+
+            throw new Exception("Database error occurred while creating the unit.", 500);
         } catch (Exception $e) {
             Log::error("Failed to create unit", [
                 'course_id' => $course->course_id,
@@ -59,7 +97,7 @@ class UnitService
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return null;
+            throw $e; // Re-throw to preserve exception code
         }
     }
 

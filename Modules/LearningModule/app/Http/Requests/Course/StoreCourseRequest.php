@@ -31,7 +31,13 @@ class StoreCourseRequest extends FormRequest
     {
         return [
             'title' => ['required', 'array'],
-            'title.en' => ['required_without:title.ar', 'nullable', 'string', 'max:255'],
+            'title.en' => [
+                'required_without:title.ar',
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('courses', 'title->en')->where('course_type_id', $this->input('course_type_id')),
+            ],
             'title.ar' => ['nullable', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:courses,slug'],
             'description' => ['nullable', 'array'],
@@ -44,7 +50,11 @@ class StoreCourseRequest extends FormRequest
             'prerequisites.en' => ['nullable', 'string'],
             'prerequisites.ar' => ['nullable', 'string'],
             'course_type_id' => ['required', 'integer', 'exists:course_types,course_type_id'],
-            'program_id' => ['required', 'integer'], // No exists rule yet as Program table doesn't exist
+            'program_id' => [
+                'required',
+                'integer',
+                Rule::exists('programs', 'id')->whereNull('deleted_at'),
+            ],
             'actual_duration_hours' => ['required', 'integer', 'min:1'],
             'allocated_budget' => ['nullable', 'numeric', 'min:0'],
             'required_budget' => ['nullable', 'numeric', 'min:0'],
@@ -69,9 +79,12 @@ class StoreCourseRequest extends FormRequest
         return [
             'title.required' => 'The course title is required.',
             'title.max' => 'The course title may not be greater than 255 characters.',
+            'title.en.unique' => 'A course with this title already exists for the selected course type.',
             'slug.unique' => 'This slug is already taken. Please choose a different one.',
             'course_type_id.required' => 'Please select a course type.',
             'course_type_id.exists' => 'The selected course type does not exist.',
+            'program_id.required' => 'Please select a program.',
+            'program_id.exists' => 'The selected program does not exist.',
             'actual_duration_hours.required' => 'Actual duration is required.',
             'actual_duration_hours.min' => 'Actual duration must be at least 1 hour.',
             'language.in' => 'Please select a valid language.',

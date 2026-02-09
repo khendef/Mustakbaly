@@ -154,9 +154,12 @@ class LessonBuilder extends Builder
             $query = $query->required($request->boolean('is_required'));
         }
 
-        // Search
-        if ($request->has('search')) {
-            $query = $query->search($request->input('search'));
+        // Search (only if search term is not empty)
+        if ($request->filled('search')) {
+            $searchTerm = trim($request->input('search'));
+            if (!empty($searchTerm)) {
+                $query = $query->search($searchTerm);
+            }
         }
 
         // Order by

@@ -8,11 +8,19 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+/**
+ * Single point of responsibility for API exception handling.
+ *
+ * All API and JSON requests are delegated here from bootstrap/app.php so that
+ * responses use a consistent format: status, message, data, error_code, hint, and
+ * errors (for validation). Model-not-found responses include resource name and ID.
+ */
 class Handler extends ExceptionHandler
 {
     /**
@@ -45,19 +53,37 @@ class Handler extends ExceptionHandler
      */
     public function render($request, \Throwable $e)
     {
-        // Handle all API requests with consistent JSON responses
-        // Check if it's an API route or if the request expects JSON
-        $isApiRequest = $request->is('api/*') 
-            || $request->expectsJson() 
-            || $request->wantsJson()
-            || str_starts_with($request->path(), 'api/');
-        
-        if ($isApiRequest) {
+        if ($this->requestExpectsApiResponse($request)) {
             return $this->handleApiException($request, $e);
         }
 
         // For web requests, use Laravel's default handling but ensure proper error pages
         return parent::render($request, $e);
+    }
+
+    /**
+     * Determine if the request should receive API-style JSON error responses.
+     * Uses config('api.path_patterns') so all backend API routes stay in sync.
+     *
+     * @param Request $request
+     * @return bool
+     */
+    public static function requestExpectsApiResponse(Request $request): bool
+    {
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return true;
+        }
+        $path = $request->path();
+        if (str_starts_with($path, 'api/')) {
+            return true;
+        }
+        $patterns = config('api.path_patterns', ['api/*']);
+        foreach ($patterns as $pattern) {
+            if ($request->is($pattern)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -69,6 +95,16 @@ class Handler extends ExceptionHandler
      */
     protected function handleApiException(Request $request, \Throwable $e): JsonResponse
     {
+        // Preserve explicitly built JSON responses (e.g. from RoleService, PermissionService).
+        if ($e instanceof HttpResponseException) {
+            return $e->getResponse();
+        }
+
+        // Unwrap route-model-binding 404: NotFoundHttpException often wraps ModelNotFoundException.
+        if ($e instanceof NotFoundHttpException && $e->getPrevious() instanceof ModelNotFoundException) {
+            return $this->handleModelNotFoundException($e->getPrevious());
+        }
+
         // Handle authentication exceptions
         if ($e instanceof AuthenticationException) {
             return $this->handleAuthenticationException($e);
@@ -104,8 +140,27 @@ class Handler extends ExceptionHandler
             return $this->handleQueryException($e);
         }
 
+        // Invalid argument (e.g. ValueObjects like Money) -> 422 with message
+        if ($e instanceof \InvalidArgumentException) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => null,
+                'error_code' => 'VALIDATION_ERROR',
+                'hint' => 'Please check your input and try again.',
+            ], 422, [], $this->jsonOptions());
+        }
+
         // Handle generic exceptions
         return $this->handleGenericException($e);
+    }
+
+    /**
+     * Default JSON encoding options for API error responses.
+     */
+    protected function jsonOptions(): int
+    {
+        return JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION;
     }
 
     /**
@@ -417,11 +472,17 @@ class Handler extends ExceptionHandler
     protected function handleHttpException(HttpException $e): JsonResponse
     {
         $statusCode = $e->getStatusCode();
-        
+
         // For 404 errors, provide more user-friendly messages
         if ($statusCode === 404) {
+            // Laravel frequently wraps ModelNotFoundException inside NotFoundHttpException.
+            // In that case, the real "model not found" info is in the previous exception.
+            if ($e instanceof NotFoundHttpException && $e->getPrevious() instanceof ModelNotFoundException) {
+                return $this->handleModelNotFoundException($e->getPrevious());
+            }
+
             $message = $e->getMessage();
-            
+
             // Check if it's a model not found error (converted to NotFoundHttpException)
             if (str_contains($message, 'No query results for model')) {
                 // Extract model name from message
@@ -429,7 +490,7 @@ class Handler extends ExceptionHandler
                     $modelClass = $matches[1];
                     $modelName = class_basename($modelClass);
                     $modelName = str_replace('_', ' ', strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelName)));
-                    
+
                     return response()->json([
                         'status' => 'error',
                         'message' => "The requested {$modelName} was not found.",
@@ -439,7 +500,7 @@ class Handler extends ExceptionHandler
                     ], 404, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
                 }
             }
-            
+
             // For any 404, provide a user-friendly message
             $message = $message && !str_contains($message, 'Symfony') && !str_contains($message, 'HttpKernel')
                 ? $message
@@ -458,6 +519,7 @@ class Handler extends ExceptionHandler
 
     /**
      * Handle model not found exceptions.
+     * Returns a clear message including the resource name and ID(s) when available.
      *
      * @param ModelNotFoundException $e
      * @return JsonResponse
@@ -466,14 +528,59 @@ class Handler extends ExceptionHandler
     {
         $model = class_basename($e->getModel());
         $modelName = str_replace('_', ' ', strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $model)));
+        $modelNameDisplay = ucfirst($modelName);
+
+        $ids = $e->getIds();
+        $idLabel = $this->formatModelNotFoundIds($ids);
+
+        $message = $idLabel !== ''
+            ? "{$modelNameDisplay} with ID {$idLabel} was not found."
+            : "The requested {$modelName} was not found.";
+
+        $hint = $this->getModelNotFoundHint($modelName, $idLabel);
 
         return response()->json([
             'status' => 'error',
-            'message' => "The requested {$modelName} was not found.",
+            'message' => $message,
             'data' => null,
             'error_code' => 'RESOURCE_NOT_FOUND',
-            'hint' => "Please verify the ID and try again.",
+            'hint' => $hint,
         ], 404, [], JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    /**
+     * Format ID(s) from ModelNotFoundException for display in message.
+     *
+     * @param array|int|string $ids
+     * @return string
+     */
+    protected function formatModelNotFoundIds(mixed $ids): string
+    {
+        if ($ids === null || $ids === []) {
+            return '';
+        }
+        if (is_array($ids)) {
+            return implode(', ', $ids);
+        }
+        return (string) $ids;
+    }
+
+    /**
+     * Get a helpful hint for model-not-found responses.
+     *
+     * @param string $modelName
+     * @param string $idLabel
+     * @return string
+     */
+    protected function getModelNotFoundHint(string $modelName, string $idLabel): string
+    {
+        if ($modelName === 'organization') {
+            return 'Please ensure the organization exists. You can list organizations to see valid IDs.';
+        }
+        if ($modelName === 'program') {
+            return 'Please ensure the program exists for this organization.';
+        }
+        return 'Please verify the ID and try again.';
     }
 
     /**

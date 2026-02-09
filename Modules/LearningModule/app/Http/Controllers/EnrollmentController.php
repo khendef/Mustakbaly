@@ -49,6 +49,19 @@ class EnrollmentController extends Controller
     public function __construct(EnrollmentService $enrollmentService)
     {
         $this->enrollmentService = $enrollmentService;
+
+        // Enrollment CRUD permissions
+        $this->middleware('permission:list-enrollments')->only('index');
+        $this->middleware('permission:show-enrollment')->only('show');
+        $this->middleware('permission:create-enrollment')->only('store');
+        $this->middleware('permission:update-enrollment')->only('update');
+        $this->middleware('permission:delete-enrollment')->only('destroy');
+
+        // Enrollment status permissions
+        $this->middleware('permission:change-enrollment-status')->only('updateStatus');
+
+        // Enrollment information permissions
+        $this->middleware('permission:show-enrollment')->only('getProgress');
     }
 
     /**
@@ -146,7 +159,7 @@ class EnrollmentController extends Controller
             if ($e instanceof HttpException) {
                 throw $e;
             }
-            throw new Exception('An error occurred while creating the enrollment.', 500);
+            $this->throwReadable($e, 'An error occurred while creating the enrollment.');
         }
     }
 
@@ -204,7 +217,7 @@ class EnrollmentController extends Controller
                 'enrollment_id' => $enrollment->enrollment_id ?? null,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the enrollment.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the enrollment.');
         }
     }
 
@@ -240,7 +253,7 @@ class EnrollmentController extends Controller
                 'status' => $request->validated()['status'] ?? null,
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the enrollment status.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the enrollment status.');
         }
     }
 
@@ -263,16 +276,19 @@ class EnrollmentController extends Controller
             $progress = $this->enrollmentService->getProgressDetails($enrollment);
 
             if (!$progress) {
-                throw new Exception('Failed to retrieve progress details. Course information may be missing.', 404);
+                throw new HttpException(404, 'Failed to retrieve progress details. Course information may be missing.');
             }
 
             return self::success($progress, 'Progress details retrieved successfully.');
-        } catch (Exception $e) {
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             Log::error('Unexpected error retrieving progress details', [
                 'enrollment_id' => $enrollment->enrollment_id ?? null,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-            throw new Exception('Unable to retrieve enrollment progress.', 500);
+            throw new Exception('Unable to retrieve enrollment progress. ' . $e->getMessage(), 500);
         }
     }
 }

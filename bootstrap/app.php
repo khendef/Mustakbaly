@@ -1,22 +1,17 @@
 <?php
 
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Exceptions\Handler;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
-use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        channels: __DIR__.'/../routes/channels.php',
+        channels: __DIR__ . '/../routes/channels.php',
         web: __DIR__ . '/../routes/web.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
@@ -39,59 +34,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('activitylog:clean')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        /*
+         * API and JSON exception handling is delegated to App\Exceptions\Handler
+         * so all API errors use a single, consistent format (status, message, error_code, hint, errors).
+         */
+        $exceptions->render(function (Throwable $e, Request $request) {
+            // Preserve responses thrown explicitly (e.g. RoleService, PermissionService).
+            if ($e instanceof HttpResponseException) {
+                return $e->getResponse();
+            }
 
-        $exceptions->render(function( Throwable $e, Request $request){
-            if($request->expectsJson() && !$request->is('api/*')){
+            // Delegate API/JSON requests to the Handler for consistent error format and messages.
+            if (Handler::requestExpectsApiResponse($request)) {
                 return null;
             }
 
-            if($e instanceof HttpResponseException){
-                return $e->getResponse();
-            }
-            Log::error(
-                "API Exception: ". get_class($e)." - Message: ".$e->getMessage()." - File: ".$e->getFile()." - line: ".$e->getLine()
-            );
-
-            $responseDetails = match(get_class($e)){
-                ValidationException::class => [
-                    'statusCode' => 422,
-                    'message' => $e->getMessage(),
-                    'errors' => $e->errors()->all(),
-                ],
-                AuthenticationException::class => [
-                    'statusCode' => 401,
-                    'message' => 'Unauthenticated',
-                ],
-                AuthorizationException::class => [
-                    'statusCode' => 403,
-                    'message' => 'This action is unauthorized',
-                ],
-                NotFoundResourceException::class => [
-                    'statusCode' => 404,
-                    'message' => 'This requested resource was not found',
-                ],
-                default => [
-                    'statusCode' => $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500,
-                    'message' => app()->isProduction() ? 'An unexpected server error occured' : $e->getMessage()
-
-                ]
-
-            };
-
-            $payload = [
-                'status' => 'error',
-                'message' => $responseDetails ['message']
-            ];
-
-            if(!empty($responseDetails['errors'])){
-                $payload['errors'] = $responseDetails['errors'];
-            }
-
-            $statusCode =( $responseDetails ['statusCode'] >= 400 && $responseDetails['statusCode']< 600)
-                            ? $responseDetails['statusCode'] : 500;
-
-            return response()->json($payload, $statusCode);
+            return null;
         });
-
-
     })->create();

@@ -41,11 +41,22 @@ class LessonController extends Controller
     public function __construct(LessonService $lessonService)
     {
         $this->lessonService = $lessonService;
-         $this->middleware('permission:list-lessons')->only('index');
+
+        // Lesson CRUD permissions
+        $this->middleware('permission:list-lessons')->only('index');
         $this->middleware('permission:show-lesson')->only('show');
         $this->middleware('permission:create-lesson')->only('store');
         $this->middleware('permission:update-lesson')->only('update');
         $this->middleware('permission:delete-lesson')->only('destroy');
+
+        // Lesson listing permissions
+        $this->middleware('permission:list-lessons')->only(['byUnit', 'getLessonCount']);
+
+        // Lesson ordering permissions
+        $this->middleware('permission:update-lesson')->only(['reorder', 'moveToPosition']);
+
+        // Lesson information permissions
+        $this->middleware('permission:show-lesson')->only('getDuration');
     }
 
     /**
@@ -115,7 +126,7 @@ class LessonController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while creating the lesson.', 500);
+            $this->throwReadable($e, 'An error occurred while creating the lesson.');
         }
     }
 
@@ -176,7 +187,7 @@ class LessonController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while updating the lesson.', 500);
+            $this->throwReadable($e, 'An error occurred while updating the lesson.');
         }
     }
 
@@ -202,7 +213,7 @@ class LessonController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while deleting the lesson.', 500);
+            $this->throwReadable($e, 'An error occurred while deleting the lesson.');
         }
     }
 
@@ -261,7 +272,7 @@ class LessonController extends Controller
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while reordering lessons.', 500);
+            $this->throwReadable($e, 'An error occurred while reordering lessons.');
         }
     }
 
@@ -288,7 +299,7 @@ class LessonController extends Controller
                 'new_order' => $request->input('lesson_order'),
                 'error' => $e->getMessage(),
             ]);
-            throw new Exception('An error occurred while moving the lesson.', 500);
+            $this->throwReadable($e, 'An error occurred while moving the lesson.');
         }
     }
 
